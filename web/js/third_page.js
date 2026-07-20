@@ -1530,7 +1530,7 @@ function initEscapeButton() {
     const escapeButton = document.querySelector(".escape")
 
     escapeButton.addEventListener("click", () => {
-        window.location.href = "../second_page/second_page.html"
+        window.location.href = "../second_page.html"
     })
 }
 

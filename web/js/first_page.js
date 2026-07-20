@@ -312,7 +312,7 @@ applyButton.addEventListener("click", () => {
         Cookie.set("territory", territorySelect.value)
 
         setTimeout(() => {
-            window.location.href = "../second_page/second_page.html"
+            window.location.href = "second_page.html"
             setTimeout(() => {
                 applyButton.classList.remove("clicked")
             }, 100)
