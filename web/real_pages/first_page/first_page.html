@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Страница 1</title>
+  <link rel="stylesheet" type="text/css" href="first_page.css">
+  <link rel="stylesheet" type="text/css" href="../fonts.css">
+  <link rel="stylesheet" type="text/css" href="../main_styles.css">
+</head>
+  <body class="body">
+    <header class="header">
+      <div class="header-time">
+        <div class="time-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+        </div>
+        <span id="time"></span>
+      </div>
+      <div id="name">
+        <span style="color: var(--color-red-text)">AM</span>
+        <span>Service</span>
+      </div>
+      <div>
+        <span></span>
+      </div>
+    </header>
+
+    <main class="main">
+      <div class="search-choose-wrapper">
+        <strong class="search-choose-name">Настройки</strong>
+        <main class="search-choose">
+          <div class="select">
+          <label>Территория</label>
+          <select id="territorySelect">
+            <option>Мысхако</option>
+            <option>Кирилловка</option>
+          </select>
+        </div>
+          <div id="postTextInput" class="text-input">
+            <label>Пост</label>
+            <input type="text" placeholder="Введите Пост" autocomplete="off" id="postInput">
+            <div class="suggests-panel">
+
+            </div>
+          </div>
+          <div id="nameTextInput" class="text-input">
+            <label>ФИО</label>
+            <input type="text" placeholder="Введите ФИО" autocomplete="off" id="nameInput">
+            <div class="suggests-panel">
+
+            </div>
+          </div>
+        </main>
+        <footer class="search-choose-footer">
+          <button class="active-button">Применить</button>
+        </footer>
+
+        </button>
+      </div>
+    </main>
+
+  </body>
+  <script src="../main_script.js"></script>
+  <script src="first_page.js"></script>
+</html>

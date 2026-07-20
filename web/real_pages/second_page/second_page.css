@@ -1,0 +1,290 @@
+.header {
+    position: sticky;
+    top: 0;
+
+    display: grid;
+    grid-template-columns: auto 1fr;
+
+    padding: var(--space-2);
+
+    background-color: var(--color-bg);
+    border-bottom: 1px solid var(--color-border);
+    box-shadow: 0 10px 10px color-mix(in oklch, var(--color-shadow) 5%, transparent);
+
+    z-index: 100;
+}
+
+.header-settings {
+    display: grid;
+    grid-template-columns: 1fr;
+}
+
+.header-settings-header {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+
+    padding-block: var(--space-2);
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: 400;
+}
+
+.header-settings-main {
+    display: grid;
+    grid-template-columns: auto auto auto;
+    /*min-height: 5rem;*/
+    gap: 2vw;
+}
+
+.escape {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 3.2rem;
+    height: 3.2rem;
+
+    border: none;
+    background: none;
+
+    transition: var(--transition-fast);
+
+    svg {
+        width: 2.8rem;
+        height: 2.8rem;
+        border-radius: 50%;
+        color: var(--color-text-contrast);
+    }
+}
+
+.escape:hover {
+    svg {
+        background-color: color-mix(in oklch, var(--color-text-contrast) 10%, transparent);
+    }
+}
+
+.setting-block {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 100%;
+    height: 100%;
+
+    padding: var(--space-2);
+
+    border: 1px solid var(--color-border);
+    border-radius: var(--space-4);
+
+    .setting-block-name {
+        text-align: start;
+        padding-left: var(--space-2);
+        color: var(--color-text-contrast);
+        font-weight: 500;
+        font-size: 0.8rem;
+        user-select: none;
+    }
+
+    .setting-block-value {
+        display: flex;
+
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+
+        font-weight: 600;
+        color: var(--color-text);
+        font-size: clamp(1rem, 2vw, 1.5rem);
+    }
+}
+
+.info-table-wrapper {
+    margin-top: var(--space-6);
+}
+
+.info-table {
+    display: grid;
+    grid-template-columns: min-content auto auto 4rem;
+    gap: var(--space-4) var(--space-1);
+    padding-inline: var(--space-2);
+}
+
+.table-cell {
+    display: flex;
+    box-sizing: border-box;
+    justify-content: center;
+    align-items: center;
+
+    padding: var(--space-3);
+
+    border: 1px solid var(--color-border);
+    border-radius: var(--space-3);
+
+    box-shadow: 0 .4rem .7rem color-mix(in oklch, var(--color-shadow) 5%, transparent);
+}
+
+.table-cell.time {
+    line-height: 2rem;
+
+    span {
+        white-space: nowrap;
+    }
+}
+
+.table-cell.number {
+    overflow-wrap: break-word;
+    hyphens: auto;
+}
+
+.table-cell.car {
+    display: grid;
+    grid-template-columns: 1fr;
+    padding: 0;
+
+    .car-header {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+
+        border-bottom: 1px solid var(--color-border);
+        height: 100%;
+    }
+
+    .car-footer {
+        display: grid;
+        grid-template-columns: 1fr min-content min-content;
+        align-items: center;
+        justify-items: center;
+        height: 100%;
+    }
+
+    .car-cell {
+        display: flex;
+        box-sizing: border-box;
+        justify-content: center;
+        align-items: center;
+        height: 100%;
+
+        padding: var(--space-2);
+    }
+
+    .car-cell.millage,
+    .car-cell.year {
+        min-width: 5rem;
+        border-left: 1px solid var(--color-border)
+    }
+
+    .car-cell.reg {
+        border-left: 1px solid var(--color-border)
+    }
+}
+
+.table-equip {
+    display: flex;
+    box-sizing: border-box;
+    justify-content: center;
+    align-items: center;
+
+    .table-equip-button {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+
+        width: 3rem;
+        height: 3rem;
+
+        border-radius: 50%;
+
+        border: 1px solid transparent;
+        background-image: linear-gradient(-90deg, var(--color-bg-contrast) 50%, var(--color-primary));
+        background-size: 500% 500%;
+        background-position: 1% 0;
+        box-shadow: 0 0 0.5rem 0.3rem color-mix(in oklch, var(--color-primary) 30%, transparent);
+        transition: var(--transition-slow) ease-out;
+
+        opacity: 0.9;
+
+        svg {
+            color: var(--color-bg);
+            transition: var(--transition-slow) ease-out;
+            transform: rotate(180deg);
+        }
+    }
+}
+
+.table-equip-button.clicked {
+    animation: equip-button var(--transition-slow) ease-out forwards;
+
+    svg {
+        color: color-mix(in oklch, var(--color-primary) 90%, transparent);
+    }
+}
+
+@keyframes equip-button {
+    30% {
+        box-shadow: 0 0 15px 15px color-mix(in oklch, var(--color-primary) 20%, transparent);
+    }
+
+    100% {
+        background-position: 90% 0;
+        box-shadow: 0 0 10px 5px var(--color-primary-highlight);
+        border: 1px solid color-mix(in oklch, var(--color-primary) 50%, transparent);
+    }
+}
+
+.table-column-name {
+    padding: var(--space-2) 0;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    text-align: center;
+
+    span {
+        overflow-wrap: break-word;
+        word-break: break-word;
+        font-weight: 500;
+        color: var(--color-text-contrast);
+    }
+}
+
+.table-column-name.no-break {
+    span {
+        white-space: nowrap;
+        font-weight: 500;
+        color: var(--color-text-contrast);
+    }
+}
+
+.nothing-text {
+    color: var(--color-text-contrast);
+    font-weight: 500;
+    font-size: 1.4rem;
+
+    margin-top: var(--space-6);
+}
+
+@media (max-width: 550px) {
+    .header-settings-header {
+        font-size: 1.1rem;
+    }
+
+    .header-settings-main {
+        grid-template-columns: 1fr;
+        gap: var(--space-3);
+        overflow-y: auto;
+        min-height: 0;
+        height: 3.8rem;
+        scroll-snap-type: y mandatory;
+    }
+
+    .setting-block {
+        scroll-snap-align: start;
+    }
+}
+
+.table-content {
+    display: contents;
+}
