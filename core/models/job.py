@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import String, Integer, ForeignKey, Boolean, func, Float
+from sqlalchemy import String, ForeignKey, Boolean, func, Float
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
@@ -25,8 +25,8 @@ class Job(Base, Life, Stage, CanDone):
         unique=False,
     )
 
-    number: Mapped[int] = mapped_column(
-        Integer,
+    number: Mapped[float] = mapped_column(
+        Float,
         nullable=False,
         unique=False
     )

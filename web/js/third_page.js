@@ -70,7 +70,8 @@ async function start() {
     initEscapeButton()
     setLoading()
 
-    if (!await init()) {
+    const result = await init()
+    if (!result) {
         createNotification("error", "Ошибка загрузки страницы")
     }
 
@@ -148,13 +149,14 @@ async function updateZnInfo(data) {
 }
 
 
-async function updateTable(url, tableValue, renderRow) {
+async function updateTable(url, tableValue, renderRow, on404) {
     return await getSmth(
         `${url}`,
         "GET",
         (data) => {
             renderData(data, tableValue, renderRow)
-        }
+        },
+        on404
     )
 }
 
@@ -230,7 +232,10 @@ async function updateWorksTable() {
     return await updateTable(
         `info/jobs/${znNumber}`,
         worksTableValue,
-        renderWorksRow
+        renderWorksRow,
+        () => {
+            createNotification("error", "У этого заказ наряда нет работ")
+        }
     )
 }
 
@@ -241,7 +246,10 @@ async function updateDetailsTable() {
     return await updateTable(
         `info/parts/${znNumber}`,
         detailsTableValue,
-        renderDetailsRow
+        renderDetailsRow,
+        () => {
+            createNotification("error", "У этого заказ наряда нет запчастей")
+        }
     )
 }
 
@@ -1292,7 +1300,7 @@ function constructPinFilesCell(addClass, name, type, objectData) {
                 const hour = time.getHours()
                 const minutes = time.getMinutes()
 
-                const mechanic = Cookie.get("name")
+                const mechanic = Cookie.get("mechanic")
 
                 const name = `${mechanic} ${addZero(hour)}:${addZero(minutes)} ${addZero(date)}.${addZero(month)}.${year.toString().slice(2)}`
                 const extension = getExtensionFromBlob(lastRecordedBlob)
@@ -1530,7 +1538,7 @@ function initEscapeButton() {
     const escapeButton = document.querySelector(".escape")
 
     escapeButton.addEventListener("click", () => {
-        window.location.href = "../second_page.html"
+        window.location.href = "second_page.html"
     })
 }
 

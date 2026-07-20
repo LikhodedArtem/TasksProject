@@ -1,17 +1,11 @@
-import asyncio
-import shutil
-from pathlib import Path
 from pprint import pprint
-from typing import Literal, Annotated
-from uuid import uuid4
-
-from fastapi import File, Form, HTTPException, UploadFile, status
+import traceback
+from fastapi import File, Form, UploadFile
 
 import uvicorn
 from fastapi import FastAPI
-from fastapi import Response, Request, Cookie, Depends
+from fastapi import Request
 from fastapi.responses import JSONResponse
-from urllib.parse import unquote
 
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import StreamingResponse
@@ -28,17 +22,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from sse import base_manager
-
 
 from parse import (parse_mechanics, parse_zn, parse_main_posts,
                    create_update, create_answer, parse_done,
                    parse_done_all, parse_rec)
-
-
-from crud import add_object
-from core.models import MechanicZNStatus
-from core.models.db_helper import db_helper
 
 
 async def parse_xml(request: Request, type: str, parce_func) -> JSONResponse:
@@ -47,10 +34,13 @@ async def parse_xml(request: Request, type: str, parce_func) -> JSONResponse:
 
     try:
         result = await parce_func(body)
-        # if result:
-        #     await base_manager.broadcast(create_update(type.lower(), result), type.lower())
+        if result:
+            pprint(f"UPDATE: {create_update(type.lower(), result)}")
+        else:
+            pprint("UPDATE: Нет изменений")
     except Exception as e:
-        print(f"Parse Error: {e}")
+        traceback.print_exc()
+        print(f"Parse {type.capitalize()} Error: {e}")
 
     return JSONResponse(status_code=200, content={"status": "ok"})
 
@@ -290,4 +280,10 @@ async def files_delete(request: Request):
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(
+        app,
+        host="0.0.0.0",
+        port=8000,
+        ssl_certfile="ssl/likhoded.ru.crt",
+        ssl_keyfile="ssl/likhoded.ru.key"
+    )

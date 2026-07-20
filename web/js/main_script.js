@@ -45,7 +45,11 @@ body.append($notification)
 let hideTimer
 let removeClassTimer
 
-const API_PATH = "http://192.168.50.95:8000"
+// const baseUrl = window.location.origin;
+//
+// const API_PATH = baseUrl + ':8000';
+
+const API_PATH = "http://192.168.50.95:8000";
 
 function createNotification(operation, mainText) {
     clearTimeout(hideTimer)
@@ -74,11 +78,11 @@ function createNotification(operation, mainText) {
     hideTimer = setTimeout(() => {
         $notification.classList.remove('show');
         $notification.classList.add('hide');
-    }, 2600);
+    }, 7000);
 
     removeClassTimer = setTimeout(() => {
         $notification.classList.remove('hide');
-    }, 3400);
+    }, 7800);
 }
 
 
@@ -211,9 +215,11 @@ async function getSmth(
                 if (on200) on200(data)
                 break
             case 404:
-                (on500)
-                    ? on404()
-                    : createNotification("error", "Сервер не нашёл данные")
+                console.log(on404)
+                on404()
+                // (on404)
+                //     ? on404()
+                //     : createNotification("error", "Сервер не нашёл данные")
                 break
             case 500:
                 (on500)
@@ -273,6 +279,7 @@ function beautyReg(reg) {
     fourth.textContent = reg.slice(6, 9)
 
     mainLine.append(first, second, third, fourth)
+    mainLine.style.textTransform = "uppercase"
 
     return mainLine
 }

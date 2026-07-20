@@ -12,6 +12,7 @@ let sseSource = null
 
 
 async function start() {
+    initEscapeButton()
     initTime()
     setLoading()
 
@@ -360,6 +361,16 @@ const postSuggestPanel = document.querySelector("#postTextInput .suggests-panel"
 const nameSuggestPanel = document.querySelector("#nameTextInput .suggests-panel")
 
 const suggestPanels = document.querySelectorAll(".suggests-panel")
+
+
+function initEscapeButton() {
+    const escapeButton = document.querySelector(".escape")
+
+    escapeButton.addEventListener("click", () => {
+        window.location.href = "index.html"
+    })
+}
+
 
 function initSuggestsPanels() {
     function initSuggestsPanel(suggestsPanel, data) {

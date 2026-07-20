@@ -1,0 +1,48 @@
+.main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    height: 100vh;
+}
+
+#navigator {
+    font-weight: 600;
+    font-size: 2.5rem;
+    margin-top: 25vh;
+}
+
+.href-buttons-wrapper {
+    display: flex;
+    justify-content: center;
+}
+
+.href-buttons-wrapper {
+    display: flex;
+    justify-content: center;
+}
+
+.href-buttons {
+    width: min(100%, 46rem);
+    margin-top: 10vh;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-4);
+}
+
+.href-button {
+    margin-right: 0 !important;
+}
+
+.href-button span {
+    min-width: 0;
+    min-height: 0;
+
+    font-weight: 600;
+    font-size: 1.3rem;
+}
+
+.href-button a {
+    display: none;
+}

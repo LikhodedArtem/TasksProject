@@ -166,7 +166,7 @@ function initEvents() {
         Cookie.set("znNumber", znNumber)
 
         setTimeout(() => {
-            window.location.href = "../third_page.html"
+            window.location.href = "third_page.html"
 
             setTimeout(() => {
                 equipButton.classList.remove("clicked")
@@ -179,7 +179,7 @@ function initEscapeButton() {
     const escapeButton = document.querySelector(".escape")
 
     escapeButton.addEventListener("click", () => {
-        window.location.href = "../first_page.html"
+        window.location.href = "first_page.html"
     })
 }
 

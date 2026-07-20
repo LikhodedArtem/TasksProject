@@ -50,7 +50,7 @@ async def parse_zn(xml_string: str):
             reg=car.find("reg").text if car.find("reg") is not None else None,
             model=car.find("model").text,
             year=int(car.find("year").text),
-            millage=int(car.find("millage").text),
+            millage=int(car.find("millage").text.replace("\xa0", "")),
             stage=new_stage,
         )
     ]
@@ -101,7 +101,7 @@ async def parse_zn(xml_string: str):
             name=part.find("parts_name").text,
             manufacturer_code=part.find("manufacturer_code").text,
             manufacturer=part.find("manufacturer").text,
-            quantity=int(part.find("quantity").text),
+            quantity=float(part.find("quantity").text.replace(",", ".")),
             units=part.find("units").text,
             stage=new_stage,
         )

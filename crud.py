@@ -406,8 +406,6 @@ async def kill_old_in_model(
             continue
         answer.append(value)
 
-    print(answer)
-
     return answer
 
 

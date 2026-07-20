@@ -214,33 +214,6 @@
     max-height: 100%;
 }
 
-.escape {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    width: 3.2rem;
-    height: 3.2rem;
-
-    border: none;
-    background: none;
-
-    transition: var(--transition-fast);
-
-    svg {
-        width: 2.8rem;
-        height: 2.8rem;
-        border-radius: 50%;
-        color: var(--color-text-contrast);
-    }
-}
-
-.escape:hover {
-    svg {
-        background-color: color-mix(in oklch, var(--color-text-contrast) 10%, transparent);
-    }
-}
-
 .packages-panel {
     display: grid;
     grid-template-columns: 1fr;

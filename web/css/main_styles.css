@@ -672,6 +672,33 @@ body {
     color: color-mix(in oklch, var(--color-primary) 90%, transparent);
 }
 
+.escape {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 3.2rem;
+    height: 3.2rem;
+
+    border: none;
+    background: none;
+
+    transition: var(--transition-fast);
+
+    svg {
+        width: 2.8rem;
+        height: 2.8rem;
+        border-radius: 50%;
+        color: var(--color-text-contrast);
+    }
+}
+
+.escape:hover {
+    svg {
+        background-color: color-mix(in oklch, var(--color-text-contrast) 10%, transparent);
+    }
+}
+
 @keyframes active-button {
     30% {
         box-shadow: 0 0 1rem 1rem color-mix(in oklch, var(--color-primary) 20%, transparent);
