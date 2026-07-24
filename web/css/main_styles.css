@@ -332,7 +332,7 @@ body {
     top: 9rem;
     right: 2rem;
     display: grid;
-    grid-template-columns: auto 1fr;
+    grid-template-columns: auto 1fr min-content;
     gap: var(--space-2);
     transition: var(--transition-fast);
     opacity: 0;
@@ -371,6 +371,11 @@ body {
         color: var(--color-red-text);
     }
 
+    .warning {
+        background-color: var(--color-yellow);
+        color: var(--color-yellow-text);
+    }
+
     .notification-text {
         .notification-text-main {
             font-size: 1.1rem;
@@ -382,6 +387,36 @@ body {
             color: var(--color-text-contrast);
         }
     }
+
+    .notification-close {
+        margin-bottom: auto;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        background: none;
+        border: none;
+
+        width: min-content;
+        height: min-content;
+        border-radius: 50%;
+
+        padding: var(--space-1);
+
+        transition: var(--transition-fast);
+
+        svg {
+            width: 1rem;
+            height: 1rem;
+
+            color: var(--color-text-contrast);
+        }
+    }
+
+    .notification-close:hover {
+        background-color: color-mix(in oklch, var(--color-text-contrast) 20%, transparent);
+    }
 }
 
 .notification.show {
@@ -392,6 +427,23 @@ body {
 .notification.hide {
     transform: translateX(15rem) scale(0.1);
     opacity: 0;
+}
+
+.textarea {
+    appearance: none;
+    border-radius: var(--space-2);
+    border: 1px solid var(--color-text-contrast);
+    background-color: var(--color-bg-contrast);
+    outline: none;
+    padding: var(--space-2);
+    scrollbar-width: thin;
+    resize: none;
+    color: var(--color-text);
+
+    height: 9.2em;
+    width: 98%;
+    font-size: 1rem;
+    box-shadow: 0 .4rem .7rem color-mix(in oklch, var(--color-shadow) 5%, transparent);
 }
 
 .suggests-panel.scrollable,

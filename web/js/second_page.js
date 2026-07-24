@@ -71,8 +71,6 @@ async function updateTable() {
                 const clone = rowContent.cloneNode(true)
                 clone.dataset.znNumber = row.number
 
-                console.log(row)
-
                 clone.append(
                     constructCell(`${createReadableDate(row.date1)}<br>${createReadableDate(row.date2)}`, "time"),
                     constructCell(row.number, "number"),
@@ -80,10 +78,38 @@ async function updateTable() {
                     constructTaskEquip()
                 )
 
+                const addData = constructAddData(row)
+                const nothing = document.createElement("div")
+
+                clone.append(addData, nothing)
+
                 infoTableContent.append(clone)
             }
         }
     )
+}
+
+function constructAddData(row) {
+    const addDataWrapper = document.createElement("div")
+    addDataWrapper.classList = "add-data-wrapper"
+
+    const addData = document.createElement("div")
+    addData.classList = "add-data"
+
+    const addDataName = document.createElement("label")
+    addDataName.className = "add-data-name"
+    addDataName.textContent = "Причина обращения"
+
+    const reason = document.createElement("textarea")
+    reason.className = "textarea reason"
+    reason.value = row.reason
+    reason.disabled = true
+
+    addData.append(addDataName, reason)
+
+    addDataWrapper.append(addData)
+
+    return addDataWrapper
 }
 
 function constructTaskEquip() {
@@ -158,20 +184,34 @@ function initEvents() {
 
     infoTable.addEventListener("click", (event) => {
         const equipButton = event.target.closest(".table-equip-button")
-        if (equipButton === null) return null
+        const tableCell = event.target.closest(".table-cell")
 
-        equipButton.classList.add("clicked")
+        if (equipButton !== null) {
+            equipButton.classList.add("clicked")
 
-        const znNumber = equipButton.closest(".row-content").dataset.znNumber
-        Cookie.set("znNumber", znNumber)
-
-        setTimeout(() => {
-            window.location.href = "third_page.html"
+            const znNumber = equipButton.closest(".row-content").dataset.znNumber
+            Cookie.set("znNumber", znNumber)
 
             setTimeout(() => {
-                equipButton.classList.remove("clicked")
-            }, 100)
-        }, 500)
+                window.location.href = "third_page.html"
+
+                setTimeout(() => {
+                    equipButton.classList.remove("clicked")
+                }, 100)
+            }, 500)
+        } else if (tableCell !== null) {
+            const rowContent = tableCell.closest(".row-content")
+            const addDataWrapper = rowContent.querySelector(".add-data-wrapper")
+            const addData = addDataWrapper.querySelector(".add-data")
+
+            if (addDataWrapper.classList.contains("opened")) {
+                addDataWrapper.classList.remove("opened")
+                addDataWrapper.style.height = '0'
+            } else {
+                addDataWrapper.classList.add("opened")
+                addDataWrapper.style.height = pxToRem(addData.offsetHeight) + "rem"
+            }
+        }
     })
 }
 

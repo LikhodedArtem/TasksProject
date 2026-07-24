@@ -290,7 +290,7 @@ async def refresh_objects(
         primary_kwargs = {key: getattr(object, key) for key in primary_keys}
 
         async with db_helper.session_factory() as session:
-            old_object = await find_object(session, model, **primary_kwargs)
+            old_object = await find_objects(session, model, **primary_kwargs)
 
             if isinstance(old_object, list):
                 raise ValueError("Expected one old_object, got two or more")
@@ -410,7 +410,7 @@ async def create_answer(
             current_for_find[key] = kwargs[key]
 
         async with db_helper.session_factory() as session:
-            objects = await find_object(
+            objects = await find_objects(
                 session=session,
                 model=model,
                 **current_for_find
@@ -446,33 +446,75 @@ async def create_answer(
         # Номер заказ наряда
         elif model == "zn":
             async with db_helper.session_factory() as session:
-                zn = await find_object(
+                data = await get_objects_with_has_files(
                     session=session,
                     model=ZN,
                     joinedload_lst=[ZN.car],
-                    is_alive=True,
-                    number=for_find["zn_number"],
+                    for_find={"is_alive": True, "number": for_find["zn_number"]},
+                    for_files=for_find["zn_number"],
                 )
 
-            if zn is None:
+            if data is None:
                 not_found()
-            elif isinstance(zn, list):
+            elif isinstance(data, list):
                 raise ValueError("Expected one zn, got two or more")
             else:
-                zn: ZN
+                zn, has_files = data
+
                 dict_zn = as_dict(zn)
                 dict_zn["car"] = as_dict(zn.car)
+                dict_zn["has_files"] = has_files
                 answer["data"] = dict_zn
 
                 found()
 
         # Номер заказ наряда
         elif model == "jobs":
-            await for_base(Job, zn_number=for_find["zn_number"])
+            current_for_find = {
+                "is_alive": True,
+                "zn_number": for_find["zn_number"]
+            }
+
+            async with db_helper.session_factory() as session:
+                data = await get_objects_with_has_files(
+                    session=session,
+                    model=Job,
+                    for_find=current_for_find,
+                    for_files=for_find["zn_number"]
+                )
+
+            @check
+            def add(data):
+                for job, has_files in data:
+                    dict_job = as_dict(job)
+                    dict_job["has_files"] = has_files
+                    answer["data"].append(dict_job)
+
+            add(data)
 
         # Номер заказ наряда
         elif model == "parts":
-            await for_base(Part, zn_number=for_find["zn_number"])
+            current_for_find = {
+                "is_alive": True,
+                "zn_number": for_find["zn_number"]
+            }
+
+            async with db_helper.session_factory() as session:
+                data = await get_objects_with_has_files(
+                    session=session,
+                    model=Part,
+                    for_find=current_for_find,
+                    for_files=for_find["zn_number"]
+                )
+
+            @check
+            def add(data):
+                for job, has_files in data:
+                    dict_job = as_dict(job)
+                    dict_job["has_files"] = has_files
+                    answer["data"].append(dict_job)
+
+            add(data)
 
         # Ничего
         elif model == "posts":
@@ -529,10 +571,6 @@ async def parse_rec(body: dict[str, Any]) -> None:
             for_find={"number": body["zn_number"]},
             for_update={"recommendation": body["rec"]},
         )
-
-
-async def main():
-    pprint(await create_answer("zn", zn_number="АМКДС20552"))
 
 
 if __name__ == '__main__':

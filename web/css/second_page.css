@@ -194,6 +194,45 @@
     }
 }
 
+.add-data-wrapper {
+    grid-column: span 3;
+
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+
+    height: 0;
+    padding: 0 var(--space-2) 0 var(--space-2);
+
+    opacity: 0;
+    overflow: hidden;
+
+    transition: var(--transition-slow);
+
+    .add-data {
+        width: 100%;
+        height: 100%;
+
+        .add-data-name {
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--color-text-contrast);
+            user-select: none;
+        }
+
+        .reason {
+            width: 99%;
+            margin-top: var(--space-1);
+            height: 7.5rem;
+        }
+    }
+}
+
+.add-data-wrapper.opened {
+    opacity: 1;
+    padding: var(--space-2) var(--space-2) var(--space-2) var(--space-2);
+}
+
 @keyframes equip-button {
     30% {
         box-shadow: 0 0 15px 15px color-mix(in oklch, var(--color-primary) 20%, transparent);

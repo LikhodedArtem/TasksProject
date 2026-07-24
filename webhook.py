@@ -28,6 +28,9 @@ from parse import (parse_mechanics, parse_zn, parse_main_posts,
                    parse_done_all, parse_rec)
 
 
+from info import set_status, get_status
+
+
 async def parse_xml(request: Request, type: str, parce_func) -> JSONResponse:
     body = await request.body()
     body = body.decode("utf-8")
@@ -154,12 +157,15 @@ async def events(request: Request):
         },
     )
 
-from info import set_status, get_status
-
 
 """
 Установить статус у механика к заказ наряду.
 Установка по номеру заказ наряда, механику и посту.
+
+Для Stopped.
+Механик может остановить если:
+    а) Выполнены все запчасти и работы.
+    б) С того момента, как он нажал начать заказ наряд им не было выбрано ничего.
 """
 
 @app.post("/info/zn_status/set")
@@ -180,7 +186,7 @@ async def zn_status_set(request: Request):
 
 """
 Получить текущее состояние работы у определённого работника к заказ наряду.
-Если работник ни разу не устанавливал статус, то будет возращено 'stopped'.
+Если работник ни разу не устанавливал статус, то будет возращено 'never'.
 """
 
 @app.post("/info/zn_status/get")
@@ -191,6 +197,18 @@ async def zn_status_get(request: Request):
     mechanic = body["mechanic"]
 
     return await get_status(
+        zn_number=zn_number,
+        mechanic=mechanic,
+    )
+
+@app.post("/info/can_stop")
+async def zn_status_get(request: Request):
+    body = await request.json()
+
+    zn_number = body["zn_number"]
+    mechanic = body["mechanic"]
+
+    return await can_stop(
         zn_number=zn_number,
         mechanic=mechanic,
     )
@@ -284,6 +302,6 @@ if __name__ == "__main__":
         app,
         host="0.0.0.0",
         port=8000,
-        ssl_certfile="ssl/likhoded.ru.crt",
-        ssl_keyfile="ssl/likhoded.ru.key"
+        # ssl_certfile="ssl/likhoded.ru.crt",
+        # ssl_keyfile="ssl/likhoded.ru.key"
     )

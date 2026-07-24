@@ -1,10 +1,12 @@
 import json
 import shutil
+import traceback
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
 from uuid import uuid4
-from zipfile import ZipFile
+from zipfile import ZIP_DEFLATED, ZipFile
+from fastapi.responses import StreamingResponse
 
 from fastapi import UploadFile
 
@@ -15,7 +17,7 @@ UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 from core.models import File
 from core.models.db_helper import db_helper
-from crud import add_object, update_object, find_object
+from crud import add_object, update_object, find_objects
 
 
 async def create_zn_items_files(
@@ -112,28 +114,22 @@ async def delete_zn_items_files(
                     }
                 )
         return True
-    except Exception as e:
-        print(f"Delete zn_items Files Error: {e}")
+    except Exception:
+        print(f"Delete zn_items Files Error: {traceback.format_exc()}")
         return False
-
-
-from zipfile import ZIP_DEFLATED, ZipFile
-
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
 
 async def get_files(
         identical_str: str,
 ):
     try:
         async with db_helper.session_factory() as session:
-            files = await find_object(
+            files = await find_objects(
                 session=session,
                 model=File,
                 identical_str=identical_str,
                 is_alive=True,
             )
+
         if files is None:
             return []
         if not isinstance(files, list):
@@ -174,5 +170,5 @@ async def get_files(
         )
 
     except Exception as e:
-        print(f"Get zn_items Files Error: {e}")
+        print(f"Get Files Error: {traceback.print_exc()}")
         return False

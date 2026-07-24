@@ -11,6 +11,7 @@ from .help_classes import Life, Stage, CanDone
 
 if TYPE_CHECKING:
     from .zn import ZN
+    from .file import File
 
 
 class Job(Base, Life, Stage, CanDone):

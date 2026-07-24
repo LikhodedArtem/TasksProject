@@ -33,7 +33,29 @@ async function init() {
 
     getNameFromCookie()
 
+    returnCookieData()
+
     return true
+}
+
+
+function returnCookieData() {
+    const data = Cookie.getGroup([
+        "mechanic", "territory", "post"
+    ], true)
+
+    if (data.territory) {
+        if (data.territory === "Мысхако") {
+            territorySelect.selectedIndex = 0
+        } else {
+            territorySelect.selectedIndex = 1
+        }
+
+        territorySelect.updateOptions()
+        updatePosts()
+    }
+    if (data.mechanic) { nameInput.value = data.mechanic }
+    if (data.post) { postInput.value = data.post }
 }
 
 
@@ -100,22 +122,6 @@ function sortMechanicsData(data) {
 }
 
 
-function insertOptions(select, options) {
-    select.innerHTML = ""
-
-    if (!options) {
-        select.classList.add()
-        return
-    }
-
-    options.forEach((option) => {
-        select.add(new Option(option, option))
-    })
-
-    select.updateOptions()
-}
-
-
 function updatePosts() {
     if (territorySelect.value === "Кирилловка") {
         postSuggestPanel.changeData(postsData.k)
@@ -166,9 +172,9 @@ selects.forEach((select) => {
     function updateOptions() {
         selectFooter.innerHTML = ""
 
-        realSelect.selectedIndex = -1
-
         if (firstTime) {
+            realSelect.selectedIndex = -1
+
             updateSelectHeaderValue("Не выбрано...")
 
             for (const option of realSelect.options) {
@@ -179,6 +185,7 @@ selects.forEach((select) => {
                     )
                 )
             }
+            firstTime = false
         } else {
             updateSelectHeaderValue(realSelect.value)
 
@@ -308,9 +315,9 @@ applyButton.addEventListener("click", () => {
 
         applyButton.classList.add("clicked")
 
-        Cookie.set("mechanic", nameInput.value)
-        Cookie.set("post", postInput.value)
-        Cookie.set("territory", territorySelect.value)
+        Cookie.set("mechanic", nameInput.value, { hours: 24 })
+        Cookie.set("post", postInput.value, { hours: 24 })
+        Cookie.set("territory", territorySelect.value, { hours: 24 })
 
         setTimeout(() => {
             window.location.href = "second_page.html"

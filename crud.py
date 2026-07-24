@@ -4,7 +4,7 @@ from sqlite3 import IntegrityError
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import select, update, delete, func
+from sqlalchemy import select, update, delete, func, exists, not_
 from sqlalchemy.orm import selectinload, joinedload
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -144,7 +144,7 @@ async def create_relation(
         zn_number: str,
         post_uuid: str,
 ) -> ZN_mtm_Post | None:
-    if await find_object(
+    if await find_objects(
             session,
             ZN_mtm_Post,
             post_uuid=post_uuid,
@@ -257,7 +257,7 @@ def build_conditions(
     return conditions
 
 
-async def find_object(
+async def find_objects(
         session: AsyncSession,
         model,
         order_by: list | None = None,
@@ -302,6 +302,107 @@ async def find_object(
 
     return answer
 
+
+async def get_objects_with_has_files(
+        session: AsyncSession,
+        model,
+        for_files: str,
+        selectinload_lst: list | None = None,
+        joinedload_lst: list | None = None,
+        for_find: dict[str, Any] | None = None,
+) -> list[tuple[Any, bool]] | tuple[Any, bool] | None:
+    has_files = exists().where(
+        File.is_alive.is_(True),
+        File.identical_str == for_files
+    )
+
+    stmt = (
+        select(model, has_files.label("has_files"))
+    )
+
+    if for_find:
+        stmt = stmt.where(*build_conditions(model, for_find))
+
+    if selectinload_lst or joinedload_lst:
+        options = []
+
+        if selectinload_lst:
+            for selectin in selectinload_lst:
+                options.append(selectinload(selectin))
+
+        if joinedload_lst:
+            for joined in joinedload_lst:
+                options.append(joinedload(joined))
+
+        stmt = stmt.options(*options)
+
+    result = await session.execute(stmt)
+
+    answer = result.all()
+
+    if not answer:
+        return None
+
+    if len(answer) == 1:
+        return answer[0]
+
+    return answer
+
+
+async def check_can_stop(
+        session: AsyncSession,
+        mechanic: str,
+        zn_number: str,
+):
+    start_time_stmt = select(MechanicZNStatus.at_time).where(
+        MechanicZNStatus.mechanic == mechanic,
+        MechanicZNStatus.zn_number == zn_number,
+        MechanicZNStatus.status == "start",
+    ).order_by(
+        MechanicZNStatus.at_time.desc()
+    ).limit(1)
+
+
+    result = await session.execute(start_time_stmt)
+    start_time = result.scalar_one_or_none()
+
+    did_smth_stmt = select(
+        exists().where(
+            DoneLog.zn_number == zn_number,
+            DoneLog.by_mechanic == mechanic,
+            DoneLog.time > start_time,
+        )
+    )
+
+    result = await session.execute(did_smth_stmt)
+    did_smth = result.scalar()
+
+    if not did_smth:
+        return True, "did-nothing"
+
+    everything_done_stmt = select(
+        not_(
+            exists().where(
+                Part.zn_number == zn_number,
+                Part.is_alive.is_(True),
+                Part.done.is_(False),
+            )
+        ) & not_ (
+            exists().where(
+                Job.zn_number == zn_number,
+                Job.is_alive.is_(True),
+                Job.done.is_(False),
+            )
+        )
+    )
+
+    result = await session.execute(everything_done_stmt)
+    everything_done = result.scalar()
+
+    if everything_done:
+        return True, "everything-done"
+
+    return False, "not-everything-done"
 
 async def get_zns_by_post_name(
     session: AsyncSession,
@@ -440,13 +541,6 @@ async def change_done(
         type=type,
         new_value=new_value
     )
-
-
-async def main():
-    from core.models.db_helper import db_helper
-
-    async with db_helper.session_factory() as session:
-        print(await get_zns_by_post_name(session, "Логинов И.А."))
 
 
 if __name__ == '__main__':

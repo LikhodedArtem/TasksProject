@@ -14,10 +14,11 @@ const SVG = {
     document: '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l5 5v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"/><path d="M14 3v5h5"/><path d="M9 13h6"/><path d="M9 17h6"/></svg>',
     picture: '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-4 4-2-2-5 5"/></svg>',
     video: '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="13" height="14" rx="2"/><path d="M16 10l5-3v10l-5-3z"/><path d="M9 9l4 3-4 3z"/></svg>',
-    audio: '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4v11.5a2.5 2.5 0 1 1-1.5-2.29V7.5L8 8.4V17a2.5 2.5 0 1 1-1.5-2.29V6.3L14 4z"/></svg>',
+    audio: '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 10v4"/><path d="M8 7v10"/><path d="M12 4v16"/><path d="M16 7v10"/><path d="M20 10v4"/></svg>',
     archive: '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3v4h6V3"/><path d="M12 10h.01"/><path d="M12 13h.01"/><path d="M12 16h.01"/><path d="M10 19h4"/></svg>',
     file: '<svg viewBox="0 0 24 24" fill="none"><path d=\"M8 3.5h6l4 4V19a1.5 1.5 0 0 1-1.5 1.5h-8A1.5 1.5 0 0 1 7 19V5A1.5 1.5 0 0 1 8.5 3.5Z\" stroke=\"currentColor\" stroke-width=\"1.8\"/><path d=\"M14 3.5V8h4\" stroke=\"currentColor\" stroke-width=\"1.8\"/><path d=\"M9 12.5h6M9 16h6\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\"/></svg>',
 
+    war: "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M10.3 4.2 2.6 17.5A2 2 0 0 0 4.3 20h15.4a2 2 0 0 0 1.7-2.5L13.7 4.2a2 2 0 0 0-3.4 0Z\"/><path d=\"M12 9v4\"/><path d=\"M12 17h.01\"/></svg>",
     ok: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none">\n <path d="M7 12.5L10.2 15.7L17.5 8.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>\n</svg>',
     x: '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="5" x2="19" y2="19" /><line x1="5" y1="19" x2="19" y2="5" /></svg>',
 }
@@ -37,8 +38,19 @@ $notificationMainTextElement.className = "notification-text-main"
 const $notificationAddTextElement = document.createElement("p")
 $notificationAddTextElement.className = "notification-text-add"
 
+const $notificationClose = document.createElement("button")
+$notificationClose.className = "notification-close"
+$notificationClose.innerHTML = SVG.x
+
 $notificationText.append($notificationMainTextElement, $notificationAddTextElement)
-$notification.append($notificationIcon, $notificationText)
+$notification.append($notificationIcon, $notificationText, $notificationClose)
+
+$notificationClose.addEventListener("click", () => {
+    clearTimeout(hideTimer)
+    clearTimeout(removeClassTimer)
+
+    $notification.classList.remove('show')
+})
 
 body.append($notification)
 
@@ -55,16 +67,27 @@ function createNotification(operation, mainText) {
     clearTimeout(hideTimer)
     clearTimeout(removeClassTimer)
 
-    if (operation.toLowerCase() === "ok") {
-        $notificationIcon.classList.remove("error")
+    const formattedOperation = operation.toLowerCase()
+
+    function iconClear() {
+        $notificationIcon.className = "notification-icon"
+    }
+
+    if (formattedOperation === "ok") {
+        iconClear()
         $notificationIcon.classList.add("ok")
         $notificationIcon.innerHTML = SVG.ok
         $notificationAddTextElement.textContent = "Операция успешно выполнена"
-    } else if (operation.toLowerCase() === "error") {
-        $notificationIcon.classList.remove("ok")
+    } else if (formattedOperation === "error") {
+        iconClear()
         $notificationIcon.classList.add("error")
         $notificationIcon.innerHTML = SVG.x
         $notificationAddTextElement.textContent = "Не удалось выполнить операцию"
+    } else if (formattedOperation === "warning") {
+        iconClear()
+        $notificationIcon.classList.add("warning")
+        $notificationIcon.innerHTML = SVG.war
+        $notificationAddTextElement.textContent = "Просьба обратить внимание"
     }
     else {
         return null
@@ -78,11 +101,11 @@ function createNotification(operation, mainText) {
     hideTimer = setTimeout(() => {
         $notification.classList.remove('show');
         $notification.classList.add('hide');
-    }, 7000);
+    }, 5000);
 
     removeClassTimer = setTimeout(() => {
         $notification.classList.remove('hide');
-    }, 7800);
+    }, 5800);
 }
 
 
@@ -169,18 +192,6 @@ async function sendRequestToServer(url, method, data, notJson) {
 }
 
 
-function createTableUndefined() {
-    const undefinedContent = document.createElement("div")
-    undefinedContent.className = "undefined-content"
-
-    const undefinedText = document.createElement("span")
-    undefinedText.textContent = "Не удалось получить информацию"
-
-    undefinedContent.append(undefinedText)
-    return undefinedContent
-}
-
-
 async function getSmth(
     url,
     method,
@@ -215,8 +226,7 @@ async function getSmth(
                 if (on200) on200(data)
                 break
             case 404:
-                console.log(on404)
-                on404()
+                if (on404) on404()
                 // (on404)
                 //     ? on404()
                 //     : createNotification("error", "Сервер не нашёл данные")
@@ -284,6 +294,10 @@ function beautyReg(reg) {
     return mainLine
 }
 
+function pxToRem(px) {
+    const remBase = parseFloat(getComputedStyle(document.documentElement).fontSize)
+    return Math.round(px / remBase * 100) / 100
+}
 
 class Cookie {
     static set(name, value, options = {}) {
