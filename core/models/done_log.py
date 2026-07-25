@@ -15,14 +15,14 @@ class DoneLog(Base):
         primary_key=True
     )
 
-    by_mechanic: Mapped[str] = mapped_column(
+    mechanic: Mapped[str] = mapped_column(
         String,
         ForeignKey('mechanics.key'),
         nullable=False,
         unique=False
     )
 
-    on_post: Mapped[str] = mapped_column(
+    post: Mapped[str] = mapped_column(
         String,
         ForeignKey('mainposts.name'),
         nullable = False,
@@ -65,8 +65,8 @@ class DoneLog(Base):
     def as_dict(self):
         return {
             "id": self.id,
-            "by_mechanic": self.by_mechanic,
-            "on_post": self.on_post,
+            "mechanic": self.mechanic,
+            "post": self.post,
             "type": self.type,
             "new_value": self.new_value,
             "time": self.time,

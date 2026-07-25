@@ -23,191 +23,6 @@ async def add_object(
     await session.refresh(object)
 
 
-async def create_zn(
-        session: AsyncSession,
-        number: str,
-        date: str,
-        reason: str,
-        assistant: str,
-        manager: str,
-) -> ZN:
-    zn = ZN(
-        number=number,
-        date=date,
-        reason=reason,
-        assistant=assistant,
-        manager=manager,
-    )
-    session.add(zn)
-
-    await session.commit()
-    await session.refresh(zn)
-    return zn
-
-
-async def create_post(
-        session: AsyncSession,
-        uuid: str,
-        name: str,
-        date1: str,
-        date2: str,
-) -> Post:
-    post = Post(
-        uuid=uuid,
-        name=name,
-        date1=date1,
-        date2=date2,
-    )
-    session.add(post)
-
-    await session.commit()
-    await session.refresh(post)
-    return post
-
-
-async def create_car(
-        session: AsyncSession,
-        zn_number: str,
-        win: str,
-        reg: str,
-        model: str,
-        year: int,
-        millage: int,
-) -> Car:
-    car = Car(
-        zn_number=zn_number,
-        win=win,
-        reg=reg,
-        model=model,
-        year=year,
-        millage=millage,
-    )
-    session.add(car)
-
-    await session.commit()
-    await session.refresh(car)
-    return car
-
-
-async def create_job(
-        session: AsyncSession,
-        uuid: str,
-        zn_number: str,
-        number: int,
-        name: str,
-        normal_time: int
-) -> Job:
-    job = Job(
-        uuid=uuid,
-        zn_number=zn_number,
-        number=number,
-        name=name,
-        normal_time=normal_time,
-    )
-    session.add(job)
-
-    await session.commit()
-    await session.refresh(job)
-    return job
-
-
-async def create_part(
-        session: AsyncSession,
-        uuid: str,
-        zn_number: str,
-        number: int,
-        name: str,
-        manufacturer_code: str,
-        manufacturer: str,
-        quantity: int,
-        units: str,
-) -> Part:
-    part = Part(
-        uuid=uuid,
-        zn_number=zn_number,
-        number=number,
-        name=name,
-        manufacturer_code=manufacturer_code,
-        manufacturer=manufacturer,
-        quantity=quantity,
-        units=units,
-    )
-    session.add(part)
-
-    await session.commit()
-    await session.refresh(part)
-    return part
-
-
-async def create_relation(
-        session: AsyncSession,
-        zn_number: str,
-        post_uuid: str,
-) -> ZN_mtm_Post | None:
-    if await find_objects(
-            session,
-            ZN_mtm_Post,
-            post_uuid=post_uuid,
-            zn_number=zn_number):
-        return
-
-    relation = ZN_mtm_Post(
-        zn_number=zn_number,
-        post_uuid=post_uuid,
-    )
-    session.add(relation)
-
-    await session.commit()
-    await session.refresh(relation)
-    return relation
-
-
-async def create_mechanic(
-        session: AsyncSession,
-        key: str,
-        name: str,
-        stage: int,
-) -> Mechanic:
-    mechanic = Mechanic(
-        key=key,
-        name=name,
-        stage=stage,
-    )
-
-    session.add(mechanic)
-
-    await session.commit()
-    await session.refresh(mechanic)
-
-    return mechanic
-
-
-async def create_done_log(
-        session: AsyncSession,
-        by_mechanic: str,
-        on_post: str,
-        zn_number: str,
-        uuid: str,
-        type: str,
-        new_value: bool,
-) -> DoneLog:
-    done_log = DoneLog(
-        by_mechanic=by_mechanic,
-        on_post=on_post,
-        zn_number=zn_number,
-        uuid=uuid,
-        type=type,
-        new_value=new_value,
-    )
-
-    session.add(done_log)
-
-    await session.commit()
-    await session.refresh(done_log)
-
-    return done_log
-
-
 async def get_current_zn_stage(
         session: AsyncSession,
         number: str,
@@ -306,7 +121,7 @@ async def find_objects(
 async def get_objects_with_has_files(
         session: AsyncSession,
         model,
-        for_files: str,
+        for_files: Any,
         selectinload_lst: list | None = None,
         joinedload_lst: list | None = None,
         for_find: dict[str, Any] | None = None,
@@ -369,7 +184,7 @@ async def check_can_stop(
     did_smth_stmt = select(
         exists().where(
             DoneLog.zn_number == zn_number,
-            DoneLog.by_mechanic == mechanic,
+            DoneLog.mechanic == mechanic,
             DoneLog.time > start_time,
         )
     )
@@ -512,8 +327,8 @@ async def kill_old_in_model(
 
 async def change_done(
         session: AsyncSession,
-        by_mechanic: str,
-        on_post: str,
+        mechanic: str,
+        post: str,
         zn_number: str,
         uuid: str,
         type: str,
@@ -532,16 +347,19 @@ async def change_done(
         { "uuid": uuid },
         { "done": new_value }
     )
-    await create_done_log(
-        session=session,
-        by_mechanic=by_mechanic,
-        on_post=on_post,
+
+    done_log = DoneLog(
+        mechanic=mechanic,
+        post=post,
         zn_number=zn_number,
         uuid=uuid,
         type=type,
-        new_value=new_value
+        new_value=new_value,
     )
 
+    await add_object(session, done_log)
 
-if __name__ == '__main__':
-    asyncio.run(main())
+
+
+# if __name__ == '__main__':
+#     asyncio.run(main())

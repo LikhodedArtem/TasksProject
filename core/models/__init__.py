@@ -24,5 +24,5 @@ __all__ = [
     "DoneLog",
     "MainPost",
     "File",
-    "MechanicZNStatus"
+    "MechanicZNStatus",
 ]

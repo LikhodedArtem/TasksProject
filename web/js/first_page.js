@@ -5,8 +5,10 @@ const postInput = document.querySelector("#postInput")
 const nameInput = document.querySelector("#nameInput")
 const time = document.querySelector("#time")
 
-let postsData = null
-let mechanicsData = null
+const postsData = new SmartContainer()
+let postsDataM = null
+let postsDataK = null
+const mechanicsData = new SmartContainer()
 
 let sseSource = null
 
@@ -73,8 +75,9 @@ async function getPosts() {
     return await getSmth(
         "info/posts",
         "GET",
-        (data) => { postsData = sortPostsData(data) }
-
+        (data) => {
+            updatePostsData(data)
+        }
     )
 }
 
@@ -82,54 +85,35 @@ async function getMechanics() {
     return await getSmth(
         "info/mechanics",
         "GET",
-        (data) => { mechanicsData = sortMechanicsData(data) },
+        (data) => {
+            updateMechanicsData(data)
+        },
     )
 }
 
-
-function sortPostsData(data) {
-    const formattedData = {k: [], m: []}
-
-    for (const post of data) {
-        if (post.territory === "Кирилловка") {
-            formattedData.k.push(post.name)
-        } else {
-            formattedData.m.push(post.name)
-        }
-    }
-
-    return formattedData
-}
-
-// function sortMechanicsData(data) {
-//     const formattedData = {}
-//
-//     for (const mechanic of data) {
-//         formattedData[mechanic.key] = mechanic.name
-//     }
-//
-//     return formattedData
-// }
-
-function sortMechanicsData(data) {
-    const formattedData = []
-
-    for (const mechanic of data) {
-        formattedData.push(mechanic.name)
-    }
-
-    return formattedData
-}
-
-
 function updatePosts() {
     if (territorySelect.value === "Кирилловка") {
-        postSuggestPanel.changeData(postsData.k)
+        postSuggestPanel.changeData(postsDataK)
     } else if (territorySelect.value === "Мысхако") {
-        postSuggestPanel.changeData(postsData.m)
+        postSuggestPanel.changeData(postsDataM)
     } else {
         postSuggestPanel.changeData([])
     }
+}
+
+function updatePostsData(newData) {
+    postsData.replace(newData)
+    postsDataM = postsData.select({ territory: "Мысхако" }, ["name"])
+    postsDataK = postsData.select({ territory: "Кирилловка" }, ["name"])
+}
+
+function updateMechanics() {
+    nameInput.changeData(mechanicsData.select(null, ["name"]))
+    nameInput.updateOptions()
+}
+
+function updateMechanicsData(newData) {
+    mechanicsData.replace(newData)
 }
 
 function getNameFromCookie() {
@@ -330,38 +314,8 @@ applyButton.addEventListener("click", () => {
 
 
 function initSSE() {
-    if (sseSource) {
-        sseSource.close()
-    }
+    sseSource = createSSESource("first_page")
 
-    sseSource = new EventSource(`${API_PATH}/info/events`)
-
-    sseSource.onopen = () => {
-        console.log("SSE connected")
-    }
-
-    sseSource.onerror = () => {
-        console.log("SSE state:", sseSource?.readyState)
-    }
-
-    sseSource.addEventListener("mechanics", (event) => {
-        const data = event.data
-        const _create = data["create"]
-        const _update = data["update"]
-        const _delete = data["delete"]
-
-        if (mechanicsData === null) return
-
-        if (_create) {
-            for (const mechanic of _create) {
-                mechanicsData.push(mechanic)
-            }
-        }
-
-        if (_delete) {
-
-        }
-    })
 }
 
 const postSuggestPanel = document.querySelector("#postTextInput .suggests-panel")
@@ -476,7 +430,7 @@ function initSuggestsPanels() {
         suggestsPanel.isInData = isInData
     }
 
-    initSuggestsPanel(nameSuggestPanel, mechanicsData)
+    initSuggestsPanel(nameSuggestPanel, mechanicsData.select(null, ["name"]))
     initSuggestsPanel(postSuggestPanel, [])
 
     body.addEventListener("click", (event) => {

@@ -11,8 +11,3 @@ class Life:
         server_default=func.true(),
         default=True,
     )
-
-    death_time: Mapped[datetime] = mapped_column(
-        DateTime,
-        nullable=True,
-    )

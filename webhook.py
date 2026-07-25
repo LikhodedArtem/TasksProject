@@ -1,6 +1,8 @@
 from pprint import pprint
 import traceback
-from fastapi import File, Form, UploadFile
+from typing import Annotated
+
+from fastapi import File, Form, UploadFile, Body
 
 import uvicorn
 from fastapi import FastAPI
@@ -8,7 +10,8 @@ from fastapi import Request
 from fastapi.responses import JSONResponse
 
 from fastapi.middleware.cors import CORSMiddleware
-from starlette.responses import StreamingResponse
+
+from sse.managers import *
 
 app = FastAPI()
 
@@ -38,7 +41,17 @@ async def parse_xml(request: Request, type: str, parce_func) -> JSONResponse:
     try:
         result = await parce_func(body)
         if result:
-            pprint(f"UPDATE: {create_update(type.lower(), result)}")
+            update = create_update(result)
+
+            match type.lower():
+                case "zn":
+                    second_page_manager.broadcast(update, "zn")
+                    third_page_manager.broadcast(update, "zn")
+                case "mechanics":
+                    first_page_manager.broadcast(update, "mechanics")
+                case "posts":
+                    first_page_manager.broadcast(update, "posts")
+
         else:
             pprint("UPDATE: Нет изменений")
     except Exception as e:
@@ -48,9 +61,9 @@ async def parse_xml(request: Request, type: str, parce_func) -> JSONResponse:
     return JSONResponse(status_code=200, content={"status": "ok"})
 
 
-async def try_smth(body, func):
+async def try_smth(func, **kwargs):
     try:
-        await func(body)
+        await func(**kwargs)
 
         return JSONResponse(status_code=200, content={"status": "ok"})
     except Exception as e:
@@ -117,45 +130,77 @@ async def mechanics():
 """Получить рекомендацию по заказ наряду"""
 
 @app.post("/info/rec")
-async def rec(request: Request):
-    body = await request.json()
-
-    return await try_smth(body, parse_rec)
+async def rec(
+        zn_number: Annotated[str, Body()],
+        rec: Annotated[str, Body()]
+):
+    return await try_smth(
+        parse_rec,
+        zn_number=zn_number,
+        rec=rec,
+    )
 
 """Установить сделано или не сделано на запчасть или работу"""
 
 @app.post("/info/done")
-async def done(request: Request):
-    body = await request.json()
-
-    return await try_smth(body, parse_done)
+async def done(
+        mechanic: Annotated[bool, Body()],
+        post: Annotated[str, Body()],
+        zn_number: Annotated[str, Body()],
+        uuid: Annotated[str, Body()],
+        type: Annotated[str, Body()],
+        new_value: Annotated[str, Body()],
+):
+    return await try_smth(
+        parse_done,
+        mechanic=mechanic,
+        post=post,
+        zn_number=zn_number,
+        uuid=uuid,
+        type=type,
+        new_value=new_value,
+    )
 
 
 """Установить сделано или не сделано на много запчастей или работ"""
 
 @app.post("/info/done/all")
-async def done(request: Request):
-    body = await request.json()
-
-    return await try_smth(body, parse_done_all)
-
-
-"""
-На текущий момент не активно.
-
-Подписка на различные обновления данных.
-"""
-
-@app.get("/info/events")
-async def events(request: Request):
-    return StreamingResponse(
-        base_manager.connect(request),
-        media_type="text/event-stream",
-        headers={
-            "Cache-Control": "no-cache",
-            "Connection": "keep-alive",
-        },
+async def done_all(
+        mechanic: Annotated[bool, Body()],
+        post: Annotated[str, Body()],
+        zn_number: Annotated[str, Body()],
+        uuids: Annotated[list[str], Body()],
+        type: Annotated[str, Body()],
+        new_value: Annotated[str, Body()],
+):
+    return await try_smth(
+        parse_done_all,
+        mechanic=mechanic,
+        post=post,
+        zn_number=zn_number,
+        uuids=uuids,
+        type=type,
+        new_value=new_value,
     )
+
+"""
+Подписка на различные обновления данных на каждой странице.
+"""
+
+
+
+@app.get("/info/events/first_page")
+async def first_page_events(request: Request):
+    return first_page_manager.streaming_response(request)
+
+@app.get("/info/events/second_page")
+async def second_page_events(request: Request):
+    return second_page_manager.streaming_response(request)
+
+
+@app.get("/info/events/third_page")
+async def third_page_events(request: Request):
+    return third_page_manager.streaming_response(request)
 
 
 """
@@ -169,17 +214,15 @@ async def events(request: Request):
 """
 
 @app.post("/info/zn_status/set")
-async def zn_status_set(request: Request):
-    body = await request.json()
-
-    zn_number = body["zn_number"]
-    on_post = body["on_post"]
-    mechanic = body["mechanic"]
-    status = body["status"]
-
+async def zn_status_set(
+        zn_number: Annotated[str, Body()],
+        post: Annotated[str, Body()],
+        mechanic: Annotated[str, Body()],
+        status: Annotated[str, Body()],
+):
     return await set_status(
         zn_number=zn_number,
-        on_post=on_post,
+        post=post,
         mechanic=mechanic,
         status=status,
     )
@@ -190,25 +233,11 @@ async def zn_status_set(request: Request):
 """
 
 @app.post("/info/zn_status/get")
-async def zn_status_get(request: Request):
-    body = await request.json()
-
-    zn_number = body["zn_number"]
-    mechanic = body["mechanic"]
-
+async def zn_status_get(
+        zn_number: Annotated[str, Body()],
+        mechanic: Annotated[str, Body()],
+):
     return await get_status(
-        zn_number=zn_number,
-        mechanic=mechanic,
-    )
-
-@app.post("/info/can_stop")
-async def zn_status_get(request: Request):
-    body = await request.json()
-
-    zn_number = body["zn_number"]
-    mechanic = body["mechanic"]
-
-    return await can_stop(
         zn_number=zn_number,
         mechanic=mechanic,
     )
@@ -226,14 +255,14 @@ from files import create_zn_items_files, delete_zn_items_files, get_files, creat
 Возвращает uuid'ы под которыми были сохранены файлы.
 """
 
-@app.post("/files/zn_items/create")
+@app.post("/files/create/zn_items")
 async def files_create(
     zn_number: str = Form(...),
     type: str = Form(...),
     uuid: str = Form(...),
     files: list[UploadFile] = File(...),
     mechanic: str = Form(...),
-    on_post: str = Form(...),
+    post: str = Form(...),
 ) -> list[str]:
     return await create_zn_items_files(
         zn_number=zn_number,
@@ -241,7 +270,7 @@ async def files_create(
         uuid=uuid,
         files=files,
         mechanic=mechanic,
-        on_post=on_post,
+        post=post,
     )
 
 
@@ -251,29 +280,29 @@ async def files_create(
 Возвращает uuid'ы под которыми были сохранены файлы.
 """
 
-@app.post("/files/zn/create")
+@app.post("/files/create/zn")
 async def files_create(
     zn_number: str = Form(...),
     files: list[UploadFile] = File(...),
     mechanic: str = Form(...),
-    on_post: str = Form(...),
+    post: str = Form(...),
 ) -> list[str]:
     return await create_zn_files(
         zn_number=zn_number,
         files=files,
         mechanic=mechanic,
-        on_post=on_post,
+        post=post,
     )
+
 
 """
 Получить файлы по отличающей строке для хранения.
 """
 
 @app.post("/files/get")
-async def files_get(request: Request):
-    body = await request.json()
-    identical_str = body["identical_str"]
-
+async def files_get(
+        identical_str: Annotated[str, Body()],
+):
     return await get_files(
         identical_str=identical_str,
     )
@@ -284,16 +313,15 @@ async def files_get(request: Request):
 """
 
 @app.post("/files/delete")
-async def files_delete(request: Request):
-    body = await request.json()
-    uuids = body["uuids"]
-    mechanic = body["mechanic"]
-    on_post = body["on_post"]
-
+async def files_delete(
+        uuids: Annotated[list[str], Body()],
+        mechanic: Annotated[str, Body()],
+        post: Annotated[str, Body()],
+):
     return await delete_zn_items_files(
         uuids=uuids,
         mechanic=mechanic,
-        on_post=on_post,
+        post=post,
     )
 
 

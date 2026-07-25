@@ -33,35 +33,35 @@ class File(Base, Life):
         unique=False
     )
 
-    author: Mapped[str] = mapped_column(
+    mechanic: Mapped[str] = mapped_column(
         String,
         ForeignKey('mechanics.name'),
         nullable=False,
         unique=False
     )
 
-    on_post: Mapped[str] = mapped_column(
+    post: Mapped[str] = mapped_column(
         String,
         ForeignKey('mainposts.name'),
         nullable=False,
         unique=False
     )
 
-    created_at: Mapped[datetime] = mapped_column(
+    time: Mapped[datetime] = mapped_column(
         DateTime,
         nullable=False,
         default=datetime.now,
         server_default=func.now()
     )
 
-    delete_author: Mapped[str] = mapped_column(
+    delete_mechanic: Mapped[str] = mapped_column(
         String,
         ForeignKey('mechanics.name'),
         nullable=True,
         unique=False
     )
 
-    delete_on_post: Mapped[str] = mapped_column(
+    delete_post: Mapped[str] = mapped_column(
         String,
         ForeignKey('mainposts.name'),
         nullable=True,

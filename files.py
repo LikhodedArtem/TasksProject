@@ -25,7 +25,7 @@ async def create_zn_items_files(
     type: str,
     uuid: str,
     files: list[UploadFile],
-    on_post: str,
+    post: str,
     mechanic: str,
 ) -> list[str]:
     data = []
@@ -46,8 +46,8 @@ async def create_zn_items_files(
             path=str(destination),
             user_name=file.filename,
             identical_str=uuid,
-            author=mechanic,
-            on_post=on_post,
+            mechanic=mechanic,
+            post=post,
         )
 
         async with db_helper.session_factory() as session:
@@ -61,7 +61,7 @@ async def create_zn_items_files(
 async def create_zn_files(
     zn_number: str,
     files: list[UploadFile],
-    on_post: str,
+    post: str,
     mechanic: str,
 ) -> list[str]:
     data = []
@@ -82,8 +82,8 @@ async def create_zn_files(
             path=str(destination),
             user_name=file.filename,
             identical_str=zn_number,
-            author=mechanic,
-            on_post=on_post,
+            mechanic=mechanic,
+            post=post,
         )
 
         async with db_helper.session_factory() as session:
@@ -97,7 +97,7 @@ async def create_zn_files(
 async def delete_zn_items_files(
         uuids: list[str],
         mechanic: str,
-        on_post: str,
+        post: str,
 ) -> bool:
     try:
         for uuid in uuids:
@@ -109,8 +109,8 @@ async def delete_zn_items_files(
                     for_update={
                         "is_alive": False,
                         "death_time": datetime.now(),
-                        "delete_author": mechanic,
-                        "delete_on_post": on_post,
+                        "delete_mechanic": mechanic,
+                        "delete_post": post,
                     }
                 )
         return True

@@ -7,7 +7,7 @@ from core.models.db_helper import db_helper
 async def set_status(
         zn_number: str,
         mechanic: str,
-        on_post: str,
+        post: str,
         status: str,
 ):
     try:
@@ -28,7 +28,7 @@ async def set_status(
         m_status = MechanicZNStatus(
             zn_number=zn_number,
             mechanic=mechanic,
-            on_post=on_post,
+            post=post,
             status=status,
         )
 
@@ -38,7 +38,6 @@ async def set_status(
         return {"data": True, "reason": reason}
 
     except Exception as e:
-        print(f"Setting status Error: {e}")
         return {"data": False, "reason": "error"}
 
 

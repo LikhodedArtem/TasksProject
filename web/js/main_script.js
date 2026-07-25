@@ -351,3 +351,196 @@ class Cookie {
         return this.get(name) !== null;
     }
 }
+
+
+class SmartContainer {
+    constructor(data=null) {
+        if (!data) {
+            this._data = []
+            return
+        }
+        this._data = data
+    }
+
+    create(
+        newRow
+    ) {
+        this._data.push(newRow)
+    }
+
+    select(
+        forFind=null,
+        forSelect=null,
+        limit=null
+    ) {
+        let count = 0
+
+        const answer = []
+
+        function getColumnsFromRow(row) {
+            let data
+
+            if (forSelect.length !== 1) {
+                data = {}
+
+                for (const key of forSelect) {
+                    data[key] = row[key]
+                }
+            } else {
+                data = row[forSelect[0]]
+            }
+
+            return data
+        }
+
+        outerLoop:
+        for (const row of this._data) {
+            if (forFind) {
+                for (const [key, value] of Object.entries(forFind)) {
+                    if (row[key] !== value) {
+                        continue outerLoop
+                    }
+                }
+            }
+
+            if (forSelect) {
+                answer.push(getColumnsFromRow(row))
+            } else {
+                answer.push(row)
+            }
+
+            count++
+
+            if (limit && limit === count) {
+                break
+            }
+        }
+
+        return answer
+    }
+
+    update(
+        forUpdate,
+        forFind=null,
+        limit=null,
+    ) {
+        let count = 0
+
+        outerLoop:
+        for (const row of this._data) {
+            if (forFind) {
+                for (const [key, value] of Object.entries(forFind)) {
+                    if (row[key] !== value) {
+                        continue outerLoop
+                    }
+                }
+            }
+
+            for (const [key, value] of Object.entries(forUpdate)) {
+                row[key] = value
+            }
+
+            count++
+
+            if (limit && limit === count) {
+                break
+            }
+        }
+
+        return count
+    }
+
+    delete(
+        forFind,
+        limit=null,
+    ) {
+        let count = 0
+
+        outerLoop:
+        for (const row of this._data) {
+            for (const [key, value] of Object.entries(forFind)) {
+                    if (row[key] !== value) {
+                        continue outerLoop
+                    }
+                }
+
+            count++
+
+            if (limit && limit === count)
+                break
+        }
+
+        return count
+    }
+
+    replace(
+        newData
+    ) {
+        this._data = newData
+    }
+
+    data() {
+        return this._data
+    }
+}
+
+
+class SmartSSESource {
+    constructor() {
+        this._sseSourse = null
+        this.lastMessageAt = null
+    }
+
+    start(type) {
+        try {
+            this.close()
+
+            this._sseSourse = new EventSource(`${API_PATH}/info/events/${type}`)
+
+            this._sseSourse.onopen = () => {
+                console.log("SSE connected")
+            }
+
+            this._sseSourse.onerror = (e) => {
+                if (e.readyState === EventSource.CONNECTING) {
+                    console.log("SSE reconnecting...")
+                } else if (e.readyState === EventSource.CONNECTING) {
+                    console.log("SSE connection completely closed")
+                } else {
+                    console.log("SSE unexpected error")
+                }
+            }
+
+            this._sseSourse.addEventListener("heartbeat", () => {
+                this.lastMessageAt = Date.now()
+            })
+
+            document.addEventListener("visibilitychange", () => {
+                if (document.hidden) {
+                    this.close()
+                } else {
+                    this.start()
+                }
+            })
+
+            window.addEventListener('beforeunload', () => {
+                this.close()
+            })
+
+        } catch (e) {
+            console.error("Error while starting SSE connection")
+        }
+    }
+
+    close() {
+        if (this._sseSourse) {
+            this._sseSourse.close()
+            console.log("SSE closed")
+        }
+    }
+
+    delete() {
+        this.close()
+        this._sseSourse = null
+    }
+}

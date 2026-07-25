@@ -37,14 +37,14 @@ class MechanicZNStatus(Base):
         unique=False,
     )
 
-    on_post: Mapped[str] = mapped_column(
+    post: Mapped[str] = mapped_column(
         String,
         ForeignKey('mainposts.name'),
         nullable=False,
         unique=False,
     )
 
-    at_time: Mapped[datetime] = mapped_column(
+    time: Mapped[datetime] = mapped_column(
         DateTime,
         server_default=func.now(),
         default=datetime.now,

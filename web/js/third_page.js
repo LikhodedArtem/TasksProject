@@ -300,17 +300,24 @@ async function sendDone(uuid, type, value, all) {
 
         if (!data) return
 
+        const requestData = {
+            mechanic: data.mechanic,
+            post: data.post,
+            zn_number: data.znNumber,
+            type: type,
+            new_value: value,
+        }
+
+        if (all) {
+            requestData.uuid = uuid
+        } else {
+            requestData.uuids = uuid
+        }
+
         const result = await sendRequestToServer(
             `info/done${(all) ? "/all" : ""}`,
             "POST",
-            {
-                by_mechanic: data.mechanic,
-                on_post: data.post,
-                zn_number: data.znNumber,
-                uuid: uuid,
-                type: type,
-                new_value: value,
-            }
+            requestData
         )
 
         if (result === null) {
@@ -1037,7 +1044,7 @@ function constructPinFilesCell(addClass, type, rowContent) {
                 {
                     uuids: deleteUUIDS,
                     mechanic: data.mechanic,
-                    on_post: data.post,
+                    post: data.post,
                 }
             )
 
@@ -1606,7 +1613,7 @@ async function uploadFiles(files, type, objectData) {
         formData.append("zn_number", data.znNumber)
         formData.append("type", type)
         formData.append("mechanic", data.mechanic)
-        formData.append("on_post", data.post)
+        formData.append("post", data.post)
 
         let object
         if (type === "zn") {
@@ -1620,7 +1627,7 @@ async function uploadFiles(files, type, objectData) {
             formData.append("files", file, file.name)
         }
 
-        const response = await fetch(`${API_PATH}/files/${object}/create`, {
+        const response = await fetch(`${API_PATH}/files/create/${object}`, {
             method: "POST",
             credentials: "include",
             body: formData,
@@ -1902,7 +1909,7 @@ function initStartZN() {
             "POST",
             {
                 zn_number: data.znNumber,
-                on_post: data.post,
+                post: data.post,
                 mechanic: data.mechanic,
                 status: status
             }
@@ -1950,6 +1957,11 @@ async function updateZNStatus() {
 }
 
 
+function initSSE() {
+    sseSource = createSSESource()
+
+    sseSource.addEventListener("done")
+}
 
 
 start()

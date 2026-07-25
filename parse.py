@@ -345,13 +345,11 @@ async def refresh_objects(
 
 
 def create_update(
-        type: Literal["zn", "mechanics", "posts"],
         data: list[Operation]
 ) -> dict[str, Any]:
     answer = dict()
     answer["code"] = 200
     answer["message"] = "success"
-    answer["type"] = type
     answer["data"]: dict[str, dict[str, list[dict[str, Any]]]] = dict()
 
     for op in data:
@@ -480,7 +478,7 @@ async def create_answer(
                     session=session,
                     model=Job,
                     for_find=current_for_find,
-                    for_files=for_find["zn_number"]
+                    for_files=Job.uuid
                 )
 
             @check
@@ -504,7 +502,7 @@ async def create_answer(
                     session=session,
                     model=Part,
                     for_find=current_for_find,
-                    for_files=for_find["zn_number"]
+                    for_files=Part.uuid
                 )
 
             @check
@@ -536,42 +534,55 @@ async def create_answer(
         return answer
 
 
-async def parse_done(body: dict[str, Any]) -> None:
+async def parse_done(
+        mechanic: str,
+        post: str,
+        zn_number: str,
+        uuid: str,
+        type: str,
+        new_value: bool,
+) -> None:
     async with db_helper.session_factory() as session:
         await change_done(
             session=session,
-            by_mechanic=body["by_mechanic"],
-            on_post=body["on_post"],
-            zn_number=body["zn_number"],
-            uuid=body["uuid"],
-            type=body["type"],
-            new_value=body["new_value"],
+            mechanic=mechanic,
+            post=post,
+            zn_number=zn_number,
+            uuid=uuid,
+            type=type,
+            new_value=new_value
         )
 
 
-async def parse_done_all(body: dict[str, Any]) -> None:
+async def parse_done_all(
+        uuids: list[str],
+        mechanic: str,
+        post: str,
+        type: str,
+        zn_number: str,
+        new_value: bool,
+) -> None:
     async with db_helper.session_factory() as session:
-        for obj_uuid in body["uuid"]:
+        for obj_uuid in uuids:
             await change_done(
                 session=session,
-                by_mechanic=body["by_mechanic"],
-                on_post=body["on_post"],
-                zn_number=body["zn_number"],
+                mechanic=mechanic,
+                post=post,
+                zn_number=zn_number,
                 uuid=obj_uuid,
-                type=body["type"],
-                new_value=body["new_value"],
+                type=type,
+                new_value=new_value,
             )
 
 
-async def parse_rec(body: dict[str, Any]) -> None:
+async def parse_rec(
+        zn_number: str,
+        rec: str,
+) -> None:
     async with db_helper.session_factory() as session:
         await update_object(
             session=session,
             model=ZN,
-            for_find={"number": body["zn_number"]},
-            for_update={"recommendation": body["rec"]},
+            for_find={"number": zn_number},
+            for_update={"recommendation": rec},
         )
-
-
-if __name__ == '__main__':
-    asyncio.run(main())
