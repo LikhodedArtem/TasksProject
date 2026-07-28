@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import String
+from sqlalchemy import String, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from .base import Base
+from ._base import RealInfoBase
 from .help_classes import Life, Stage
 
 
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from part import Part
 
 
-class ZN(Base, Life, Stage):
+class ZN(RealInfoBase, Life, Stage):
     number: Mapped[str] = mapped_column(
         String,
         primary_key=True,
@@ -48,6 +48,13 @@ class ZN(Base, Life, Stage):
 
     manager: Mapped[str] = mapped_column(
         String,
+        nullable=False,
+        unique=False,
+    )
+
+    car_vin: Mapped[str] = mapped_column(
+        String,
+        ForeignKey('cars.vin'),
         nullable=False,
         unique=False,
     )

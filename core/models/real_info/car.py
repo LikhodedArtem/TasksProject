@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import String, Integer, ForeignKey
+from sqlalchemy import String, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from .base import Base
+from ._base import RealInfoBase
 from .help_classes import Life, Stage
 
 
@@ -13,14 +13,8 @@ if TYPE_CHECKING:
     from .zn import ZN
 
 
-class Car(Base, Life, Stage):
-    zn_number: Mapped[str] = mapped_column(
-        String,
-        ForeignKey('zns.number'),
-        nullable=False
-    )
-
-    win: Mapped[str] = mapped_column(
+class Car(RealInfoBase, Life, Stage):
+    vin: Mapped[str] = mapped_column(
         String,
         primary_key=True,
     )
@@ -56,7 +50,7 @@ class Car(Base, Life, Stage):
 
     @staticmethod
     def for_find() -> list[str]:
-        return ["win"]
+        return ["vin"]
 
     @staticmethod
     def for_value() -> list[str]:
@@ -64,7 +58,7 @@ class Car(Base, Life, Stage):
 
     def as_dict(self):
         return {
-            "win": self.win,
+            "vin": self.vin,
             "reg": self.reg,
             "model": self.model,
             "year": self.year,

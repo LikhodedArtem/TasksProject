@@ -1,11 +1,11 @@
 from sqlalchemy import String, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 
-from .base import Base
+from ._base import RealInfoBase
 from .help_classes import Life, Stage
 
 
-class ZN_mtm_Post(Base, Life, Stage):
+class ZN_mtm_Post(RealInfoBase, Life, Stage):
     __tablename__ = 'zn_mtm_post'
 
     zn_number: Mapped[str] = mapped_column(

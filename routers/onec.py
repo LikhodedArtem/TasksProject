@@ -1,23 +1,56 @@
-import asyncio
-import hashlib
-import xml.etree.ElementTree as ET
-from collections import defaultdict
-from copy import deepcopy
+"""Обработка xml со стороны 1C"""
+
+
 from dataclasses import dataclass
+from typing import Annotated, Any, Optional, Literal
+from copy import deepcopy
+
 from enum import Enum, auto
-from pprint import pprint
-from threading import Thread
-from typing import Optional, Callable, Awaitable, Literal
-from uuid import UUID
+from fastapi import APIRouter, Body
+import xml.etree.ElementTree as ET
 
+from codes import safe_route
+from core.models import *
 from crud import *
-from core.models.db_helper import db_helper
+from help_functions import as_dict
 
 
-class UpdateType(Enum):
-    CREATE = auto()
-    UPDATE = auto()
-    DELETE = auto()
+onec_router = APIRouter(prefix="/onec", tags=["onec"])
+
+
+__all__ = ["onec_router"]
+
+
+"""Обработка заказ наряда"""
+
+@onec_router.post("/zn")
+@safe_route("Parse zn")
+async def zn(
+        xml_string: Annotated[str, Body(embed=True)]
+):
+    await parse_zn(xml_string)
+
+
+"""Обработка списка всех механиков"""
+
+@onec_router.post("/mechanics")
+@safe_route("Parse mechanics")
+async def mechanics(
+        xml_string: Annotated[str, Body(embed=True)]
+):
+    await parse_mechanics(xml_string)
+
+
+"""Обработка списка всех названий постов"""
+
+@onec_router.post("/posts")
+@safe_route("Parse posts")
+async def posts(
+        xml_string: Annotated[str, Body(embed=True)]
+):
+    await parse_posts(xml_string)
+
+
 
 
 async def parse_zn(xml_string: str):
@@ -173,7 +206,7 @@ async def parse_mechanics(xml_string: str):
 
     return operations_lst
 
-async def parse_main_posts(xml_string: str):
+async def parse_posts(xml_string: str):
     root = ET.fromstring(xml_string)
 
     async with db_helper.session_factory() as session:
@@ -200,12 +233,10 @@ async def parse_main_posts(xml_string: str):
     return operations_lst
 
 
-def as_dict(obj) -> dict[str, Any]:
-    keys = obj.for_find() + obj.for_value()
-    if hasattr(obj, 'done'):
-        keys.append("done")
-
-    return {key: getattr(obj, key) for key in keys}
+class UpdateType(Enum):
+    CREATE = auto()
+    UPDATE = auto()
+    DELETE = auto()
 
 
 @dataclass
@@ -285,7 +316,6 @@ async def refresh_objects(
     value_keys = model.for_value()
     new_stage = data[0].stage
 
-
     for object in data:
         primary_kwargs = {key: getattr(object, key) for key in primary_keys}
 
@@ -319,7 +349,7 @@ async def refresh_objects(
 
                 for_update["stage"] = new_stage
 
-                await update_object(
+                await update_objects(
                     session,
                     model,
                     primary_kwargs,
@@ -342,247 +372,3 @@ async def refresh_objects(
             operation_list.append(OperationConstructor.delete(model, primary_keys_delete))
 
     return operation_list
-
-
-def create_update(
-        data: list[Operation]
-) -> dict[str, Any]:
-    answer = dict()
-    answer["code"] = 200
-    answer["message"] = "success"
-    answer["data"]: dict[str, dict[str, list[dict[str, Any]]]] = dict()
-
-    for op in data:
-        current = answer["data"]
-
-        if op.operation not in current:
-            current[op.operation] = dict()
-
-        current = current[op.operation]
-
-        if op.model_name not in current:
-            current[op.model_name] = []
-
-        current = current[op.model_name]
-
-        current.append(op.data)
-
-    return answer
-
-
-async def create_answer(
-        model: Literal["zns", "zn", "jobs", "parts", "posts", "main_posts", "mechanics"],
-        **for_find
-) -> dict[str, Any]:
-    answer = dict()
-    answer["data"] = []
-
-    def not_found():
-        answer["code"] = 404
-        answer["message"] = "Such object(s) not found"
-
-    def found():
-        answer["code"] = 200
-        answer["message"] = "Success"
-
-    def check(func):
-        def wrapper(lst):
-
-            if lst is None:
-                not_found()
-            else:
-                if not isinstance(lst, list):
-                    final_lst = [lst]
-                else:
-                    final_lst = lst
-
-                func(final_lst)
-
-                found()
-
-        return wrapper
-
-    async def for_base(model, **kwargs):
-        current_for_find = {"is_alive": True}
-        for key in kwargs:
-            current_for_find[key] = kwargs[key]
-
-        async with db_helper.session_factory() as session:
-            objects = await find_objects(
-                session=session,
-                model=model,
-                **current_for_find
-            )
-
-        @check
-        def add(objects):
-            for object in objects:
-                dict_object = as_dict(object)
-                answer["data"].append(dict_object)
-
-        add(objects)
-    try:
-        # Пост
-        if model == "zns":
-            async with db_helper.session_factory() as session:
-                zns = await get_zns_by_post_name(
-                    session=session,
-                    post_name=for_find["post_name"],
-                )
-
-            @check
-            def add(zns):
-                for zn, date1, date2 in zns:
-                    dict_zn = as_dict(zn)
-                    dict_zn["car"] = as_dict(zn.car)
-                    dict_zn["date1"] = date1
-                    dict_zn["date2"] = date2
-                    answer["data"].append(dict_zn)
-
-            add(zns)
-
-        # Номер заказ наряда
-        elif model == "zn":
-            async with db_helper.session_factory() as session:
-                data = await get_objects_with_has_files(
-                    session=session,
-                    model=ZN,
-                    joinedload_lst=[ZN.car],
-                    for_find={"is_alive": True, "number": for_find["zn_number"]},
-                    for_files=for_find["zn_number"],
-                )
-
-            if data is None:
-                not_found()
-            elif isinstance(data, list):
-                raise ValueError("Expected one zn, got two or more")
-            else:
-                zn, has_files = data
-
-                dict_zn = as_dict(zn)
-                dict_zn["car"] = as_dict(zn.car)
-                dict_zn["has_files"] = has_files
-                answer["data"] = dict_zn
-
-                found()
-
-        # Номер заказ наряда
-        elif model == "jobs":
-            current_for_find = {
-                "is_alive": True,
-                "zn_number": for_find["zn_number"]
-            }
-
-            async with db_helper.session_factory() as session:
-                data = await get_objects_with_has_files(
-                    session=session,
-                    model=Job,
-                    for_find=current_for_find,
-                    for_files=Job.uuid
-                )
-
-            @check
-            def add(data):
-                for job, has_files in data:
-                    dict_job = as_dict(job)
-                    dict_job["has_files"] = has_files
-                    answer["data"].append(dict_job)
-
-            add(data)
-
-        # Номер заказ наряда
-        elif model == "parts":
-            current_for_find = {
-                "is_alive": True,
-                "zn_number": for_find["zn_number"]
-            }
-
-            async with db_helper.session_factory() as session:
-                data = await get_objects_with_has_files(
-                    session=session,
-                    model=Part,
-                    for_find=current_for_find,
-                    for_files=Part.uuid
-                )
-
-            @check
-            def add(data):
-                for job, has_files in data:
-                    dict_job = as_dict(job)
-                    dict_job["has_files"] = has_files
-                    answer["data"].append(dict_job)
-
-            add(data)
-
-        # Ничего
-        elif model == "posts":
-            await for_base(MainPost)
-
-        # Ничего
-        elif model == "mechanics":
-            await for_base(Mechanic)
-
-        else:
-            raise NotImplementedError("Unknown model")
-
-    except Exception as e:
-        print(e)
-        answer["code"] = 500
-        answer["message"] = "Something went wrong"
-
-    finally:
-        return answer
-
-
-async def parse_done(
-        mechanic: str,
-        post: str,
-        zn_number: str,
-        uuid: str,
-        type: str,
-        new_value: bool,
-) -> None:
-    async with db_helper.session_factory() as session:
-        await change_done(
-            session=session,
-            mechanic=mechanic,
-            post=post,
-            zn_number=zn_number,
-            uuid=uuid,
-            type=type,
-            new_value=new_value
-        )
-
-
-async def parse_done_all(
-        uuids: list[str],
-        mechanic: str,
-        post: str,
-        type: str,
-        zn_number: str,
-        new_value: bool,
-) -> None:
-    async with db_helper.session_factory() as session:
-        for obj_uuid in uuids:
-            await change_done(
-                session=session,
-                mechanic=mechanic,
-                post=post,
-                zn_number=zn_number,
-                uuid=obj_uuid,
-                type=type,
-                new_value=new_value,
-            )
-
-
-async def parse_rec(
-        zn_number: str,
-        rec: str,
-) -> None:
-    async with db_helper.session_factory() as session:
-        await update_object(
-            session=session,
-            model=ZN,
-            for_find={"number": zn_number},
-            for_update={"recommendation": rec},
-        )

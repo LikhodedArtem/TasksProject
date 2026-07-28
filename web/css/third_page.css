@@ -256,6 +256,7 @@
     label {
         color: var(--color-text-contrast);
         font-size: 0.6rem;
+        user-select: none;
     }
 
     span {
@@ -413,11 +414,17 @@
     overflow: hidden;
 
     transition: var(--transition-slow);
+
+    mask-image: linear-gradient(180deg, black 0%, transparent 100%);
+    mask-size: 300% 300%;
+    mask-position: 0 100%;
 }
 
 .package-value-wrapper.opened {
     opacity: 1;
     padding: var(--space-2) var(--space-2) var(--space-2) var(--space-2);
+    mask-image: linear-gradient(180deg, black 100%, transparent 100%);
+    mask-position: 0 0;
 }
 
 .package-value {
@@ -425,9 +432,13 @@
     height: 100%;
 }
 
+#recPinFiles .pin-files-icon{
+    box-shadow: 0 0 10px color-mix(in oklch, var(--color-shadow) 30%, transparent);
+}
+
 .rec-bottom {
     display: grid;
-    grid-template-columns: 4fr 1fr;
+    grid-template-columns: min-content 4fr 1fr;
     gap: var(--space-4);
 
     margin-top: var(--space-4);
@@ -590,10 +601,6 @@
 }
 
 .pin-files.has-files .pin-files-icon {
-    filter: saturate(1);
-}
-
-.row-content.has-files .pin-files-icon {
     filter: saturate(1);
 }
 
@@ -975,6 +982,13 @@
         aspect-ratio: 1 / 1;
         color: var(--color-primary);
         margin: var(--space-1);
+    }
+
+    .file-type-icon {
+        height: 2.5rem;
+        aspect-ratio: 1 / 1;
+        color: var(--color-primary);
+        margin-right: var(--space-1);
     }
 
     .file-info {

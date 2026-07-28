@@ -12,7 +12,7 @@ const SVG = {
     open: '<svg class="chevron" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>',
 
     document: '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l5 5v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"/><path d="M14 3v5h5"/><path d="M9 13h6"/><path d="M9 17h6"/></svg>',
-    picture: '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-4 4-2-2-5 5"/></svg>',
+    picture: '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8" cy="8.5" r="2"/><path d="M3 19l7-7 3 3 3-3 5 5"/></svg>',
     video: '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="13" height="14" rx="2"/><path d="M16 10l5-3v10l-5-3z"/><path d="M9 9l4 3-4 3z"/></svg>',
     audio: '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 10v4"/><path d="M8 7v10"/><path d="M12 4v16"/><path d="M16 7v10"/><path d="M20 10v4"/></svg>',
     archive: '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3v4h6V3"/><path d="M12 10h.01"/><path d="M12 13h.01"/><path d="M12 16h.01"/><path d="M10 19h4"/></svg>',
@@ -21,6 +21,11 @@ const SVG = {
     war: "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M10.3 4.2 2.6 17.5A2 2 0 0 0 4.3 20h15.4a2 2 0 0 0 1.7-2.5L13.7 4.2a2 2 0 0 0-3.4 0Z\"/><path d=\"M12 9v4\"/><path d=\"M12 17h.01\"/></svg>",
     ok: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none">\n <path d="M7 12.5L10.2 15.7L17.5 8.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>\n</svg>',
     x: '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="5" x2="19" y2="19" /><line x1="5" y1="19" x2="19" y2="5" /></svg>',
+
+    zn: '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5H6a2 2 0 0 0-2 2v13h16V7a2 2 0 0 0-2-2h-2"/><rect x="8" y="3" width="8" height="4" rx="1.5"/><path d="M8 11h8M8 15h8"/></svg>',
+    job: '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m5 19 8.5-8.5"/><path d="M14.5 4.5a4 4 0 0 0-4.8 5.8L4.6 15.4a2.5 2.5 0 0 0 3.5 3.5l5.1-5.1a4 4 0 0 0 5.8-4.8l-2.7 2.7-2.5-.5-.5-2.5z"/><circle cx="6.4" cy="17.1" r=".6"/></svg>',
+    part: '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5H6a2 2 0 0 0-2 2v13h16V7a2 2 0 0 0-2-2h-2"/><rect x="8" y="3" width="8" height="4" rx="1.5"/><path d="M8 11h8M8 15h8"/></svg>',
+    rec: '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-8l-4 4v-4H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><path d="m8 11 2.5 2.5L16 8"/></svg>',
 }
 
 const $notification = document.createElement("div")
@@ -59,9 +64,9 @@ let removeClassTimer
 
 // const baseUrl = window.location.origin;
 //
-// const API_PATH = baseUrl + ':8000';
+// const API_PATH = baseUrl + ':8000/api/web';
 
-const API_PATH = "http://192.168.50.95:8000";
+const API_PATH = "http://192.168.50.95:8000/api/web";
 
 function createNotification(operation, mainText) {
     clearTimeout(hideTimer)
@@ -167,44 +172,51 @@ function constructCell(text, addClass) {
     return cell
 }
 
-async function sendRequestToServer(url, method, data, notJson) {
+async function sendRequestToServer(
+    url,
+    method,
+    data,
+) {
     try {
-        const response = await fetch(`${API_PATH}/` + url, {
+        let body
+        if (typeof data === 'string') {
+            body = data
+        } else if (data != null) {
+            body = JSON.stringify(data)
+        } else {
+            body = null
+        }
+
+        return  await fetch(`${API_PATH}/` + url, {
             method: method,
             credentials: 'include',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: data != null ? JSON.stringify(data) : null
+            body: body
         })
 
-        if (!response.ok) return undefined
-        if (!notJson) {
-            return await response.json()
-        } else {
-             return response
-        }
-
     } catch (error) {
-        console.error("Ошибка:", error)
+        console.error("Ошибка отправки:", error)
         return null
     }
 }
 
 
-async function getSmth(
+async function smartSendRequest(
     url,
     method,
-    on200,
+    data,
+    onOk,
     on404,
     on500,
     onError
 ) {
     try {
-        let newContent = null
+        let response = null
         let cycles = 0
         
-        while (!newContent) {
+        while (!response) {
             if (cycles === 3) {
                 createNotification("error", "Нет связи с сервером")
                 deleteLoading()
@@ -214,40 +226,56 @@ async function getSmth(
                 createNotification("error", "Нет ответа от сервера")
             }
 
-            newContent = await sendRequestToServer(url, method)
+            response = await sendRequestToServer(url, method, data)
             cycles++
         }
 
-        const code = newContent.code
-        const data = newContent.data
+        if (response.ok) {
+            const answer = await response.json()
 
-        switch (code) {
-            case 200:
-                if (on200) on200(data)
-                break
+            if (onOk) {
+                const result = onOk(answer)
+
+                if (result != null) return result
+            }
+            return true
+        }
+
+        switch (response.status) {
             case 404:
-                if (on404) on404()
-                // (on404)
-                //     ? on404()
-                //     : createNotification("error", "Сервер не нашёл данные")
+                if (on404) {
+                    on404(response)
+                    return true
+                } else {
+                    console.warn(response.statusText)
+                    createNotification("warning", "Данные не найдены")
+                }
                 break
             case 500:
-                (on500)
-                    ? on500()
-                    : createNotification("error", "Ошибка обработки данных")
+                if (on500) {
+                    on500(response)
+                    return true
+                } else {
+                    console.error(response.statusText)
+                    createNotification("warning", "На сервере произошла ошибка")
+                }
                 break
             default:
                 console.error(`Unexpected code: ${code}`)
+                createNotification("error", "Произошла неизвестная ошибка")
         }
-        return true
+
+        return false
     } catch (e) {
-        console.error(`Get Error: ${e}`)
+        console.error(`smartSendRequest Error: ${e}`)
 
-        (onError)
-            ? onError()
-            : createNotification("error", "Неизвестная ошибка")
+        if (onError) {
+            onError()
+        } else {
+            createNotification("error", "Неизвестная ошибка")
+        }
 
-        return true
+        return false
     }
 }
 
@@ -354,7 +382,7 @@ class Cookie {
 
 
 class SmartContainer {
-    constructor(data=null) {
+    constructor (data=null) {
         if (!data) {
             this._data = []
             return

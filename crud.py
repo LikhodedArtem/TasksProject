@@ -1,16 +1,12 @@
-import asyncio
 from datetime import datetime
-from sqlite3 import IntegrityError
 from typing import Any
-from uuid import UUID
 
-from sqlalchemy import select, update, delete, func, exists, not_
+from sqlalchemy import select, update, delete, func, exists
 from sqlalchemy.orm import selectinload, joinedload
-from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.models import *
-from core.models.mechanic import Mechanic
+from core.models.real_info.mechanic import Mechanic
 
 
 async def add_object(
@@ -121,14 +117,16 @@ async def find_objects(
 async def get_objects_with_has_files(
         session: AsyncSession,
         model,
-        for_files: Any,
+        for_files: dict,
         selectinload_lst: list | None = None,
         joinedload_lst: list | None = None,
         for_find: dict[str, Any] | None = None,
 ) -> list[tuple[Any, bool]] | tuple[Any, bool] | None:
+    files_conditions = build_conditions(File, for_files)
+
     has_files = exists().where(
         File.is_alive.is_(True),
-        File.identical_str == for_files
+        *files_conditions
     )
 
     stmt = (
@@ -164,71 +162,72 @@ async def get_objects_with_has_files(
     return answer
 
 
-async def check_can_stop(
-        session: AsyncSession,
-        mechanic: str,
-        zn_number: str,
-):
-    start_time_stmt = select(MechanicZNStatus.at_time).where(
-        MechanicZNStatus.mechanic == mechanic,
-        MechanicZNStatus.zn_number == zn_number,
-        MechanicZNStatus.status == "start",
-    ).order_by(
-        MechanicZNStatus.at_time.desc()
-    ).limit(1)
+# async def check_can_stop(
+#         session: AsyncSession,
+#         mechanic: str,
+#         zn_number: str,
+# ):
+#     start_time_stmt = select(MechanicZNStatus.time).where(
+#         MechanicZNStatus.mechanic == mechanic,
+#         MechanicZNStatus.zn_number == zn_number,
+#         MechanicZNStatus.status == "start",
+#     ).order_by(
+#         MechanicZNStatus.time.desc()
+#     ).limit(1)
+#
+#
+#     result = await session.execute(start_time_stmt)
+#     start_time = result.scalar_one_or_none()
+#
+#     did_smth_stmt = select(
+#         exists().where(
+#             DoneLog.zn_number == zn_number,
+#             DoneLog.mechanic == mechanic,
+#             DoneLog.time > start_time,
+#         )
+#     )
+#
+#     result = await session.execute(did_smth_stmt)
+#     did_smth = result.scalar()
+#
+#     if not did_smth:
+#         return True, "did-nothing"
+#
+#     everything_done_stmt = select(
+#         not_(
+#             exists().where(
+#                 Part.zn_number == zn_number,
+#                 Part.is_alive.is_(True),
+#                 Part.done.is_(False),
+#             )
+#         ) & not_ (
+#             exists().where(
+#                 Job.zn_number == zn_number,
+#                 Job.is_alive.is_(True),
+#                 Job.done.is_(False),
+#             )
+#         )
+#     )
+#
+#     result = await session.execute(everything_done_stmt)
+#     everything_done = result.scalar()
+#
+#     if everything_done:
+#         return True, "everything-done"
+#
+#     return False, "not-everything-done"
 
 
-    result = await session.execute(start_time_stmt)
-    start_time = result.scalar_one_or_none()
-
-    did_smth_stmt = select(
-        exists().where(
-            DoneLog.zn_number == zn_number,
-            DoneLog.mechanic == mechanic,
-            DoneLog.time > start_time,
-        )
-    )
-
-    result = await session.execute(did_smth_stmt)
-    did_smth = result.scalar()
-
-    if not did_smth:
-        return True, "did-nothing"
-
-    everything_done_stmt = select(
-        not_(
-            exists().where(
-                Part.zn_number == zn_number,
-                Part.is_alive.is_(True),
-                Part.done.is_(False),
-            )
-        ) & not_ (
-            exists().where(
-                Job.zn_number == zn_number,
-                Job.is_alive.is_(True),
-                Job.done.is_(False),
-            )
-        )
-    )
-
-    result = await session.execute(everything_done_stmt)
-    everything_done = result.scalar()
-
-    if everything_done:
-        return True, "everything-done"
-
-    return False, "not-everything-done"
-
-async def get_zns_by_post_name(
+async def get_zns_by_post(
     session: AsyncSession,
-    post_name: str
+    post: str
 ):
     stmt = (
         select(ZN, Post.date1, Post.date2)
         .join(ZN_mtm_Post, ZN_mtm_Post.zn_number == ZN.number)
         .join(Post, ZN_mtm_Post.post_uuid == Post.uuid)
         .join(MainPost, MainPost.name == Post.main_post_name)
-        .where(MainPost.name == post_name)
+        .where(MainPost.name == post)
         .options(joinedload(ZN.car))
         .order_by(Post.date1.asc())
     )
@@ -239,7 +238,7 @@ async def get_zns_by_post_name(
     return answer
 
 
-async def delete_object(
+async def delete_objects(
         session: AsyncSession,
         model,
         **kwargs,
@@ -253,7 +252,7 @@ async def delete_object(
     await session.commit()
 
 
-async def update_object(
+async def update_objects(
         session: AsyncSession,
         model,
         for_find: dict,
@@ -341,7 +340,7 @@ async def change_done(
     if not hasattr(model, "done"):
         return
 
-    await update_object(
+    await update_objects(
         session,
         model,
         { "uuid": uuid },
@@ -361,5 +360,16 @@ async def change_done(
 
 
 
-# if __name__ == '__main__':
-#     asyncio.run(main())
+__all__ = [
+    "add_object",
+    "find_objects",
+    "update_objects",
+    "delete_objects",
+    "kill_old_in_model",
+    "change_done",
+    "get_zns_by_post",
+    "get_current_mechanics_stage",
+    "get_current_zn_stage",
+    "get_objects_with_has_files",
+    "get_current_main_posts_stage",
+]

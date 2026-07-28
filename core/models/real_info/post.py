@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from sqlalchemy import String, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from .base import Base
+from ._base import RealInfoBase
 from .help_classes import Life, Stage
 
 
@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from .zn import ZN
 
 
-class Post(Base, Life, Stage):
+class Post(RealInfoBase, Life, Stage):
     uuid: Mapped[str] = mapped_column(
         String,
         primary_key=True

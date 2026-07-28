@@ -1,15 +1,14 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING
 
 from sqlalchemy import String, Integer, ForeignKey, DateTime, func, Boolean
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column
 
-from .base import Base
+from ._base import RealInfoBase
 
 
-class DoneLog(Base):
+class DoneLog(RealInfoBase):
     id: Mapped[int] = mapped_column(
         Integer,
         primary_key=True

@@ -18,8 +18,9 @@ async function start() {
     initTime()
     setLoading()
 
-    if (!await init()) {
-        createNotification("error", "Ошибка загрузки страницы")
+    const result = await init()
+    if (result !== true) {
+        createNotification("error", `Ошибка загрузки ${result}`)
     }
 
     clearLoading()
@@ -27,8 +28,8 @@ async function start() {
 
 
 async function init() {
-    if (!await getPosts()) return false
-    if (!await getMechanics()) return false
+    if (!await getPosts()) return "постов"
+    if (!await getMechanics()) return "механиков"
 
     initSuggestsPanels()
     updatePosts()
@@ -72,9 +73,10 @@ function initTime() {
 
 
 async function getPosts() {
-    return await getSmth(
+    return await smartSendRequest(
         "info/posts",
         "GET",
+        null,
         (data) => {
             updatePostsData(data)
         }
@@ -82,9 +84,10 @@ async function getPosts() {
 }
 
 async function getMechanics() {
-    return await getSmth(
+    return await smartSendRequest(
         "info/mechanics",
         "GET",
+        null,
         (data) => {
             updateMechanicsData(data)
         },
@@ -311,12 +314,6 @@ applyButton.addEventListener("click", () => {
         }, 500)
     }
 })
-
-
-function initSSE() {
-    sseSource = createSSESource("first_page")
-
-}
 
 const postSuggestPanel = document.querySelector("#postTextInput .suggests-panel")
 const nameSuggestPanel = document.querySelector("#nameTextInput .suggests-panel")

@@ -6,7 +6,7 @@ from datetime import datetime
 from sqlalchemy import String, ForeignKey, DateTime, func, Enum as SQLEnum, Integer
 from sqlalchemy.orm import Mapped, mapped_column
 
-from .base import Base
+from ._base import RealInfoBase
 
 
 class Status(str, Enum):
@@ -15,17 +15,17 @@ class Status(str, Enum):
     STOPPED = "stopped"
 
 
-class MechanicZNStatus(Base):
-    __tablename__ = 'mechanic_zn_statuses'
+class PostZNStatus(RealInfoBase):
+    __tablename__ = 'post_zn_statuses'
 
     id: Mapped[int] = mapped_column(
         Integer,
         primary_key=True
     )
 
-    mechanic: Mapped[str] = mapped_column(
+    post: Mapped[str] = mapped_column(
         String,
-        ForeignKey('mechanics.name'),
+        ForeignKey('mainposts.name'),
         nullable=False,
         unique=False,
     )
@@ -37,9 +37,9 @@ class MechanicZNStatus(Base):
         unique=False,
     )
 
-    post: Mapped[str] = mapped_column(
+    mechanic: Mapped[str] = mapped_column(
         String,
-        ForeignKey('mainposts.name'),
+        ForeignKey('mechanics.name'),
         nullable=False,
         unique=False,
     )

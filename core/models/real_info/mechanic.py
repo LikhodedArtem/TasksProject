@@ -3,32 +3,33 @@ from __future__ import annotations
 from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from .base import Base
+from ._base import RealInfoBase
 from .help_classes import Life, Stage
 
 
-class MainPost(Base, Life, Stage):
-    name: Mapped[str] = mapped_column(
+class Mechanic(RealInfoBase, Life, Stage):
+    key: Mapped[str] = mapped_column(
         String,
         primary_key=True,
     )
 
-    territory: Mapped[str] = mapped_column(
+    name: Mapped[str] = mapped_column(
         String,
-        unique=False,
         nullable=False,
+        unique=False
     )
 
     @staticmethod
     def for_find() -> list[str]:
-        return ["name"]
+        return ["key"]
 
     @staticmethod
     def for_value() -> list[str]:
-        return ["territory"]
+        return ["name"]
 
     def as_dict(self):
         return {
+            "key": self.key,
             "name": self.name,
-            "territory": self.territory,
+            "is_alive": self.is_alive,
         }

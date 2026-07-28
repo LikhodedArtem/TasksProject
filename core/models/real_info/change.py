@@ -2,24 +2,19 @@ from __future__ import annotations
 
 from enum import Enum
 
-from sqlalchemy import Integer, Enum as SQLEnum, JSON
+from sqlalchemy import Integer, Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column
 
-from .base import Base
+from ._base import RealInfoBase
 
 
-class Change1CType(Enum):
-    COMMON = "COMMON"
-
-
-
-class ChangeType(Enum):
+class ChangeType(str, Enum):
     UPDATE = "update"
     CREATE = "create"
     DELETE = "delete"
 
 
-class ChangeDataType(Enum):
+class ChangeDataType(str, Enum):
     ZN_INFO = "zn_info"
     CAR = "car"
     MECHANIC = "mechanic"
@@ -28,7 +23,7 @@ class ChangeDataType(Enum):
     FILE = "file"
 
 
-class Change(Base):
+class Change(RealInfoBase):
     type: Mapped[str] = mapped_column(
         SQLEnum(ChangeType, name="type"),
         nullable=False,

@@ -54,7 +54,13 @@ const detailsTableValue = detailsTable.querySelector(".table-content")
 
 const tookButton = document.querySelector("#took")
 
-const headerPinFiles = document.querySelector(".pin-files")
+const headerPinFiles = document.querySelector("#headerPinFiles")
+const recPinFiles = document.querySelector("#recPinFiles")
+
+const recApply = document.querySelector("#recApply")
+const recArea = document.querySelector("#recArea")
+const recInput = document.querySelector("#recInput")
+
 
 const EXTENSIONS = {
     document: ['txt', 'doc', 'docx', 'pdf', 'rtf', 'odt'],
@@ -73,26 +79,26 @@ async function start() {
     setLoading()
 
     const result = await init()
-    if (!result) {
-        createNotification("error", "Ошибка загрузки страницы")
+    if (result !== true) {
+        createNotification("error", `Ошибка загрузки ${result}`)
     }
 
     clearLoading()
 }
 
 async function init() {
-    if (!await getZnInfo()) return false
+    if (!await getZnInfo()) return "заказ-наряда"
 
-    if (!await updateWorksTable()) return false
+    if (!await updateWorksTable()) return "работ"
 
-    if (!await updateDetailsTable()) return false
+    if (!await updateDetailsTable()) return "запчастей"
 
     initStartZN()
-    if (!await updateZNStatus()) return false
+    if (!await updateZNStatus()) return "статуса"
 
     initPackagesEvents()
     initTookButton()
-    initZNPinFiles()
+    initCustomPinFiles()
     initRecommendation()
 
     return true
@@ -102,17 +108,32 @@ async function getZnInfo() {
     const znNumber = Cookie.get("znNumber")
     if (!znNumber) return false
 
-    return await getSmth(
-        `info/zn/${znNumber}`,
-        "GET",
+    return await smartSendRequest(
+        `info/zn`,
+        "POST",
+        {zn_number: znNumber},
         (data) => {
-            updateZnInfo(data)
+            updateZnInfo(data[0])
+            return true
         }
     )
 }
 
+
+
+function hasFiles(pinFiles) {
+    pinFiles.classList.add("has-files")
+    headerPinFiles.classList.add("has-files")
+}
+
+function hasNotFiles(pinFiles) {
+    pinFiles.classList.remove("has-files")
+}
+
 async function updateZnInfo(data) {
-    if (data.has_files) headerPinFiles.classList.add("has-files")
+    if (data.rec_has_files) {
+        hasFiles(recPinFiles)
+    }
 
     document.querySelector("#znNumber span").textContent = data.number
     const reg = document.querySelector("#reg")
@@ -144,7 +165,6 @@ async function updateZnInfo(data) {
     }
 
     const reasonArea = document.querySelector("#reasonArea")
-    const recArea = document.querySelector("#recArea")
     reasonArea.disabled = true
     reasonArea.value = data.reason
 
@@ -153,12 +173,14 @@ async function updateZnInfo(data) {
 }
 
 
-async function updateTable(url, tableValue, renderRow, on404) {
-    return await getSmth(
-        `${url}`,
-        "GET",
+async function updateTable(url, data, tableValue, renderRow, on404) {
+    return await smartSendRequest(
+        url,
+        "POST",
+        data,
         (data) => {
             renderData(data, tableValue, renderRow)
+            return true
         },
         on404
     )
@@ -196,16 +218,15 @@ function renderData(data, tableValue, renderRow) {
     }
 }
 
-function renderRowWrapper(cells, done, uuid, haveFiles) {
+function renderRowWrapper(cells, done, uuid, isHasFiles) {
     const rowWrapper = document.createElement("div")
     rowWrapper.className = "row-content"
-    if (haveFiles) {
-        rowWrapper.classList.add("has-files")
-    }
     if (done) rowWrapper.classList.add("yes")
     rowWrapper.dataset.uuid = uuid
 
     rowWrapper.append(...cells)
+
+    if (isHasFiles) hasFiles(rowWrapper.querySelector(".pin-files"))
 
     return rowWrapper
 }
@@ -238,11 +259,12 @@ async function updateWorksTable() {
     if (!znNumber) return false
 
     return await updateTable(
-        `info/jobs/${znNumber}`,
+        `info/jobs`,
+        {zn_number: znNumber},
         worksTableValue,
         renderWorksRow,
         () => {
-            document.querySelector("#works .package").className = "package close-forever empty"
+            document.querySelector("#jobs .package").className = "package close-forever empty"
         }
     )
 }
@@ -252,11 +274,12 @@ async function updateDetailsTable() {
     if (!znNumber) return false
 
     return await updateTable(
-        `info/parts/${znNumber}`,
+        `info/parts`,
+        {zn_number: znNumber},
         detailsTableValue,
         renderDetailsRow,
         () => {
-            document.querySelector("#details .package").className = "package close-forever empty"
+            document.querySelector("#parts .package").className = "package close-forever empty"
         }
     )
 }
@@ -306,25 +329,16 @@ async function sendDone(uuid, type, value, all) {
             zn_number: data.znNumber,
             type: type,
             new_value: value,
+            uuid: uuid,
         }
 
-        if (all) {
-            requestData.uuid = uuid
-        } else {
-            requestData.uuids = uuid
-        }
-
-        const result = await sendRequestToServer(
+        const result = await smartSendRequest(
             `info/done${(all) ? "/all" : ""}`,
             "POST",
             requestData
         )
 
-        if (result === null) {
-            return false
-        }
-
-        return true
+        return result != null
     } catch (e) {
         console.error(e)
         return false
@@ -376,7 +390,7 @@ function createPinFilesPanel(type, rowContent) {
 }
 
 
-function initZNPinFiles() {
+function initCustomPinFiles() {
     headerPinFiles.addEventListener("click", () => {
         createPinFilesPanel("zn")
     })
@@ -449,7 +463,12 @@ function initPackagesEvents() {
                 : "jobs"
             const value = !rowContent.classList.contains("yes")
 
-            const result = await saveDone(uuid, type, value)
+            const result = await saveDone(
+                uuid,
+                type,
+                value,
+                false
+            )
 
             if (!result) {
                 createNotification("error", "Нет связи с сервером")
@@ -470,7 +489,7 @@ function initPackagesEvents() {
             if (!pinFilesIcon) return
 
             const rowContent = pinFilesIcon.closest(".row-content")
-            const type = (pinFilesIcon.closest("#works")) ? "jobs" : "parts"
+            const type = pinFilesIcon.closest(".package-wrapper").id
 
             createPinFilesPanel(type, rowContent)
         })
@@ -621,10 +640,11 @@ function constructPinFilesCell(addClass, type, rowContent) {
         realInput.multiple = true
         realInput._storedFiles = new DataTransfer().files
         realInput._storedUUIDS = []
+        realInput._storedTypes = null
 
         let isGetFiles = false
 
-        getFiles()
+        getFiles(type)
 
         function startDownload() {
             pinFilesDownloading.classList.add("active")
@@ -634,13 +654,13 @@ function constructPinFilesCell(addClass, type, rowContent) {
             pinFilesDownloading.classList.remove("active")
         }
 
-        async function getFiles() {
+        async function getFiles(type) {
             if (isGetFiles) return
             isGetFiles = true
 
             startDownload()
 
-            const result = await getFilesFromBase()
+            const result = await getFilesFromBase(type)
 
             if (!result) {
                 createNotification("error", "Файлы не были загружены")
@@ -652,13 +672,18 @@ function constructPinFilesCell(addClass, type, rowContent) {
 
         async function getFilesFromBase() {
             try {
-                const data = {}
-
-                if (type === "zn") {
-                    data.identical_str = Cookie.get("znNumber")
-                } else {
-                    data.identical_str = rowContent.dataset.uuid
+                const data = {
+                    zn_number: Cookie.get("znNumber"),
                 }
+
+                if (type !== "zn") {
+                    data.type = type
+                    if (type !== "rec") {
+                        data.identical_str = rowContent.dataset.uuid
+                    }
+                }
+
+
 
                 const response = await fetch(`${API_PATH}/files/get`, {
                     method: "POST",
@@ -684,7 +709,7 @@ function constructPinFilesCell(addClass, type, rowContent) {
                 const zip = await JSZip.loadAsync(archiveBlob)
 
                 const fileEntries = Object.entries(zip.files).filter(([pathInZip, zipEntry]) => {
-                    return pathInZip !== "uuids.json" && !zipEntry.dir
+                    return pathInZip !== "types.json" && pathInZip !== "uuids.json" && !zipEntry.dir
                 })
 
                 if (fileEntries.length === 0) {
@@ -697,6 +722,11 @@ function constructPinFilesCell(addClass, type, rowContent) {
                 if (!uuidsFile) {
                     updateCounter(0)
                     return true
+                }
+
+                const typesFile = zip.file("types.json")
+                if (typesFile) {
+                    realInput._storedTypes = JSON.parse(await typesFile.async("text")).types
                 }
 
                 const uuids = JSON.parse(await uuidsFile.async("text"))
@@ -764,6 +794,18 @@ function constructPinFilesCell(addClass, type, rowContent) {
 
         let isUploadFiles = false
 
+        function updateTypes(length) {
+            if (type === "zn" && realInput._storedTypes) {
+                const newTypes = []
+
+                for (let i = 0; i < length; i++) {
+                    newTypes.push("zn")
+                }
+
+                realInput._storedTypes = [...newTypes, ...realInput._storedTypes]
+            }
+        }
+
         async function fullUploadFiles(forUUIDS, forAdd) {
             if (isUploadFiles) return
             isUploadFiles = true
@@ -772,6 +814,8 @@ function constructPinFilesCell(addClass, type, rowContent) {
 			
 			try {
 				if (forUUIDS) {
+                    updateTypes(forUUIDS.length)
+
 					const result = await updateUUIDS(forUUIDS)
 					if (!result) {
 						createNotification("error", "Ошибка отправки данных")
@@ -888,38 +932,34 @@ function constructPinFilesCell(addClass, type, rowContent) {
         function renderFiles() {
             filePanel.innerHTML = ""
 
-            let index = 0
+            for (let index = 0; index < realInput.files.length; index++) {
+                const file = realInput.files[index]
+                const type = realInput._storedTypes !== null ? realInput._storedTypes[index] : null
 
-            for (const file of realInput.files) {
-                filePanel.append(constructFile(file, index))
-                index++
+                filePanel.append(
+                    constructFile(
+                        index,
+                        file,
+                        type,
+                    )
+                )
             }
 
             updateCounter(realInput.files.length)
             resetClickedCounter()
         }
 
-        function updateZnItems(count) {
-            if (count === 0) {
-                rowContent.classList.remove("has-files")
-            } else {
-                rowContent.classList.add("has-files")
-            }
-        }
-
-        function updateZn(count) {
-            if (count === 0) {
-                headerPinFiles.classList.remove("has-files")
-            } else {
-                headerPinFiles.classList.add("has-files")
-            }
+        function updatePinFiles(el, count) {
+            count === 0 ? hasNotFiles(el) : hasFiles(el)
         }
 
         function updateCounter(count) {
             if (type === "zn") {
-                updateZn(count)
+                updatePinFiles(headerPinFiles, count)
+            } else if (type === "rec") {
+                updatePinFiles(recPinFiles, count)
             } else {
-                updateZnItems(count)
+                updatePinFiles(rowContent.querySelector(".pin-files"), count)
             }
 
             pinFilesCellCounter.textContent = count
@@ -1021,12 +1061,14 @@ function constructPinFilesCell(addClass, type, rowContent) {
 
             const dt = new DataTransfer()
             const saveUUIDS = []
+            const saveTypes = []
             const deleteUUIDS = []
 
             for (let indx = 0; indx < realInput.files.length; indx++) {
                 if (indexes.indexOf(indx) === -1) {
                     dt.items.add(realInput.files[indx])
                     saveUUIDS.push(realInput._storedUUIDS[indx])
+                    saveTypes.push(realInput._storedTypes[indx])
                 } else {
                     deleteUUIDS.push(realInput._storedUUIDS[indx])
                 }
@@ -1038,7 +1080,7 @@ function constructPinFilesCell(addClass, type, rowContent) {
 
             if (!data) return false
 
-            const response = await sendRequestToServer(
+            const response = await smartSendRequest(
                 "files/delete",
                 "POST",
                 {
@@ -1053,6 +1095,7 @@ function constructPinFilesCell(addClass, type, rowContent) {
             realInput.files = dt.files
             realInput._storedFiles = dt.files
             realInput._storedUUIDS = saveUUIDS
+            realInput._storedTypes = saveTypes
 
             return true
         }
@@ -1556,7 +1599,7 @@ function createRecordPanel(addClass, addButtons, appendFile) {
     body.append(pinFilesCellWrapper)
 }
 
-function constructFile(realFile, index) {
+function constructFile(index, realFile, type) {
     const file = document.createElement("div")
     file.className = "file"
     file.dataset.index = index
@@ -1583,13 +1626,17 @@ function constructFile(realFile, index) {
     fileWeight.className = "file-weight"
     fileWeight.innerHTML = constructFileSize(realFile)
 
-    const fileButtons = document.createElement("div")
-    fileButtons.className = "file-buttons"
-
     fileAddInfo.append(fileExtension, fileWeight)
     fileInfo.append(fileName, fileAddInfo)
 
-    file.append(fileIcon, fileInfo, fileButtons)
+    file.append(fileIcon)
+
+    if (type) {
+        file.style.gridTemplateColumns = "min-content min-content 1fr"
+        file.append(constructFileTypeIcon(type))
+    }
+
+    file.append(fileInfo)
 
     if (EXTENSIONS.audio.includes(extension.toLowerCase()) || EXTENSIONS.video.includes(extension.toLowerCase())) {
         file.dataset.playable = true
@@ -1615,19 +1662,17 @@ async function uploadFiles(files, type, objectData) {
         formData.append("mechanic", data.mechanic)
         formData.append("post", data.post)
 
-        let object
-        if (type === "zn") {
-            object = "zn"
+        if (objectData && objectData.uuid) {
+            formData.append("identical_str", objectData.uuid)
         } else {
-            object = "zn_items"
-            formData.append("uuid", objectData.uuid)
+            formData.append("identical_str", null)
         }
 
         for (const file of files) {
             formData.append("files", file, file.name)
         }
 
-        const response = await fetch(`${API_PATH}/files/create/${object}`, {
+        const response = await fetch(`${API_PATH}/files/create`, {
             method: "POST",
             credentials: "include",
             body: formData,
@@ -1702,6 +1747,30 @@ function constructFileIcon(file) {
     return icon
 }
 
+
+function constructFileTypeIcon(type) {
+    const typeIcon = document.createElement("div")
+    typeIcon.className = "file-type-icon"
+
+    switch (type) {
+        case "zn":
+            typeIcon.innerHTML = SVG.zn
+            break
+        case "rec":
+            typeIcon.innerHTML = SVG.rec
+            break
+        case "jobs":
+            typeIcon.innerHTML = SVG.job
+            break
+        case "parts":
+            typeIcon.innerHTML = SVG.part
+            break
+    }
+
+    return typeIcon
+}
+
+
 function initTookButton() {
     tookButton.addEventListener("click", () => {
         if (tookButton.classList.contains("clicked")) {
@@ -1746,11 +1815,6 @@ function initEscapeButton() {
 }
 
 
-const recApply = document.querySelector("#recApply")
-const recArea = document.querySelector("#recArea")
-const recInput = document.querySelector("#recInput")
-
-
 function initRecommendation() {
     recApply.addEventListener("click", async () => {
         if (!canChange) {
@@ -1773,22 +1837,21 @@ function initRecommendation() {
 		
 		const newData = currentData + addData
 
-        const result = await sendRequestToServer(
+        const result = await smartSendRequest(
             "info/rec",
             "POST",
             {
                 rec: newData,
                 zn_number: znNumber,
+            },
+            (data) => {
+                recArea.value = newData
             }
         )
 
-        if (!result) {
-			createNotification("error", "Ошибка отправки данных")
-		} else {
-			recArea.value = newData
-		}
-
         recInput.value = ""
+
+        return result
     })
 }
 
@@ -1854,23 +1917,7 @@ function initStartZN() {
 	async function setStatus(status, func) {
         setLoading()
  
-        const result = await sendStatus(status)
-
-        if (!result) {
-            createNotification("error", "Ошибка отправки данных")
-        } else {
-            if (result.data) {
-                func()
-            } else {
-                if (result.message === "not-everything-done") {
-                    createNotification("warning", "Для остановки необходимо всё выполнить")
-                } else if (result.message === "error") {
-                    createNotification("error", "На сервере произошла ошибка")
-                } else {
-                    createNotification("error", "На сервере произошла неизвестная ошибка")
-                }
-            }
-        }
+        const result = await sendStatus(status, func)
 
         clearLoading()
     }
@@ -1897,63 +1944,59 @@ function initStartZN() {
         }
     })
 
-    async function sendStatus(status) {
+    async function sendStatus(status, onOk) {
         const data = Cookie.getGroup([
             "mechanic", "post", "znNumber"
         ])
 		
 		if (!data) return false
 
-        const result = await sendRequestToServer(
-            "info/zn_status/set",
+        return await smartSendRequest(
+            "info/status/set",
             "POST",
             {
                 zn_number: data.znNumber,
                 post: data.post,
                 mechanic: data.mechanic,
                 status: status
-            }
+            },
+            onOk
         )
-
-        if (!result) return false
-
-        return result
     }
 }
 
 async function updateZNStatus() {
     const data = Cookie.getGroup([
-        "mechanic", "znNumber"
+        "post", "znNumber"
     ])
 
     if (!data) return
 
-    const result = await sendRequestToServer(
-        "info/zn_status/get",
+    return await smartSendRequest(
+        "info/status/get",
         "POST",
         {
             zn_number: data.znNumber,
-            mechanic: data.mechanic,
+            post: data.post,
+        },
+        (result) => {
+            if (result === "never") {
+                setStartStatus()
+            } else if (result === "start") {
+                setUnStartStatus()
+            } else if (result === "stopped") {
+                setUnStartStatus()
+                setStoppedStatus()
+            } else if (result === "paused") {
+                setUnStartStatus()
+                setPausedStatus()
+            } else {
+                return false
+            }
+
+            return true
         }
     )
-
-    if (!result) return false
-
-    if (result === "never") {
-        setStartStatus()
-    } else if (result === "start") {
-        setUnStartStatus()
-	} else if (result === "stopped") {
-		setUnStartStatus()
-        setStoppedStatus()
-	} else if (result === "paused") {
-		setUnStartStatus()
-        setPausedStatus()
-    } else {
-        return false
-    }
-
-    return true
 }
 
 

@@ -45,9 +45,10 @@ async function updateTable() {
 
     if (!post) return
 
-    return await getSmth(
-        `info/zns/${post}`,
-        "GET",
+    return await smartSendRequest(
+        `info/zns`,
+        "POST",
+        {post: post},
         (data) => {
             if (!data.length) {
                 infoTable.innerHTML = ""

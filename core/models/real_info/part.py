@@ -5,31 +5,26 @@ from typing import TYPE_CHECKING
 from sqlalchemy import String, ForeignKey, Boolean, func, Float
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from .base import Base
+from ._base import RealInfoBase
 from .help_classes import Life, Stage, CanDone
 
 
 if TYPE_CHECKING:
     from .zn import ZN
-    from .file import File
 
 
-class Job(Base, Life, Stage, CanDone):
+class Part(RealInfoBase, Life, Stage, CanDone):
     uuid: Mapped[str] = mapped_column(
         String,
-        primary_key=True,
+        nullable=False,
+        unique=False
     )
 
     zn_number: Mapped[str] = mapped_column(
         String,
         ForeignKey('zns.number'),
         unique=False,
-    )
-
-    number: Mapped[float] = mapped_column(
-        Float,
         nullable=False,
-        unique=False
     )
 
     name: Mapped[str] = mapped_column(
@@ -38,15 +33,33 @@ class Job(Base, Life, Stage, CanDone):
         unique=False
     )
 
-    normal_time: Mapped[float] = mapped_column(
+    manufacturer_code: Mapped[str] = mapped_column(
+        String,
+        nullable=False,
+        unique=False
+    )
+
+    manufacturer: Mapped[str] = mapped_column(
+        String,
+        nullable=False,
+        unique=False
+    )
+
+    quantity: Mapped[float] = mapped_column(
         Float,
+        nullable=False,
+        unique=False
+    )
+
+    units: Mapped[str] = mapped_column(
+        String,
         nullable=False,
         unique=False
     )
 
     zn: Mapped[ZN] = relationship(
         "ZN",
-        back_populates="jobs"
+        back_populates="parts"
     )
 
     done: Mapped[bool] = mapped_column(
@@ -62,12 +75,20 @@ class Job(Base, Life, Stage, CanDone):
 
     @staticmethod
     def for_value() -> list[str]:
-        return ["number", "name", "normal_time"]
+        return [
+            "name",
+            "manufacturer_code",
+            "manufacturer",
+            "quantity",
+            "units"
+        ]
 
     def as_dict(self):
         return {
-            "number": self.number,
             "name": self.name,
-            "normal_time": self.normal_time,
+            "manufacturer_code": self.manufacturer_code,
+            "manufacturer": self.manufacturer,
+            "quantity": self.quantity,
+            "units": self.units,
             "done": self.done,
         }

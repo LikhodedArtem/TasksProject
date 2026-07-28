@@ -2,14 +2,15 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import String, ForeignKey, DateTime, func
+from sqlalchemy import String, ForeignKey, DateTime, func, Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column
 
-from .base import Base
+from ._base import RealInfoBase
 from .help_classes import Life
+from ..common import FileType
 
 
-class File(Base, Life):
+class File(RealInfoBase, Life):
     uuid: Mapped[str] = mapped_column(
         String,
         primary_key=True,
@@ -27,9 +28,22 @@ class File(Base, Life):
         unique=False
     )
 
-    identical_str: Mapped[str] = mapped_column(
+    zn_number: Mapped[str] = mapped_column(
         String,
+        ForeignKey("zns.number"),
         nullable=False,
+        unique=False
+    )
+
+    type: Mapped[str] = mapped_column(
+        SQLEnum(FileType, name="type"),
+        nullable=False,
+        unique=False
+    )
+
+    identical_str: Mapped[str | None] = mapped_column(
+        String,
+        nullable=True,
         unique=False
     )
 
