@@ -14,7 +14,9 @@ from zipfile import ZIP_DEFLATED, ZipFile
 from fastapi import APIRouter, Body, Form, UploadFile, File as FastFile
 from fastapi.responses import StreamingResponse
 
-from core.models import *
+from core.models.db_helper import *
+from core.models.changes import *
+from core.models.real_info import *
 from crud import *
 
 

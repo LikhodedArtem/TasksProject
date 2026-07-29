@@ -79,6 +79,9 @@ async function getPosts() {
         null,
         (data) => {
             updatePostsData(data)
+        },
+        (data) => {
+            updatePostsData([])
         }
     )
 }
@@ -91,6 +94,9 @@ async function getMechanics() {
         (data) => {
             updateMechanicsData(data)
         },
+        (data) => {
+            updatePostsData([])
+        }
     )
 }
 

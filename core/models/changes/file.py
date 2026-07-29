@@ -1,20 +1,15 @@
-from sqlalchemy import String, Boolean, ForeignKey
+from sqlalchemy import String, ForeignKey, Float
 from sqlalchemy.orm import Mapped, mapped_column
 
 from ._base import ChangeBase
+from .help_classes import ChangeType
 
 
-class DoneChange(ChangeBase):
-    identical_str: Mapped[str] = mapped_column(
+class FileChange(ChangeBase, ChangeType):
+    uuid: Mapped[str] = mapped_column(
         String,
-        nullable=False,
-        unique=False,
-    )
-
-    value: Mapped[bool] = mapped_column(
-        Boolean,
-        nullable=False,
-        unique=False,
+        ForeignKey('files.uuid'),
+        primary_key=True,
     )
 
     mechanic: Mapped[str] = mapped_column(

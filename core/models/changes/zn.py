@@ -2,10 +2,10 @@ from sqlalchemy import String, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 
 from ._base import ChangeBase
-from .help_classes import Change, ChangeType
+from .help_classes import ChangeType
 
 
-class ZNChange(ChangeRealInfoBase, Change, ChangeType):
+class ZNChange(ChangeBase, ChangeType):
     number: Mapped[str] = mapped_column(
         String,
         ForeignKey("zns.number"),
@@ -44,5 +44,5 @@ class ZNChange(ChangeRealInfoBase, Change, ChangeType):
 
     car_vin: Mapped[str] = mapped_column(
         String,
-        ForeignKey('car.vin'),
+        ForeignKey('cars.vin'),
     )

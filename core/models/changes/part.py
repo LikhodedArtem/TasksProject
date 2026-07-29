@@ -5,7 +5,7 @@ from ._base import ChangeBase
 from .help_classes import ChangeType
 
 
-class PartChange(ChangeRealInfoBase, ChangeType):
+class PartChange(ChangeBase, ChangeType):
     uuid: Mapped[str] = mapped_column(
         String,
         ForeignKey('parts.uuid'),

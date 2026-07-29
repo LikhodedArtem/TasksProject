@@ -8,24 +8,17 @@ from sqlalchemy.orm import Mapped, mapped_column
 from ._base import RealInfoBase
 
 
-class DoneLog(RealInfoBase):
-    id: Mapped[int] = mapped_column(
-        Integer,
-        primary_key=True
-    )
-
+class Done(RealInfoBase):
     mechanic: Mapped[str] = mapped_column(
         String,
         ForeignKey('mechanics.key'),
-        nullable=False,
-        unique=False
+        primary_key=True,
     )
 
     post: Mapped[str] = mapped_column(
         String,
         ForeignKey('mainposts.name'),
-        nullable = False,
-        unique = False
+        primary_key=True,
     )
 
     zn_number: Mapped[str] = mapped_column(
@@ -35,7 +28,7 @@ class DoneLog(RealInfoBase):
         unique=False
     )
 
-    uuid: Mapped[str] = mapped_column(
+    identical_str: Mapped[str] = mapped_column(
         String,
         nullable=False,
         unique=False
@@ -47,26 +40,8 @@ class DoneLog(RealInfoBase):
         unique = False
     )
 
-    new_value: Mapped[bool] = mapped_column(
+    value: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
         unique=False
     )
-
-    time: Mapped[datetime] = mapped_column(
-        DateTime,
-        server_default=func.now(),
-        default=datetime.now,
-        nullable=False,
-        unique=False
-    )
-
-    def as_dict(self):
-        return {
-            "id": self.id,
-            "mechanic": self.mechanic,
-            "post": self.post,
-            "type": self.type,
-            "new_value": self.new_value,
-            "time": self.time,
-        }

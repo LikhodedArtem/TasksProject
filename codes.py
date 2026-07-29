@@ -23,7 +23,7 @@ def safe_route(error_message: str | None = None):
             except Exception as e:
                 if error_message:
                     print(error_message)
-                traceback.format_exc()
+                traceback.print_exc()
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=f"Неизвестная ошибка: {str(e)}"

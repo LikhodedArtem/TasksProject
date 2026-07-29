@@ -516,14 +516,21 @@ class SmartContainer {
 class SmartSSESource {
     constructor() {
         this._sseSourse = null
+        this._events = {}
         this.lastMessageAt = null
     }
 
-    start(type) {
+    start(type, data) {
         try {
             this.close()
 
-            this._sseSourse = new EventSource(`${API_PATH}/info/events/${type}`)
+            let options = ""
+
+            for (const obj of data) {
+                options += `/${obj}`
+            }
+
+            this._sseSourse = new EventSource(`${API_PATH}/sse/${type}${options}`)
 
             this._sseSourse.onopen = () => {
                 console.log("SSE connected")
@@ -560,6 +567,36 @@ class SmartSSESource {
         }
     }
 
+    addEvent(name, func) {
+        if (!this._sseSourse) return
+
+        function eventReact(event) {
+            console.log(1)
+            func(event)
+            console.log(2)
+        }
+
+        this._sseSourse.addEventListener(name, eventReact)
+
+        if (this._events[name] === undefined) {
+            this._events[name] = []
+        }
+
+        this._events[name].push(eventReact)
+    }
+
+    removeEvent(name) {
+        if (!this._sseSourse) return
+
+        if (this._events[name] === undefined) return
+
+        for (const eventFunc of this._events[name]) {
+            this._sseSourse.removeEventListener(name, eventFunc)
+        }
+
+        delete this._events[name]
+    }
+
     close() {
         if (this._sseSourse) {
             this._sseSourse.close()
@@ -568,6 +605,8 @@ class SmartSSESource {
     }
 
     delete() {
+        if (!this._sseSourse) return
+
         this.close()
         this._sseSourse = null
     }

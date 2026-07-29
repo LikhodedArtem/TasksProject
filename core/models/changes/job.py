@@ -5,7 +5,7 @@ from ._base import ChangeBase
 from .help_classes import ChangeType
 
 
-class JobChange(ChangeRealInfoBase, ChangeType):
+class JobChange(ChangeBase, ChangeType):
     uuid: Mapped[str] = mapped_column(
         String,
         ForeignKey('jobs.uuid'),

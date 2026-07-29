@@ -16,8 +16,7 @@ if TYPE_CHECKING:
 class Part(RealInfoBase, Life, Stage, CanDone):
     uuid: Mapped[str] = mapped_column(
         String,
-        nullable=False,
-        unique=False
+        primary_key=True,
     )
 
     zn_number: Mapped[str] = mapped_column(

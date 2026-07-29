@@ -5,8 +5,8 @@ from sqlalchemy import select, update, delete, func, exists
 from sqlalchemy.orm import selectinload, joinedload
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.models import *
-from core.models.real_info.mechanic import Mechanic
+from core.models.changes import *
+from core.models.real_info import *
 
 
 async def add_object(
@@ -346,17 +346,6 @@ async def change_done(
         { "uuid": uuid },
         { "done": new_value }
     )
-
-    done_log = DoneLog(
-        mechanic=mechanic,
-        post=post,
-        zn_number=zn_number,
-        uuid=uuid,
-        type=type,
-        new_value=new_value,
-    )
-
-    await add_object(session, done_log)
 
 
 

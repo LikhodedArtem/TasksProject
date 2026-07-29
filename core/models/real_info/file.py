@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from enum import Enum
 from datetime import datetime
 
 from sqlalchemy import String, ForeignKey, DateTime, func, Enum as SQLEnum
@@ -7,7 +8,13 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from ._base import RealInfoBase
 from .help_classes import Life
-from ..common import FileType
+
+
+class FileType(str, Enum):
+    ZN = "zn"
+    REC = "rec"
+    JOBS = "jobs"
+    PARTS = "parts"
 
 
 class File(RealInfoBase, Life):

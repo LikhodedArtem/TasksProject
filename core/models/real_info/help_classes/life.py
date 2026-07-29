@@ -14,8 +14,6 @@ class Life:
 
     death_time: Mapped[datetime] = mapped_column(
         DateTime,
-        server_default=func.now(),
-        default=datetime.now,
-        nullable=False,
+        nullable=True,
         unique=False
     )

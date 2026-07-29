@@ -10,9 +10,6 @@ __pycache__/
 /files/*
 !/files/.gitkeep
 
-/sse/
-/web/sse
-
 /alembic/
 
 db.sqlite3

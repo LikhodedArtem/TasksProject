@@ -1,8 +1,14 @@
+from sqlalchemy.orm import declared_attr
+
 from ..base import Base
 
 
 class RealInfoBase(Base):
     __abstract__ = True
+
+    @declared_attr.directive
+    def __tablename__(cls) -> str:
+        return f"{cls.__name__.lower()}s"
 
 
 __all__ = ['RealInfoBase']

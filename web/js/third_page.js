@@ -96,6 +96,8 @@ async function init() {
     initStartZN()
     if (!await updateZNStatus()) return "статуса"
 
+    initSSE()
+
     initPackagesEvents()
     initTookButton()
     initCustomPinFiles()
@@ -140,7 +142,7 @@ async function updateZnInfo(data) {
     reg.replaceChild(beautyReg(data.car.reg), reg.querySelector("span"))
 
     const znList = ["date", "manager", "assistant"]
-    const carList = ["win", "model", "year", "millage"]
+    const carList = ["vin", "model", "year", "millage"]
 
     for(const u of znList) {
         let text = data[u]
@@ -2000,10 +2002,13 @@ async function updateZNStatus() {
 }
 
 
-function initSSE() {
-    sseSource = createSSESource()
+async function initSSE() {
+    sseSource = new SmartSSESource()
 
-    sseSource.addEventListener("done")
+    const znNumber = Cookie.get("znNumber")
+    if (!znNumber) return
+
+    sseSource.start("third_page", [znNumber])
 }
 
 

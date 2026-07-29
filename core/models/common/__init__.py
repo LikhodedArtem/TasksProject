@@ -1,4 +1,4 @@
-from .file_type import FileType
+from .post_zn_status_enum import PostZNStatusEnum
 
 
-__all__ = ['FileType']
+__all__ = ['PostZNStatusEnum']

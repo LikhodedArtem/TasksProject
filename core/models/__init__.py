@@ -1,17 +1,5 @@
-from core.models.real_info.mechanic import Mechanic
+from .db_helper import db_helper
+from .base import Base
 
-__all__ = [
-    "Base",
-    "ZN",
-    "Post",
-    "Car",
-    "Job",
-    "ZN_mtm_Post",
-    "Part",
-    "Mechanic",
-    "DoneLog",
-    "MainPost",
-    "File",
-    "PostZNStatus",
-    "db_helper"
-]
+
+__all__ = ["db_helper", "Base"]

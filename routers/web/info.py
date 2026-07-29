@@ -5,7 +5,9 @@ from typing import Annotated
 from fastapi import APIRouter, Body, HTTPException, status
 
 from codes import safe_route
-from core.models import *
+from core.models import db_helper
+from core.models.changes import *
+from core.models.real_info import *
 from crud import *
 from help_functions import as_dict
 
@@ -377,8 +379,6 @@ class Status:
             status = await find_objects(
                 session=session,
                 model=PostZNStatus,
-                order_by=[PostZNStatus.time.desc()],
-                limit=1,
                 zn_number=zn_number,
                 post=post,
             )
@@ -399,15 +399,33 @@ class Status:
             mechanic: str,
             status: str
     ):
-        m_status = PostZNStatus(
-            zn_number=zn_number,
-            mechanic=mechanic,
-            post=post,
-            status=status,
-        )
-
         async with db_helper.session_factory() as session:
-            await add_object(session, m_status)
+            find_status = await find_objects(
+                session=session,
+                model=PostZNStatus,
+                zn_number=zn_number,
+                post=post,
+            )
+
+        if find_status is None:
+            new_status = PostZNStatus(
+                zn_number=zn_number,
+                post=post,
+                mechanic=mechanic,
+                status=status,
+            )
+
+            async with db_helper.session_factory() as session:
+                await add_object(session, new_status)
+
+        else:
+            async with db_helper.session_factory() as session:
+                await update_objects(
+                    session=session,
+                    model=PostZNStatus,
+                    for_find={"post": post, "zn_number": zn_number},
+                    for_update={"status": status, "mechanic": mechanic},
+                )
 
 
 class Rec:

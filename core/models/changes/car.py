@@ -5,7 +5,7 @@ from ._base import ChangeBase
 from .help_classes import ChangeType
 
 
-class CarChange(ChangeRealInfoBase, ChangeType):
+class CarChange(ChangeBase, ChangeType):
     vin: Mapped[str] = mapped_column(
         String,
         ForeignKey('cars.vin'),

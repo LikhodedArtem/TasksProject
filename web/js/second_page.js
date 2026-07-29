@@ -138,7 +138,7 @@ function constructCarCell(model) {
     modelFooter.className = "car-footer"
 
     modelHeader.append(
-        constructCarCellCarCell(model.win, "win"),
+        constructCarCellCarCell(model.vin, "vin"),
         constructCarCellCarCell(model.reg, "reg"),
     )
 
