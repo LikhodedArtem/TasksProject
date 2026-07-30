@@ -162,6 +162,46 @@ async def get_objects_with_has_files(
     return answer
 
 
+
+async def get_zn_with_has_files(
+        session: AsyncSession,
+        zn_number: str,
+):
+    zn_has_files = exists().where(
+        File.is_alive.is_(True),
+        File.zn_number == zn_number,
+        File.type == "zn",
+    )
+
+    rec_has_files = exists().where(
+        File.is_alive.is_(True),
+        File.zn_number == zn_number,
+        File.type == "rec",
+    )
+
+    stmt = (select(
+        ZN,
+        zn_has_files.label("zn_has_files"),
+        rec_has_files.label("rec_has_files")
+    ).where(
+        ZN.is_alive.is_(True),
+        ZN.number == zn_number,
+    ).options(
+        joinedload(ZN.car))
+    ).limit(1)
+
+    result = await session.execute(stmt)
+
+    answer = result.all()
+
+    if not answer:
+        return None
+
+    if len(answer) == 1:
+        return answer[0]
+
+    return answer
+
 # async def check_can_stop(
 #         session: AsyncSession,
 #         mechanic: str,
@@ -324,6 +364,27 @@ async def kill_old_in_model(
     return answer
 
 
+async def has_files(
+        session: AsyncSession,
+        **kwargs,
+) -> bool:
+    conditions = build_conditions(File, kwargs)
+
+    stmt = select(
+        exists(File)
+        .where(
+            File.is_alive.is_(True),
+            *conditions
+        )
+    )
+
+    result = await session.execute(stmt)
+    answer = result.scalar()
+
+    return answer
+
+
+
 async def change_done(
         session: AsyncSession,
         mechanic: str,
@@ -361,4 +422,6 @@ __all__ = [
     "get_current_zn_stage",
     "get_objects_with_has_files",
     "get_current_main_posts_stage",
+    "has_files",
+    "get_zn_with_has_files"
 ]

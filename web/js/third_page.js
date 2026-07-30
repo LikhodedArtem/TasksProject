@@ -1,5 +1,11 @@
+let mechanic = null
+let znNumber = null
+let post = null
+
+
 class RecurringTimer {
     constructor(callback, delay) {
+        console.log(callback)
         this.callback = callback
         this.delay = delay
         this.remaining = delay
@@ -55,11 +61,19 @@ const detailsTableValue = detailsTable.querySelector(".table-content")
 const tookButton = document.querySelector("#took")
 
 const headerPinFiles = document.querySelector("#headerPinFiles")
+let znHasFiles = false
 const recPinFiles = document.querySelector("#recPinFiles")
 
 const recApply = document.querySelector("#recApply")
 const recArea = document.querySelector("#recArea")
 const recInput = document.querySelector("#recInput")
+
+const jobs = document.querySelector("#jobs")
+const parts = document.querySelector("#parts")
+
+
+const jobsData = new SmartContainer()
+const partsData = new SmartContainer()
 
 
 const EXTENSIONS = {
@@ -76,6 +90,16 @@ let sseSource = null
 
 async function start() {
     initEscapeButton()
+
+    post = Cookie.get("post")
+    znNumber = Cookie.get("znNumber")
+    mechanic = Cookie.get("mechanic")
+
+    if (!mechanic || !znNumber || !post) {
+        createNotification("error", "")
+        return
+    }
+
     setLoading()
 
     const result = await init()
@@ -89,9 +113,9 @@ async function start() {
 async function init() {
     if (!await getZnInfo()) return "заказ-наряда"
 
-    if (!await updateWorksTable()) return "работ"
+    if (!await uploadJobsTable()) return "работ"
 
-    if (!await updateDetailsTable()) return "запчастей"
+    if (!await uploadPartsTable()) return "запчастей"
 
     initStartZN()
     if (!await updateZNStatus()) return "статуса"
@@ -107,9 +131,6 @@ async function init() {
 }
 
 async function getZnInfo() {
-    const znNumber = Cookie.get("znNumber")
-    if (!znNumber) return false
-
     return await smartSendRequest(
         `info/zn`,
         "POST",
@@ -124,15 +145,48 @@ async function getZnInfo() {
 
 
 function hasFiles(pinFiles) {
-    pinFiles.classList.add("has-files")
+    if (!pinFiles.classList.contains("has-files")) {
+        pinFiles.classList.add("has-files")
+    }
     headerPinFiles.classList.add("has-files")
 }
 
 function hasNotFiles(pinFiles) {
-    pinFiles.classList.remove("has-files")
+    if (pinFiles.classList.contains("has-files")) {
+        pinFiles.classList.remove("has-files")
+        if (pinFiles !== headerPinFiles) updateHeaderPinFiles()
+    }
+}
+
+function updateHeaderPinFiles() {
+    if (znHasFiles) {
+        headerPinFiles.add("has-files")
+        return
+    }
+
+    const pinsFiles = document.querySelectorAll(".pin-files")
+
+    let hasFiles = false
+
+    for (const pinFiles of Array.from(pinsFiles)) {
+        if (pinFiles !== headerPinFiles && pinFiles.classList.contains("has-files")) {
+            hasFiles = true
+            return
+        }
+    }
+
+    if (!hasFiles) {
+        headerPinFiles.classList.remove("has-files")
+    }
 }
 
 async function updateZnInfo(data) {
+    if (data.zn_has_files) {
+        hasFiles(headerPinFiles)
+        znHasFiles = true
+    }
+
+
     if (data.rec_has_files) {
         hasFiles(recPinFiles)
     }
@@ -172,20 +226,6 @@ async function updateZnInfo(data) {
 
     recArea.disabled = true
     recArea.value = data.recommendation
-}
-
-
-async function updateTable(url, data, tableValue, renderRow, on404) {
-    return await smartSendRequest(
-        url,
-        "POST",
-        data,
-        (data) => {
-            renderData(data, tableValue, renderRow)
-            return true
-        },
-        on404
-    )
 }
 
 
@@ -256,34 +296,51 @@ function renderDetailsRow(row, indx) {
     ]
 }
 
-async function updateWorksTable() {
-    const znNumber = Cookie.get("znNumber")
-    if (!znNumber) return false
 
-    return await updateTable(
+async function uploadJobsTable() {
+    return await uploadTable(
         `info/jobs`,
         {zn_number: znNumber},
-        worksTableValue,
-        renderWorksRow,
+        (data) => {
+            jobsData.replace(data)
+            updateJobsTable()
+        },
         () => {
-            document.querySelector("#jobs .package").className = "package close-forever empty"
+            jobs.querySelector(".package").className = "package close-forever empty"
         }
     )
 }
 
-async function updateDetailsTable() {
-    const znNumber = Cookie.get("znNumber")
-    if (!znNumber) return false
-
-    return await updateTable(
+async function uploadPartsTable() {
+    return await uploadTable(
         `info/parts`,
         {zn_number: znNumber},
-        detailsTableValue,
-        renderDetailsRow,
+        (data) => {
+            partsData.replace(data)
+            updatePartsTable()
+        },
         () => {
-            document.querySelector("#parts .package").className = "package close-forever empty"
+            parts.querySelector(".package").className = "package close-forever empty"
         }
     )
+}
+
+async function uploadTable(url, data, onOk, on404) {
+    return await smartSendRequest(
+        url,
+        "POST",
+        data,
+        onOk,
+        on404
+    )
+}
+
+async function updateJobsTable() {
+    renderData(jobsData.data(), worksTableValue, renderWorksRow)
+}
+
+async function updatePartsTable() {
+    renderData(partsData.data(), detailsTableValue, renderDetailsRow)
 }
 
 function removePackageRightPanel(packageP) {
@@ -319,16 +376,10 @@ async function saveDone(uuid, type, value, all) {
 
 async function sendDone(uuid, type, value, all) {
     try {
-        const data = Cookie.getGroup([
-            "mechanic", "post", "znNumber"
-        ])
-
-        if (!data) return
-
         const requestData = {
-            mechanic: data.mechanic,
-            post: data.post,
-            zn_number: data.znNumber,
+            mechanic: mechanic,
+            post: post,
+            zn_number: znNumber,
             type: type,
             new_value: value,
             uuid: uuid,
@@ -407,7 +458,8 @@ function initPackagesEvents() {
 
         const wrapper = packageP.closest(".package-wrapper")
         const valueWrapper = wrapper.querySelector(".package-value-wrapper")
-        const value = wrapper.querySelector(".package-value")
+        const value = valueWrapper.querySelector(".package-value")
+        const tableContent = value.querySelector(".table-content")
 
         value.style.height = pxToRem(value.scrollHeight) + 'rem'
 
@@ -477,6 +529,17 @@ function initPackagesEvents() {
                 return
             }
 
+            const data = type === "jobs" ? jobsData : partsData
+
+            if(!data.update(
+                {done: value},
+                {uuid: uuid},
+                1,
+            ).length) {
+                createNotification("error", "Ошибка обновления данных на странице")
+                return
+            }
+
             if (rowContent.classList.contains("yes")) {
                 rowContent.classList.remove("yes")
                 noCheckbox(doneAll)
@@ -522,11 +585,11 @@ function initPackagesEvents() {
                     const uuids = []
                     const value = !doneAll.classList.contains("yes")
 
-                    for(const rowContent of rowContents) {
-                        if (rowContent.classList.contains("yes") !== value) {
-                            uuids.push(rowContent.dataset.uuid)
-                        }
+                    for (const rowContent of rowContents) {
+                        uuids.push(rowContent.dataset.uuid)
                     }
+
+                    if (!uuids.length) return
 
                     const done = await saveDone(
                         uuids,
@@ -539,6 +602,10 @@ function initPackagesEvents() {
                         createNotification("error", "Нет связи с сервером")
                         return false
                     }
+
+                    const data = type === "jobs" ? jobsData : partsData
+
+                    data.update({done: value})
 
                     for (const rowContent of rowContents) {
                         func(rowContent)
@@ -573,6 +640,34 @@ function initPackagesEvents() {
                 }
             }
         })
+
+        // Outer API
+
+        function oneRowDone(done, index) {
+            const row = Array.from(tableContent.children)[index]
+
+            if (done) {
+                row.classList.add("yes")
+                updateDoneAll()
+            } else {
+                row.classList.remove("yes")
+                noCheckbox(doneAll)
+            }
+        }
+
+        // function allRowDone(done) {
+        //     if (done) {
+        //         Array.from(rowContents).forEach((rowContent) => { rowContent.classList.add("yes") })
+        //         yesCheckbox(doneAll)
+        //     } else {
+        //         Array.from(rowContents).forEach((rowContent) => { rowContent.classList.remove("yes") })
+        //         noCheckbox(doneAll)
+        //     }
+        // }
+        //
+        // wrapper.allRowDone = allRowDone
+
+        wrapper.oneRowDone = oneRowDone
     })
 }
 
@@ -618,7 +713,7 @@ function constructPinFilesCell(addClass, type, rowContent) {
         downloadButton.innerHTML = SVG.download
 
         const playButton = document.createElement("button")
-        playButton.className = "play-button"
+        playButton.className = "play-button hide"
         playButton.innerHTML = SVG.play
 
         const clickedCounter = document.createElement("span")
@@ -675,7 +770,7 @@ function constructPinFilesCell(addClass, type, rowContent) {
         async function getFilesFromBase() {
             try {
                 const data = {
-                    zn_number: Cookie.get("znNumber"),
+                    zn_number: znNumber,
                 }
 
                 if (type !== "zn") {
@@ -684,8 +779,6 @@ function constructPinFilesCell(addClass, type, rowContent) {
                         data.identical_str = rowContent.dataset.uuid
                     }
                 }
-
-
 
                 const response = await fetch(`${API_PATH}/files/get`, {
                     method: "POST",
@@ -797,7 +890,11 @@ function constructPinFilesCell(addClass, type, rowContent) {
         let isUploadFiles = false
 
         function updateTypes(length) {
-            if (type === "zn" && realInput._storedTypes) {
+            if (type === "zn") {
+                if (!realInput._storedTypes) {
+                    realInput._storedTypes = []
+                }
+
                 const newTypes = []
 
                 for (let i = 0; i < length; i++) {
@@ -934,9 +1031,15 @@ function constructPinFilesCell(addClass, type, rowContent) {
         function renderFiles() {
             filePanel.innerHTML = ""
 
+            let hasZN = false
+
             for (let index = 0; index < realInput.files.length; index++) {
                 const file = realInput.files[index]
                 const type = realInput._storedTypes !== null ? realInput._storedTypes[index] : null
+
+                if (type === "zn") {
+                    hasZN = true
+                }
 
                 filePanel.append(
                     constructFile(
@@ -945,6 +1048,10 @@ function constructPinFilesCell(addClass, type, rowContent) {
                         type,
                     )
                 )
+            }
+
+            if (realInput._storedTypes !== null) {
+                znHasFiles = hasZN
             }
 
             updateCounter(realInput.files.length)
@@ -1076,19 +1183,13 @@ function constructPinFilesCell(addClass, type, rowContent) {
                 }
             }
 
-            const data = Cookie.getGroup([
-                "mechanic", "post"
-            ])
-
-            if (!data) return false
-
             const response = await smartSendRequest(
                 "files/delete",
                 "POST",
                 {
                     uuids: deleteUUIDS,
-                    mechanic: data.mechanic,
-                    post: data.post,
+                    mechanic: mechanic,
+                    post: post,
                 }
             )
 
@@ -1185,8 +1286,6 @@ function createRecordPanel(addClass, addButtons, appendFile) {
     let lastRecordedBlob = null
     let lastRecordedUrl = null
 
-    const timer = new RecurringTimer(addTimeCounter, 1000)
-
     const pinFilesCellWrapper = document.createElement("div")
     pinFilesCellWrapper.className = "background-blur fast"
     pinFilesCellWrapper.style.zIndex = 101
@@ -1210,6 +1309,8 @@ function createRecordPanel(addClass, addButtons, appendFile) {
     isRecordActive.textContent = isAudio ? "Микрофон" : "Камера"
 
     if (addButtons) {
+        const timer = new RecurringTimer(addTimeCounter, 1000)
+
         const timeCounter = document.createElement("div")
         timeCounter.className = "time-counter"
 
@@ -1457,8 +1558,6 @@ function createRecordPanel(addClass, addButtons, appendFile) {
                 const hour = time.getHours()
                 const minutes = time.getMinutes()
 
-                const mechanic = Cookie.get("mechanic")
-
                 const name = `${mechanic} ${addZero(hour)}:${addZero(minutes)} ${addZero(date)}.${addZero(month)}.${year.toString().slice(2)}`
                 const extension = getExtensionFromBlob(lastRecordedBlob)
                 const fileName = `${name}.${extension}`
@@ -1653,16 +1752,10 @@ async function uploadFiles(files, type, objectData) {
     try {
         const formData = new FormData()
 
-        const data = Cookie.getGroup([
-            "mechanic", "post", "znNumber"
-        ])
-
-        if (!data) return
-
-        formData.append("zn_number", data.znNumber)
+        formData.append("zn_number", znNumber)
         formData.append("type", type)
-        formData.append("mechanic", data.mechanic)
-        formData.append("post", data.post)
+        formData.append("mechanic", mechanic)
+        formData.append("post", post)
 
         if (objectData && objectData.uuid) {
             formData.append("identical_str", objectData.uuid)
@@ -1832,10 +1925,6 @@ function initRecommendation() {
 		if (currentData && currentData.slice(currentData.lenght - 1) !== "\n") {
 			addData = "\n" + addData
 		}
-
-        const znNumber = Cookie.get("znNumber")
-		
-        if (!znNumber) return
 		
 		const newData = currentData + addData
 
@@ -1947,19 +2036,13 @@ function initStartZN() {
     })
 
     async function sendStatus(status, onOk) {
-        const data = Cookie.getGroup([
-            "mechanic", "post", "znNumber"
-        ])
-		
-		if (!data) return false
-
         return await smartSendRequest(
             "info/status/set",
             "POST",
             {
-                zn_number: data.znNumber,
-                post: data.post,
-                mechanic: data.mechanic,
+                zn_number: znNumber,
+                post: post,
+                mechanic: mechanic,
                 status: status
             },
             onOk
@@ -1968,18 +2051,12 @@ function initStartZN() {
 }
 
 async function updateZNStatus() {
-    const data = Cookie.getGroup([
-        "post", "znNumber"
-    ])
-
-    if (!data) return
-
     return await smartSendRequest(
         "info/status/get",
         "POST",
         {
-            zn_number: data.znNumber,
-            post: data.post,
+            zn_number: znNumber,
+            post: post,
         },
         (result) => {
             if (result === "never") {
@@ -2003,12 +2080,75 @@ async function updateZNStatus() {
 
 
 async function initSSE() {
-    sseSource = new SmartSSESource()
+    sseSource = new SmartSSESource(MY_UUID)
 
-    const znNumber = Cookie.get("znNumber")
-    if (!znNumber) return
+    await sseSource.start("third_page", {"zn": znNumber})
 
-    sseSource.start("third_page", [znNumber])
+    // type: str, uuid: str, new_value: bool
+    sseSource.addEvent("done", ({ type, uuid, new_value }) => {
+        const data = type === "jobs" ? jobsData : partsData
+        const packageWrapper =  type === "jobs" ? jobs : parts
+
+        const indexes = data.update(
+            {done: new_value},
+            {uuid: uuid},
+            1
+        )
+
+        if (indexes.length) {
+            packageWrapper.oneRowDone(new_value, indexes[0])
+        }
+    })
+
+    // type: str, new_value: bool, uuids: list[str]
+    sseSource.addEvent("done_all", ({ type, uuids, new_value }) => {
+        const data = type === "jobs" ? jobsData : partsData
+        const packageWrapper = type === "jobs" ? jobs : parts
+
+        for (const uuid of uuids) {
+            const indexes = data.update(
+                {done: new_value},
+                {uuid: uuid},
+                1
+            )
+
+            if (indexes.length) {
+                 packageWrapper.oneRowDone(new_value, indexes[0])
+            }
+        }
+    })
+
+    // type: str, identical_str: str | None, has_files: bool
+    sseSource.addEvent("has_files", ({ type, identical_str, has_files }) => {
+        let pinFiles
+
+        if (type === "zn") {
+            pinFiles = headerPinFiles
+            znHasFiles = has_files
+        } else if (type === "rec") {
+            pinFiles = recPinFiles
+        } else {
+            const data = type === "jobs" ? jobsData : partsData
+            const packageWrapper = type === "jobs" ? jobs : parts
+
+            const result = data.update(
+                {has_files: has_files},
+                {uuid: identical_str},
+                1
+            )
+
+            if (!result.length) {
+                createNotification("error", "Ошибка обновления данных на странице")
+                return
+            }
+
+            pinFiles = Array.from(packageWrapper.querySelectorAll(".pin-files"))[result[0]]
+        }
+
+        has_files
+            ? pinFiles.classList.add("has-files")
+            : pinFiles.classList.remove("has-files")
+    })
 }
 
 

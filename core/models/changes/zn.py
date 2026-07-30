@@ -12,6 +12,12 @@ class ZNChange(ChangeBase, ChangeType):
         primary_key=True,
     )
 
+    car_vin: Mapped[str] = mapped_column(
+        String,
+        ForeignKey('cars.vin'),
+        primary_key=True,
+    )
+
     date: Mapped[str] = mapped_column(
         String,
         nullable=True,
@@ -40,9 +46,4 @@ class ZNChange(ChangeBase, ChangeType):
         String,
         nullable=True,
         unique=False,
-    )
-
-    car_vin: Mapped[str] = mapped_column(
-        String,
-        ForeignKey('cars.vin'),
     )

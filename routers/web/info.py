@@ -1,15 +1,17 @@
 """ Работа с информацией на web части """
 import asyncio
 from typing import Annotated
+from uuid import UUID
 
-from fastapi import APIRouter, Body, HTTPException, status
+from fastapi import APIRouter, Body, HTTPException, status, Request, Depends
 
 from codes import safe_route
 from core.models import db_helper
 from core.models.changes import *
 from core.models.real_info import *
 from crud import *
-from help_functions import as_dict
+from help_functions import as_dict, get_client_id
+from sse.managers import *
 
 info_router = APIRouter(prefix="/info", tags=["info"])
 
@@ -84,6 +86,7 @@ async def done(
         uuid: Annotated[str, Body()],
         type: Annotated[str, Body()],
         new_value: Annotated[bool, Body()],
+        client_id: UUID | None = Depends(get_client_id),
 ):
     return await Done.done(
         mechanic=mechanic,
@@ -92,6 +95,7 @@ async def done(
         uuid=uuid,
         type=type,
         new_value=new_value,
+        client_id=client_id,
     )
 
 """Установить сделано или не сделано на все запчасти или все работы заказ наряда"""
@@ -105,6 +109,7 @@ async def done_all(
         uuid: Annotated[list[str], Body()],
         type: Annotated[str, Body()],
         new_value: Annotated[bool, Body()],
+        client_id: UUID | None = Depends(get_client_id),
 ):
     return await Done.done_all(
         mechanic=mechanic,
@@ -113,6 +118,7 @@ async def done_all(
         uuid=uuid,
         type=type,
         new_value=new_value,
+        client_id=client_id,
     )
 
 
@@ -217,20 +223,18 @@ class CreateAnswer:
     @classmethod
     async def zn(cls, zn_number: str):
         async with db_helper.session_factory() as session:
-            data = await get_objects_with_has_files(
+            data = await get_zn_with_has_files(
                 session=session,
-                model=ZN,
-                joinedload_lst=[ZN.car],
-                for_find={"is_alive": True, "number": zn_number},
-                for_files={"zn_number": zn_number, "type": "rec"},
+                zn_number=zn_number,
             )
 
         def parse(data):
-            zn, has_files = data
+            zn, zn_has_files, rec_has_files = data
 
             dict_zn = as_dict(zn)
             dict_zn["car"] = as_dict(zn.car)
-            dict_zn["rec_has_files"] = has_files
+            dict_zn["zn_has_files"] = zn_has_files
+            dict_zn["rec_has_files"] = rec_has_files
 
             return dict_zn
 
@@ -334,6 +338,7 @@ class Done:
             uuid: str,
             type: str,
             new_value: bool,
+            client_id: UUID | None = None,
     ):
         async with db_helper.session_factory() as session:
             await change_done(
@@ -346,6 +351,15 @@ class Done:
                 new_value=new_value
             )
 
+        await third_page_manager.broadcast(
+            data={"type": type, "uuid": uuid, "new_value": new_value},
+            event="done",
+            broadcast_event="zn",
+            add_info=zn_number,
+            id_="test",
+            author=client_id,
+        )
+
     @staticmethod
     async def done_all(
             uuid: list[str],
@@ -354,6 +368,7 @@ class Done:
             type: str,
             zn_number: str,
             new_value: bool,
+            client_id: UUID | None = None,
     ):
         async def fetch_one(obj_uuid):
             async with db_helper.session_factory() as session:
@@ -367,6 +382,15 @@ class Done:
                     new_value=new_value,
                 )
         await asyncio.gather(*(fetch_one(obj_uuid) for obj_uuid in uuid))
+
+        await third_page_manager.broadcast(
+            data={"type": type, "new_value": new_value, "uuids": uuid},
+            event="done_all",
+            broadcast_event="zn",
+            add_info=zn_number,
+            id_="test",
+            author=client_id,
+        )
 
 
 class Status:

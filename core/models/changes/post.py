@@ -15,8 +15,7 @@ class PostChange(ChangeBase, ChangeType):
     main_post_name: Mapped[str] = mapped_column(
         String,
         ForeignKey('mainposts.name'),
-        nullable=False,
-        unique=False
+        primary_key=True
     )
 
     date1: Mapped[str] = mapped_column(

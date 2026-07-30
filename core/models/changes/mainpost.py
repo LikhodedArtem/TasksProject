@@ -15,5 +15,5 @@ class MainPostChange(ChangeBase, ChangeType):
     territory: Mapped[str] = mapped_column(
         String,
         unique=False,
-        nullable=False,
+        nullable=True,
     )

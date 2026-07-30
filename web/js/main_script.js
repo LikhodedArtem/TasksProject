@@ -1,3 +1,6 @@
+const MY_UUID = crypto.randomUUID()
+
+
 const body = document.querySelector(".body")
 
 
@@ -191,7 +194,8 @@ async function sendRequestToServer(
             method: method,
             credentials: 'include',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'X-Client-Id': MY_UUID,
             },
             body: body
         })
@@ -238,6 +242,9 @@ async function smartSendRequest(
 
                 if (result != null) return result
             }
+
+            if (answer) return answer
+
             return true
         }
 
@@ -453,9 +460,13 @@ class SmartContainer {
         limit=null,
     ) {
         let count = 0
+        let index = -1
+
+        const indexes = []
 
         outerLoop:
         for (const row of this._data) {
+            index++
             if (forFind) {
                 for (const [key, value] of Object.entries(forFind)) {
                     if (row[key] !== value) {
@@ -468,6 +479,7 @@ class SmartContainer {
                 row[key] = value
             }
 
+            indexes.push(index)
             count++
 
             if (limit && limit === count) {
@@ -475,7 +487,7 @@ class SmartContainer {
             }
         }
 
-        return count
+        return indexes
     }
 
     delete(
@@ -514,41 +526,50 @@ class SmartContainer {
 
 
 class SmartSSESource {
-    constructor() {
+    constructor(uuid) {
+        this._uuid = uuid
         this._sseSourse = null
         this._events = {}
+        this._SSEEvents = {}
+
+        this.delay = 5
+
         this.lastMessageAt = null
     }
 
-    start(type, data) {
+    async start(type) {
         try {
+            console.log("start")
             this.close()
 
-            let options = ""
-
-            for (const obj of data) {
-                options += `/${obj}`
-            }
-
-            this._sseSourse = new EventSource(`${API_PATH}/sse/${type}${options}`)
+            this._sseSourse = new EventSource(`${API_PATH}/sse/connect/${type}/${this._uuid}`)
 
             this._sseSourse.onopen = () => {
                 console.log("SSE connected")
             }
 
-            this._sseSourse.onerror = (e) => {
-                if (e.readyState === EventSource.CONNECTING) {
+            this._sseSourse.onerror = () => {
+                if (this._sseSourse.readyState === EventSource.CONNECTING) {
                     console.log("SSE reconnecting...")
-                } else if (e.readyState === EventSource.CONNECTING) {
+                } else if (this._sseSourse.readyState === EventSource.CLOSED) {
                     console.log("SSE connection completely closed")
+
+                    setTimeout(() => { this.start(type) }, this.delay * 1000)
                 } else {
-                    console.log("SSE unexpected error")
+                    console.error(`SSE unexpected error: ${this._sseSourse.readyState}`)
                 }
             }
 
             this._sseSourse.addEventListener("heartbeat", () => {
                 this.lastMessageAt = Date.now()
             })
+
+            for (const [event, funcList] of Object.entries(this._events)) {
+                for (const func of funcList) {
+                    this._sseSourse.addEventListener(event, func)
+                    console.log(event, func)
+                }
+            }
 
             document.addEventListener("visibilitychange", () => {
                 if (document.hidden) {
@@ -563,20 +584,35 @@ class SmartSSESource {
             })
 
         } catch (e) {
-            console.error("Error while starting SSE connection")
+            console.error(`Error while starting SSE connection: ${e}`)
         }
+    }
+
+    close() {
+        if (this._sseSourse) {
+            this._sseSourse.close()
+            console.log("SSE closed")
+        }
+    }
+
+    async stop() {
+        this.close()
+        this._sseSourse = null
+        this._uuid = null
+
+        console.log("SSE stopped")
     }
 
     addEvent(name, func) {
         if (!this._sseSourse) return
 
-        function eventReact(event) {
-            console.log(1)
-            func(event)
-            console.log(2)
+        function eventReact(data) {
+            func(data)
         }
 
-        this._sseSourse.addEventListener(name, eventReact)
+        this._sseSourse.addEventListener(name, (event) => {
+            eventReact(JSON.parse(event.data))
+        })
 
         if (this._events[name] === undefined) {
             this._events[name] = []
@@ -597,17 +633,44 @@ class SmartSSESource {
         delete this._events[name]
     }
 
-    close() {
-        if (this._sseSourse) {
-            this._sseSourse.close()
-            console.log("SSE closed")
+    async subscribeSSEEvents(data) {
+        try {
+            for ()
+
+            const optionals = SmartSSESource.createOptionals(data)
+
+            const result = await sendRequestToServer(`sse/subscribe/events/${this._uuid}?${optionals}`, "PUT")
+
+            if (!result) console.error("SSE subscribe events Error")
+        } catch (e) {
+            console.error(`SSE subscribe events Error: ${e}`)
+        }
+
+    }
+
+    async unsubscribeSSEEvents(data) {
+        try {
+            const optionals = SmartSSESource.createOptionals(data)
+
+            const result = await sendRequestToServer(`sse/unsubscribe/events/${this._uuid}?${optionals}`, "PUT")
+
+            if (!result) console.error("SSE subscribe events Error")
+        } catch (e) {
+            console.error(`SSE unsubscribe events Error: ${e}`)
         }
     }
 
-    delete() {
-        if (!this._sseSourse) return
+    static createOptionals(data) {
+        if (!Object.keys(data).length) {
+            return ""
+        }
 
-        this.close()
-        this._sseSourse = null
+        const optionals = []
+
+        for (const [key, value] of Object.entries(data)) {
+            optionals.push(`${key}=${value == null ? "None" : value}`)
+        }
+
+        return optionals.join("&")
     }
 }

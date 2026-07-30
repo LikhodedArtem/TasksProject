@@ -15,36 +15,35 @@ class PartChange(ChangeBase, ChangeType):
     zn_number: Mapped[str] = mapped_column(
         String,
         ForeignKey('zns.number'),
-        unique=False,
-        nullable=False,
+        primary_key=True,
     )
 
     name: Mapped[str] = mapped_column(
         String,
-        nullable=False,
+        nullable=True,
         unique=False
     )
 
     manufacturer_code: Mapped[str] = mapped_column(
         String,
-        nullable=False,
+        nullable=True,
         unique=False
     )
 
     manufacturer: Mapped[str] = mapped_column(
         String,
-        nullable=False,
+        nullable=True,
         unique=False
     )
 
     quantity: Mapped[float] = mapped_column(
         Float,
-        nullable=False,
+        nullable=True,
         unique=False
     )
 
     units: Mapped[str] = mapped_column(
         String,
-        nullable=False,
+        nullable=True,
         unique=False
     )

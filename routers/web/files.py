@@ -7,18 +7,19 @@ import traceback
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
-from uuid import uuid4
+from uuid import uuid4, UUID
 from zipfile import ZIP_DEFLATED, ZipFile
 
 
-from fastapi import APIRouter, Body, Form, UploadFile, File as FastFile
+from fastapi import APIRouter, Body, Form, UploadFile, File as FastFile, Depends
 from fastapi.responses import StreamingResponse
+from help_functions import get_client_id
 
 from core.models.db_helper import *
 from core.models.changes import *
 from core.models.real_info import *
 from crud import *
-
+from sse.managers import *
 
 files_router = APIRouter(prefix="/files", tags=["files"])
 
@@ -40,6 +41,7 @@ async def create(
     files: list[UploadFile] = FastFile(...),
     mechanic: str = Form(...),
     post: str = Form(...),
+    client_id: UUID | None = Depends(get_client_id),
 ) -> list[str]:
     return await Files.create(
         zn_number=zn_number,
@@ -48,6 +50,7 @@ async def create(
         files=files,
         mechanic=mechanic,
         post=post,
+        client_id=client_id,
     )
 
 
@@ -77,11 +80,13 @@ async def kill(
         uuids: Annotated[list[str], Body()],
         mechanic: Annotated[str, Body()],
         post: Annotated[str, Body()],
+        client_id: UUID | None = Depends(get_client_id),
 ):
     return await Files.kill(
         uuids=uuids,
         mechanic=mechanic,
         post=post,
+        client_id=client_id,
     )
 
 
@@ -166,7 +171,27 @@ class Files:
             files: list[UploadFile],
             post: str,
             mechanic: str,
+            client_id: UUID | None = None,
     ):
+        send_sse = False
+
+        async with db_helper.session_factory() as session:
+            has = await has_files(
+                session=session,
+                zn_number=zn_number,
+                type=type,
+                identical_str=identical_str,
+            )
+
+        if not has:
+            sse_data = {
+                "identical_str": identical_str,
+                "type": type,
+                "has_files": True,
+            }
+
+            send_sse = True
+
         if type == "zn":
             destination = UPLOAD_DIR / zn_number / "files"
         elif type == "rec":
@@ -174,7 +199,7 @@ class Files:
         else:
             destination = UPLOAD_DIR / zn_number / identical_str
 
-        return await cls._create_all_zn(
+        result = await cls._create_all_zn(
             zn_number=zn_number,
             type=type,
             files=files,
@@ -183,6 +208,18 @@ class Files:
             identical_str=identical_str,
             destination=destination,
         )
+
+        if send_sse:
+            await third_page_manager.broadcast(
+                data=sse_data,
+                event="has_files",
+                broadcast_event="zn",
+                add_info=zn_number,
+                id_="test",
+                author=client_id,
+            )
+
+        return result
 
     @classmethod
     async def get(
@@ -264,6 +301,7 @@ class Files:
             post: str,
             mechanic: str,
             uuids: list[str],
+            client_id: UUID | None = None,
     ):
         for uuid in uuids:
             async with db_helper.session_factory() as session:
@@ -278,3 +316,35 @@ class Files:
                         "delete_post": post,
                     }
                 )
+
+        async with db_helper.session_factory() as session:
+            identical_file = await find_objects(
+                session=session,
+                model=File,
+                uuid=uuids[0],
+            )
+
+            identical_str = identical_file.identical_str
+            zn_number = identical_file.zn_number
+            type = identical_file.type
+
+            has = await has_files(
+                session=session,
+                identical_str=identical_str,
+                zn_number=zn_number,
+                type=type,
+            )
+
+        if not has:
+            await third_page_manager.broadcast(
+                data={
+                    "identical_str": identical_str,
+                    "type": type,
+                    "has_files": False,
+                },
+                event="has_files",
+                broadcast_event="zn",
+                add_info=zn_number,
+                id_="test",
+                author=client_id,
+            )

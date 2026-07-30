@@ -1,6 +1,5 @@
 from ._base import RealInfoBase
 from .car import Car
-from .done import Done
 from .file import File
 from .job import Job
 from .main_post import MainPost
@@ -15,7 +14,6 @@ from .zn_mtm_post import ZN_mtm_Post
 __all__ = [
     "RealInfoBase",
     "Car",
-    "Done",
     "File",
     "Job",
     "MainPost",

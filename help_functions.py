@@ -1,4 +1,7 @@
 from typing import Any
+from uuid import UUID
+
+from fastapi import Header
 
 
 def as_dict(obj) -> dict[str, Any]:
@@ -7,6 +10,10 @@ def as_dict(obj) -> dict[str, Any]:
         keys.append("done")
 
     return {key: getattr(obj, key) for key in keys}
+
+
+def get_client_id(x_client_id: UUID | None = Header(default=None)) -> UUID | None:
+    return x_client_id
 
 
 # def create_update(

@@ -15,24 +15,23 @@ class JobChange(ChangeBase, ChangeType):
     zn_number: Mapped[str] = mapped_column(
         String,
         ForeignKey('zns.number'),
-        unique=False,
-        nullable=False,
+        primary_key=True,
     )
 
     number: Mapped[float] = mapped_column(
         Float,
-        nullable=False,
+        nullable=True,
         unique=False
     )
 
     name: Mapped[str] = mapped_column(
         String,
-        nullable=False,
+        nullable=True,
         unique=False
     )
 
     normal_time: Mapped[float] = mapped_column(
         Float,
-        nullable=False,
+        nullable=True,
         unique=False
     )
