@@ -1,4 +1,43 @@
 const MY_UUID = crypto.randomUUID()
+const generateUUIDv7 = (() => {
+    let lastTimestamp = -1;
+    let counter = 0;
+
+    return function () {
+        const bytes = new Uint8Array(16);
+        let timestamp = Date.now();
+
+        if (timestamp <= lastTimestamp) {
+            timestamp = lastTimestamp;
+            counter += 1;
+
+            if (counter > 0xfff) {
+                timestamp += 1;
+                counter = 0;
+            }
+        } else {
+            counter = crypto.getRandomValues(new Uint16Array(1))[0] & 0xfff;
+        }
+
+        lastTimestamp = timestamp;
+
+        bytes[0] = (timestamp / 2 ** 40) & 0xff;
+        bytes[1] = (timestamp / 2 ** 32) & 0xff;
+        bytes[2] = (timestamp / 2 ** 24) & 0xff;
+        bytes[3] = (timestamp / 2 ** 16) & 0xff;
+        bytes[4] = (timestamp / 2 ** 8) & 0xff;
+        bytes[5] = timestamp & 0xff;
+        bytes[6] = 0x70 | ((counter >> 8) & 0x0f);
+        bytes[7] = counter & 0xff;
+
+        crypto.getRandomValues(bytes.subarray(8));
+        bytes[8] = (bytes[8] & 0x3f) | 0x80;
+
+        const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+
+        return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+    };
+})();
 
 
 const body = document.querySelector(".body")
@@ -525,6 +564,38 @@ class SmartContainer {
 }
 
 
+class Queue {
+    constructor() {
+        this._items = {}
+        this._head = 0
+        this._tail = 0
+    }
+
+    push(element) {
+        this._items[this._tail] = element
+        this._tail++
+    }
+
+    get() {
+        if (this.isEmpty()) return undefined
+
+        const item = this._items[this._head]
+        delete this._items[this._head]
+        this._head++
+
+        return item
+    }
+
+    isEmpty() {
+        return this._tail - this._head === 0
+    }
+
+    size () {
+        return this._tail - this._head
+    }
+}
+
+
 class SmartSSESource {
     constructor(type, uuid) {
         this._type = type
@@ -534,8 +605,6 @@ class SmartSSESource {
 
         this._sseEvents = {}
         this._serverEvents = {}
-
-        this.delay = 5
 
         this._lastId = null
         this._retry = 3000
@@ -683,20 +752,20 @@ class SmartSSESource {
 
             this._stopped = false
 
-            const result = await this._connect()
+            await this._connect()
 
-            if (result === this.STOPPED) {
-                return this.STOPPED
-            } else if (result === this.LOST_CONNECTION) {
-                this._stopped = false
-                this._reconnecting = true
-
-                console.log("SSE reconnecting...")
-
-                setTimeout(() => {
-                    this.start()
-                }, this.delay * 1000)
-            }
+            // if (result === this.STOPPED) {
+            //     return this.STOPPED
+            // } else if (result === this.LOST_CONNECTION) {
+            //     this._stopped = false
+            //     this._reconnecting = true
+            //
+            //     console.log("SSE reconnecting...")
+            //
+            //     setTimeout(() => {
+            //         this.start()
+            //     }, this.delay * 1000)
+            // }
         } catch (e) {
             console.error(`Error while starting SSE connection: ${e}`)
         }
@@ -804,12 +873,150 @@ class SmartSSESource {
 }
 
 
-// class RequestContainer {
-//     constructor() {
-//         this._reconnectTimer = null
-//         this.delay = 10
-//
-//     }
-//
-//     async send()
-// }
+class RequestContainer {
+    constructor() {
+        this._requestQueue = new Queue()
+
+        this._reconnectTimeout = null
+        this.delay = 10
+
+        this.CONNECTED = true
+
+        this.SSE = null
+    }
+
+    async send({
+            addURL,
+            method,
+            data = null,
+            headers = {},
+            credentials = "omit",
+            timeout = 3,
+            func = null,
+            onErrorsFuncs = null,
+            changeUUID = false,
+       }) {
+        let body
+        if (typeof data === 'string') {
+            body = data
+        } else if (data != null) {
+            body = JSON.stringify(data)
+        } else {
+            body = null
+        }
+
+        if (changeUUID) {
+            headers['Change-UUID'] = generateUUIDv7()
+        }
+
+        async function fetchInvoker() {
+            const response = await fetch(
+                `${API_PATH}/${addURL.replace(/^\/+/, "")}`,
+                {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Client-Id': MY_UUID,
+                        ...headers
+                    },
+                    body: body,
+                    credentials: credentials,
+                    signal: AbortController.timeout(timeout * 1000)
+                }
+            )
+
+            if (!response.ok) {
+                if (!onErrorsFuncs
+                    || Object.keys(onErrorsFuncs).indexOf(response.status) === -1) return
+
+                const find = onErrorsFuncs[response.status]
+
+                if (typeof find === "function") {
+                    find(response)
+                } else {
+                    for (const func of find) {
+                        func(response)
+                    }
+                }
+
+                return
+            }
+
+            if (typeof func === "function") {
+                let data
+                try {
+                    data = await response.json()
+                } catch (e) {
+                    data = response.body
+                }
+
+                func(data)
+            }
+        }
+
+        try {
+            await fetchInvoker()
+
+            this.CONNECTED = true
+            if (this._reconnectTimeout) clearTimeout(this._reconnectTimeout)
+
+            this._runQueue()
+
+        } catch (error) {
+            this._requestQueue.push(fetchInvoker)
+
+            this.CONNECTED = false
+            if (this._reconnectTimeout) clearTimeout(this._reconnectTimeout)
+
+            this._setTimeout()
+        }
+    }
+
+    async _runQueue() {
+        if (!this.CONNECTED) {
+            await this._connect()
+
+            if (!this.CONNECTED) {
+                this._setTimeout()
+                return
+            }
+        }
+
+        while (!this._requestQueue.isEmpty()) {
+            const requestInvoker = this._requestQueue.get()
+
+            try {
+                await requestInvoker()
+            } catch (e) {
+                this.CONNECTED = false
+                this._setTimeout()
+            }
+        }
+
+        if (this.SSE && this.CONNECTED) this.SSE.start()
+    }
+
+    _setTimeout() {
+        this._reconnectTimeout = setTimeout(
+            this._runQueue(),
+            this.delay * 1000
+        )
+    }
+
+    async _connect() {
+        try {
+            await fetch(
+                API_PATH,
+                {
+                    method: "HEAD",
+                    signal: AbortSignal.timeout(4000),
+                    cache: "no-store"
+                }
+            )
+
+            this.CONNECTED = true
+        } catch (error) {
+            this.CONNECTED = false
+        }
+    }
+}
