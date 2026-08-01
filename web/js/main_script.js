@@ -1020,3 +1020,5 @@ class RequestContainer {
         }
     }
 }
+
+const requestManager = new RequestContainer()

@@ -2076,7 +2076,6 @@ async function initSSE() {
     sseSource = new SmartSSESource("third_page", MY_UUID)
 
     sseSource.start()
-
     await sseSource.subServerEvents({"zn": znNumber})
 
     // type: str, uuid: str, new_value: bool
