@@ -102,8 +102,6 @@ class SSEManager:
             broadcast_all: bool = False,
             author: str | None = None,
     ):
-        print(self._clients)
-
         if not self._clients: return
 
         if not broadcast_all:

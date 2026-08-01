@@ -76,23 +76,36 @@ async def unsubscribe(uuid: UUID):
     manager.unsubscribe(uuid)
 
 
-@sse_router.put("/subscribe/events/{uuid}")
-async def subscribe_event(request: Request, uuid: UUID):
+@sse_router.post("/subscribe/events/{uuid}")
+async def subscribe_event(
+        request: Request,
+        uuid: UUID
+):
     manager = get_manager(uuid)
 
-    params: dict[str, str] = dict(request.query_params)
+    params: dict[str, None | str | list[str]] = await request.json()
 
     if params:
-        for key, value in params.items():
-            manager.subscribe_event(uuid, key, value if value != "None" else None)
+        for event, add_info in params.items():
+            if isinstance(add_info, list):
+                for item in add_info:
+                    manager.subscribe_event(uuid, event, item)
+                continue
+
+            manager.subscribe_event(uuid, event, add_info)
 
 
-@sse_router.put("/unsubscribe/events/{uuid}")
+@sse_router.post("/unsubscribe/events/{uuid}")
 async def unsubscribe_event(request: Request, uuid: UUID):
     manager = get_manager(uuid)
 
-    params: dict[str, str] = dict(request.query_params)
+    params: dict[str, None | str | list[str]] = await request.json()
 
     if params:
-        for key, value in params.items():
-            manager.unsubscribe_event(uuid, key, value if value != "None" else None)
+        for event, add_info in params.items():
+            if isinstance(add_info, list):
+                for item in add_info:
+                    manager.unsubscribe_event(uuid, event, item)
+                continue
+
+            manager.unsubscribe_event(uuid, event, add_info)

@@ -1894,13 +1894,6 @@ function noCheckbox(checkBox) {
     }
 }
 
-
-window.addEventListener("beforeunload", () => {
-    if (sseSource) {
-        sseSource.close()
-    }
-})
-
 function initEscapeButton() {
     const escapeButton = document.querySelector(".escape")
 
@@ -2080,12 +2073,14 @@ async function updateZNStatus() {
 
 
 async function initSSE() {
-    sseSource = new SmartSSESource(MY_UUID)
+    sseSource = new SmartSSESource("third_page", MY_UUID)
 
-    await sseSource.start("third_page", {"zn": znNumber})
+    sseSource.start()
+
+    await sseSource.subServerEvents({"zn": znNumber})
 
     // type: str, uuid: str, new_value: bool
-    sseSource.addEvent("done", ({ type, uuid, new_value }) => {
+    sseSource.addSSEEvent("done", ({ type, uuid, new_value }) => {
         const data = type === "jobs" ? jobsData : partsData
         const packageWrapper =  type === "jobs" ? jobs : parts
 
@@ -2101,7 +2096,7 @@ async function initSSE() {
     })
 
     // type: str, new_value: bool, uuids: list[str]
-    sseSource.addEvent("done_all", ({ type, uuids, new_value }) => {
+    sseSource.addSSEEvent("done_all", ({ type, uuids, new_value }) => {
         const data = type === "jobs" ? jobsData : partsData
         const packageWrapper = type === "jobs" ? jobs : parts
 
@@ -2119,7 +2114,7 @@ async function initSSE() {
     })
 
     // type: str, identical_str: str | None, has_files: bool
-    sseSource.addEvent("has_files", ({ type, identical_str, has_files }) => {
+    sseSource.addSSEEvent("has_files", ({ type, identical_str, has_files }) => {
         let pinFiles
 
         if (type === "zn") {
