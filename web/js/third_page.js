@@ -2120,7 +2120,6 @@ async function initSSE() {
     requestManager.SSE = sseSource
     sseSource.requests = requestManager
 
-
     // type: str, uuid: str, new_value: bool
     sseSource.addSSEEvent("done", ({ type, uuid, new_value }) => {
         const data = type === "jobs" ? jobsData : partsData

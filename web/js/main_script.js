@@ -740,6 +740,7 @@ class SmartSSESource {
             }
 
             this.stopped = true
+            this.reconnecting = false
             this.requests.CONNECTED = false
         } catch (e) {
             console.error(`Error while starting SSE connection: ${e}`)
@@ -870,7 +871,7 @@ class RequestContainer {
     }
 
     run() {
-        this._setTimeout()
+        this._runQueue()
     }
 
     async send(
@@ -952,20 +953,15 @@ class RequestContainer {
 
         try {
             await fetchInvoker()
-
             this.CONNECTED = true
-            this._removeTimeout()
 
-            this._runQueue()
             // console.log("Function Success")
+
         } catch (error) {
+            this.CONNECTED = false
             this._requestQueue.push(fetchInvoker)
 
-            this.CONNECTED = false
-
-            this._setTimeout()
             // console.log(`Function Failed by reason: ${error}`)
-            return false
         }
     }
 
@@ -993,15 +989,12 @@ class RequestContainer {
             results.forEach((result, index) => {
                 if (result.status === "rejected") {
                     remaining.push(this._requestQueue[index])
+                    console.error("Error while request function!")
                     hasFailure = true
                 }
             })
 
             this._requestQueue = remaining
-
-            if (hasFailure) {
-                this.CONNECTED = false
-            }
 
             if (this.CONNECTED
                 && this.SSE
@@ -1052,3 +1045,4 @@ class RequestContainer {
 }
 
 const requestManager = new RequestContainer()
+requestManager.run()
