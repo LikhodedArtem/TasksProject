@@ -588,6 +588,8 @@ class SmartSSESource {
             'X-Client-ID': uuid,
         }
 
+        this.requests = null
+
         document.addEventListener("visibilitychange", () => {
             if (document.hidden) {
                 this.stop()
@@ -617,22 +619,26 @@ class SmartSSESource {
                 }
             )
 
+            console.log("SSE connected")
+
             if (Object.keys(this._serverEvents).length) {
-                await fetch(
-                    `${API_PATH}/sse/subscribe/events`,
-                    {
-                        method: "POST",
-                        body: JSON.stringify(this._serverEvents),
-                        headers: this.headers,
-                    },
+                await this.subServerEvents(
+                    this._serverEvents,
+                    true,
+                    false
                 )
             }
+
+            console.log("SSE subscribed")
+
+            this.stopped = false
+            this.reconnecting = false
+
+            this.requests.CONNECTED = true
 
             const reader = response.body.getReader()
             const decoder = new TextDecoder()
             let buffer = ""
-
-            console.log("SSE connected")
 
             while (true) {
                 const { done, value } = await reader.read()
@@ -723,8 +729,7 @@ class SmartSSESource {
 
             console.log("SSE starting...")
 
-            this.stopped = false
-            this.reconnecting = false
+            this.reconnecting = true
 
             const result = await this._connect()
 
@@ -735,6 +740,7 @@ class SmartSSESource {
             }
 
             this.stopped = true
+            this.requests.CONNECTED = false
         } catch (e) {
             console.error(`Error while starting SSE connection: ${e}`)
         }
@@ -770,24 +776,27 @@ class SmartSSESource {
     }
 
     // data format: dict[str, null | str | list[str]]
-    async subServerEvents(data) {
+    async subServerEvents(
+        data,
+        send = false,
+        add = true) {
         try {
-            const result = await fetch(
-                `${API_PATH}/sse/subscribe/events`,
-                {
-                    method: "POST",
-                    body: JSON.stringify(data),
-                    headers: this.headers,
-                }
-            )
+            if (send) {
+                const response = await fetch(
+                    `${API_PATH}/sse/subscribe/events`,
+                    {
+                        method: "POST",
+                        body: JSON.stringify(data),
+                        headers: this.headers,
+                    },
+                )
 
-            if (result !== true) {
-                console.error(`SSE subscribe events Error`)
+                if (!response.ok) throw new Error(response.statusText)
             }
 
+            if (!add) return
+
             for (let [event, addInfo] of Object.entries(data)) {
-
-
                 if (this._serverEvents[event] === null) continue
 
                 if (addInfo === null) {
@@ -812,9 +821,9 @@ class SmartSSESource {
     }
 
     // data format: dict[str, null | str | list[str]]
-    async unsubServerEvents(data) {
+    async unsubServerEvents(data, remove = true) {
         try {
-            const result = await fetch(
+            const response = await fetch(
                 `${API_PATH}/sse/unsubscribe/events`,
                 {
                     method: "POST",
@@ -823,9 +832,9 @@ class SmartSSESource {
                 }
             )
 
-            if (result !== true) {
-                console.error(`SSE unsubscribe events Error`)
-            }
+            if (!response.ok) throw new Error(response.statusText)
+
+            if (!remove) return
 
             for (let [event, addInfo] of Object.entries(data)) {
                 if (this._serverEvents[event] === undefined) continue
@@ -961,7 +970,7 @@ class RequestContainer {
     }
 
     async _runQueue() {
-        console.log(`New Queue run with CONNECTED: ${this.CONNECTED}`)
+        // console.log(`New Queue run with CONNECTED: ${this.CONNECTED}`)
         // console.log(`Queue has functions: ${this._requestQueue.length}`)
 
         try {
@@ -974,7 +983,7 @@ class RequestContainer {
                 }
             }
 
-            console.log("Queue start")
+            // console.log("Queue start")
 
             const results = await Promise.allSettled(this._requestQueue.map((fn) => fn()));
 
@@ -994,7 +1003,13 @@ class RequestContainer {
                 this.CONNECTED = false
             }
 
-            if (this.SSE && this.SSE.stopped) this.SSE.start()
+            if (this.CONNECTED
+                && this.SSE
+                && this.SSE.stopped
+                && !this.SSE.reconnecting
+            ) {
+                this.SSE.start()
+            }
         } finally {
             this._setTimeout()
         }
@@ -1007,8 +1022,6 @@ class RequestContainer {
             () => { this._runQueue() },
             this.delay * 1000
         )
-
-        console.log("New timeout")
     }
 
     _removeTimeout() {
@@ -1035,10 +1048,6 @@ class RequestContainer {
             this.CONNECTED = false
             console.log("Connection Failed")
         }
-    }
-
-    isEmpty() {
-        return this._requestQueue.length === 0
     }
 }
 

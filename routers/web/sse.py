@@ -54,26 +54,6 @@ async def get_sse_events(
     return manager.streaming_response(request, client_id)
 
 
-# @sse_router.post("/subscribe/{type}/{uuid}")
-# async def subscribe(request: Request, type: ManagerType, uuid: UUID):
-#     manager = managers.get(type, None)
-#
-#     if manager is None:
-#         raise HTTPException(status_code=404, detail="This type of manager does not exist")
-#
-#     manager.subscribe(uuid)
-#
-#     params: dict[str, str] = dict(request.query_params)
-#
-#     if params:
-#         for key, value in params.items():
-#             manager.subscribe_event(uuid, key, value if value != "None" else None)
-#
-#     subscriptions[uuid] = manager
-#
-#     return uuid
-
-
 @sse_router.put("/unsubscribe")
 async def unsubscribe(client_id: UUID | None = Depends(get_client_id)):
     manager = get_manager(client_id)
@@ -82,7 +62,7 @@ async def unsubscribe(client_id: UUID | None = Depends(get_client_id)):
 
 
 @sse_router.post("/subscribe/events")
-async def subscribe_event(
+async def subscribe_events(
         request: Request,
         client_id: UUID | None = Depends(get_client_id),
 ):
@@ -101,7 +81,7 @@ async def subscribe_event(
 
 
 @sse_router.post("/unsubscribe/events")
-async def unsubscribe_event(
+async def unsubscribe_events(
         request: Request,
         client_id: UUID | None = Depends(get_client_id),
 ):

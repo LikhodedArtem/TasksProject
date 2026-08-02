@@ -393,18 +393,18 @@ function constructPinFiles() {
 }
 
 
-async function saveDone(uuid, type, value, all) {
-    setLoading()
+// async function saveDone(uuid, type, value, all) {
+//     setLoading()
+//
+//     const done = await sendDone(uuid, type, value, all)
+//
+//     clearLoading()
+//
+//     return done
+// }
 
-    const done = await sendDone(uuid, type, value, all)
 
-    clearLoading()
-
-    return done
-}
-
-
-async function sendDone(uuid, type, value, all) {
+function sendDone(uuid, type, value, all) {
     try {
         const requestData = {
             mechanic: mechanic,
@@ -415,13 +415,21 @@ async function sendDone(uuid, type, value, all) {
             uuid: uuid,
         }
 
-        const result = await smartSendRequest(
-            `info/done${(all) ? "/all" : ""}`,
+        // const result = await smartSendRequest(
+        //     `info/done${(all) ? "/all" : ""}`,
+        //     "POST",
+        //     requestData
+        // )
+
+        requestManager.send(
+            `/info/done${(all) ? "/all" : ""}`,
             "POST",
-            requestData
+            {
+                data: requestData
+            }
         )
 
-        return result != null
+        return true
     } catch (e) {
         console.error(e)
         return false
@@ -547,7 +555,7 @@ function initPackagesEvents() {
                 : "jobs"
             const value = !rowContent.classList.contains("yes")
 
-            const result = await saveDone(
+            const result = sendDone(
                 uuid,
                 type,
                 value,
@@ -621,7 +629,7 @@ function initPackagesEvents() {
 
                     if (!uuids.length) return
 
-                    const done = await saveDone(
+                    const done = sendDone(
                         uuids,
                         type,
                         value,
@@ -2107,10 +2115,11 @@ async function updateZNStatus() {
 async function initSSE() {
     sseSource = new SmartSSESource("third_page", MY_UUID)
 
-    sseSource.start()
     await sseSource.subServerEvents({"zn": znNumber})
 
     requestManager.SSE = sseSource
+    sseSource.requests = requestManager
+
 
     // type: str, uuid: str, new_value: bool
     sseSource.addSSEEvent("done", ({ type, uuid, new_value }) => {
