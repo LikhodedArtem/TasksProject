@@ -404,7 +404,7 @@ function constructPinFiles() {
 // }
 
 
-function sendDone(uuid, type, value, all) {
+async function sendDone(uuid, type, value, all) {
     try {
         const requestData = {
             mechanic: mechanic,
@@ -415,17 +415,12 @@ function sendDone(uuid, type, value, all) {
             uuid: uuid,
         }
 
-        // const result = await smartSendRequest(
-        //     `info/done${(all) ? "/all" : ""}`,
-        //     "POST",
-        //     requestData
-        // )
-
-        requestManager.send(
+        await requestManager.send(
             `/info/done${(all) ? "/all" : ""}`,
             "POST",
             {
-                data: requestData
+                data: requestData,
+                changeUUID: true,
             }
         )
 
@@ -555,7 +550,7 @@ function initPackagesEvents() {
                 : "jobs"
             const value = !rowContent.classList.contains("yes")
 
-            const result = sendDone(
+            const result = await sendDone(
                 uuid,
                 type,
                 value,
@@ -629,7 +624,7 @@ function initPackagesEvents() {
 
                     if (!uuids.length) return
 
-                    const done = sendDone(
+                    const done = await sendDone(
                         uuids,
                         type,
                         value,
@@ -2115,11 +2110,6 @@ async function updateZNStatus() {
 async function initSSE() {
     sseSource = new SmartSSESource("third_page", MY_UUID)
 
-    await sseSource.subServerEvents({"zn": znNumber})
-
-    requestManager.SSE = sseSource
-    sseSource.requests = requestManager
-
     // type: str, uuid: str, new_value: bool
     sseSource.addSSEEvent("done", ({ type, uuid, new_value }) => {
         const data = type === "jobs" ? jobsData : partsData
@@ -2185,6 +2175,13 @@ async function initSSE() {
             ? pinFiles.classList.add("has-files")
             : pinFiles.classList.remove("has-files")
     })
+
+    await sseSource.subServerEvents({"zn": znNumber})
+
+    sseSource.requests = requestManager
+    sseSource.start()
+
+    requestManager.SSE = sseSource
 }
 
 

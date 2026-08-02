@@ -19,12 +19,10 @@ class ChangeBase(Base):
         primary_key=True,
     )
 
-    changed_at: Mapped[datetime] = mapped_column(
-        DateTime,
-        server_default=func.now(),
-        default=datetime.now,
-        nullable=False,
+    sse_uuid: Mapped[UUID] = mapped_column(
+        SQLUUID,
         unique=False,
+        nullable=False,
     )
 
 

@@ -16,30 +16,9 @@ def get_client_id(x_client_id: UUID | None = Header(default=None)) -> UUID | Non
     return x_client_id
 
 
-# def create_update(
-#         data: list[Operation]
-# ) -> dict[str, Any]:
-#     answer = dict()
-#     answer["code"] = 200
-#     answer["message"] = "success"
-#     answer["data"]: dict[str, dict[str, list[dict[str, Any]]]] = dict()
-#
-#     for op in data:
-#         current = answer["data"]
-#
-#         if op.operation not in current:
-#             current[op.operation] = dict()
-#
-#         current = current[op.operation]
-#
-#         if op.model_name not in current:
-#             current[op.model_name] = []
-#
-#         current = current[op.model_name]
-#
-#         current.append(op.data)
-#
-#     return answer
+def get_change_uuid(x_change_uuid: UUID | None = Header(default=None)) -> UUID | None:
+    return x_change_uuid
 
 
-__all__ = ["as_dict"]
+
+__all__ = ["as_dict", "get_client_id", "get_change_uuid"]

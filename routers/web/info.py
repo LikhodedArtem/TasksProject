@@ -10,8 +10,10 @@ from core.models import db_helper
 from core.models.changes import *
 from core.models.real_info import *
 from crud import *
-from help_functions import as_dict, get_client_id
+from help_functions import as_dict, get_client_id, get_change_uuid
 from sse.managers import *
+
+from changes import CreateChange
 
 info_router = APIRouter(prefix="/info", tags=["info"])
 
@@ -86,8 +88,18 @@ async def done(
         uuid: Annotated[str, Body()],
         type: Annotated[str, Body()],
         new_value: Annotated[bool, Body()],
-        client_id: UUID | None = Depends(get_client_id),
+        client_id: UUID = Depends(get_client_id),
+        change_uuid: UUID = Depends(get_change_uuid),
 ):
+    await CreateChange.done(
+        change_uuid=change_uuid,
+        sse_uuid=client_id,
+        identical_str=uuid,
+        value=new_value,
+        mechanic=mechanic,
+        post=post,
+    )
+
     return await Done.done(
         mechanic=mechanic,
         post=post,
@@ -109,7 +121,7 @@ async def done_all(
         uuid: Annotated[list[str], Body()],
         type: Annotated[str, Body()],
         new_value: Annotated[bool, Body()],
-        client_id: UUID | None = Depends(get_client_id),
+        client_id: UUID = Depends(get_client_id),
 ):
     return await Done.done_all(
         mechanic=mechanic,

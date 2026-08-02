@@ -72,8 +72,10 @@ class SSEManager:
 
 
     async def connect(self, request: Request, client_uuid: UUID) -> AsyncGenerator[str, None]:
-        # Пока что не реализованно
-        # last_stage = request.headers.get("Last-Event-ID")
+        last_event_id = request.headers.get("Last-Event-ID")
+        last_change_uuid = last_event_id if last_event_id != "null" else None
+
+        print(last_change_uuid)
 
         try:
             while True:
@@ -102,6 +104,11 @@ class SSEManager:
             broadcast_all: bool = False,
             author: str | None = None,
     ):
+        # print(self._clients)
+        # print(self._subscriptions)
+        # print(self._events)
+        # print(event, broadcast_event, add_info)
+
         if not self._clients: return
 
         if not broadcast_all:

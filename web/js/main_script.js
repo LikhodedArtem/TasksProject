@@ -574,7 +574,9 @@ class SmartSSESource {
         this._sseEvents = {}
         this._serverEvents = {}
 
-        this._lastId = null
+        this._lastIDs = {}
+        this._idsSorter = {}
+
         this._retry = 3000
 
         this.stopped = true
@@ -585,7 +587,7 @@ class SmartSSESource {
 
         this.headers = {
             'Content-Type': 'application/json',
-            'X-Client-ID': uuid,
+            'X-Client-ID': this._uuid,
         }
 
         this.requests = null
@@ -614,7 +616,7 @@ class SmartSSESource {
                     signal: this._controller.signal,
                     headers: {
                         ...this.headers,
-                        'Last-Event-ID': this._lastId
+                        'Last-Event-IDs': JSON.stringify(this._lastIDs)
                     }
                 }
             )
@@ -662,6 +664,7 @@ class SmartSSESource {
 
             return this.STOPPED
         } catch (error) {
+            console.log(`SSE _connect catch Error: ${error}}`)
             if (this.stopped) return this.STOPPED
             return this.LOST_CONNECTION
         }
@@ -719,8 +722,19 @@ class SmartSSESource {
             }
         }
 
-        if (id != null) this._lastId = id
+        if (this._idsSorter[event] !== undefined) {
+            this._lastIDs[this._idsSorter[event]] = id
+        }
         if (retry != null) this._retry = retry
+    }
+
+    // dict[str, list[str]] = ID name: [sseEvents]
+    addIdsSorter(data) {
+        for (const [idName, eventList] of data) {
+            for (const sseEvent of eventList) {
+                this._idsSorter[sseEvent] = idName
+            }
+        }
     }
 
     async start() {
@@ -755,8 +769,6 @@ class SmartSSESource {
     }
 
     addSSEEvent(name, func) {
-        if (this.stopped) return
-
         function eventReact(data) {
             func(data)
         }
@@ -769,8 +781,6 @@ class SmartSSESource {
     }
 
     removeSSEEvent(name) {
-         if (this.stopped) return
-
         if (this._sseEvents[name] === undefined) return
 
         delete this._sseEvents[name]
@@ -814,7 +824,7 @@ class SmartSSESource {
                     continue
                 }
 
-                this._serverEvents = [...this._serverEvents[event], ...addInfo]
+                this._serverEvents[event] = [...this._serverEvents[event], ...addInfo]
             }
         } catch (error) {
             console.error(`SSE subscribe events Error: ${error}`)
@@ -881,7 +891,7 @@ class RequestContainer {
             data = null,
             headers = {},
             credentials = "omit",
-            timeout = 1,
+            timeout = 3,
             okFunc = null,
             anywayFunc = null,
             errorsFuncs = null,
@@ -897,7 +907,7 @@ class RequestContainer {
         }
 
         if (changeUUID) {
-            headers['Change-UUID'] = generateUUIDv7()
+            headers['X-Change-UUID'] = generateUUIDv7()
         }
 
         async function fetchInvoker() {
