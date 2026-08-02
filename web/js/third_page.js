@@ -88,6 +88,26 @@ const CLOSE_SECONDS = 30
 
 let sseSource = null
 
+
+let startRequestsCount = 4
+const startFunctions = []
+
+function doneStartRequest(func) {
+    startRequestsCount--
+    startFunctions.push(func)
+
+    if (startRequestsCount !== 0) return
+
+    for (const func of startFunctions) {
+        func()
+    }
+
+    initEnd()
+
+    clearLoading()
+}
+
+
 async function start() {
     initEscapeButton()
 
@@ -102,23 +122,18 @@ async function start() {
 
     setLoading()
 
-    const result = await init()
-    if (result !== true) {
-        createNotification("error", `Ошибка загрузки ${result}`)
-    }
-
-    clearLoading()
+    initStart()
 }
 
-async function init() {
-    if (!await getZnInfo()) return "заказ-наряда"
+async function initStart() {
+    await getZnInfo()
+    await uploadJobsTable()
+    await uploadPartsTable()
+    await updateZNStatus()
+}
 
-    if (!await uploadJobsTable()) return "работ"
-
-    if (!await uploadPartsTable()) return "запчастей"
-
+function initEnd(){
     initStartZN()
-    if (!await updateZNStatus()) return "статуса"
 
     initSSE()
 
@@ -126,18 +141,19 @@ async function init() {
     initTookButton()
     initCustomPinFiles()
     initRecommendation()
-
-    return true
 }
 
 async function getZnInfo() {
-    return await smartSendRequest(
+    await requestManager.send(
         `info/zn`,
         "POST",
-        {zn_number: znNumber},
-        (data) => {
-            updateZnInfo(data[0])
-            return true
+        {
+            data: {zn_number: znNumber},
+            okFunc: (data) => {
+                doneStartRequest(() => {
+                    updateZnInfo(data)
+                })
+            }
         }
     )
 }
@@ -180,7 +196,9 @@ function updateHeaderPinFiles() {
     }
 }
 
-async function updateZnInfo(data) {
+async function updateZnInfo(info) {
+    const data = info[0]
+
     if (data.zn_has_files) {
         hasFiles(headerPinFiles)
         znHasFiles = true
@@ -326,12 +344,24 @@ async function uploadPartsTable() {
 }
 
 async function uploadTable(url, data, onOk, on404) {
-    return await smartSendRequest(
+    return await requestManager.send(
         url,
         "POST",
-        data,
-        onOk,
-        on404
+        {
+            data: data,
+            okFunc: (data) => {
+                doneStartRequest(() => {
+                    onOk(data)
+                })
+            },
+            errorsFuncs: {
+                404: (data) => {
+                    doneStartRequest(() => {
+                        on404(data)
+                    })
+                }
+            }
+        }
     )
 }
 
@@ -2001,7 +2031,7 @@ function initStartZN() {
 	async function setStatus(status, func) {
         setLoading()
  
-        const result = await sendStatus(status, func)
+        await sendStatus(status, func)
 
         clearLoading()
     }
@@ -2044,29 +2074,31 @@ function initStartZN() {
 }
 
 async function updateZNStatus() {
-    return await smartSendRequest(
+    return await requestManager.send(
         "info/status/get",
         "POST",
         {
-            zn_number: znNumber,
-            post: post,
-        },
-        (result) => {
-            if (result === "never") {
-                setStartStatus()
-            } else if (result === "start") {
-                setUnStartStatus()
-            } else if (result === "stopped") {
-                setUnStartStatus()
-                setStoppedStatus()
-            } else if (result === "paused") {
-                setUnStartStatus()
-                setPausedStatus()
-            } else {
-                return false
-            }
+           data: {
+                zn_number: znNumber,
+                post: post,
+            },
+            okFunc: (result) => { doneStartRequest(() => {
+                if (result === "never") {
+                    setStartStatus()
+                } else if (result === "start") {
+                    setUnStartStatus()
+                } else if (result === "stopped") {
+                    setUnStartStatus()
+                    setStoppedStatus()
+                } else if (result === "paused") {
+                    setUnStartStatus()
+                    setPausedStatus()
+                } else {
+                    return false
+                }
 
-            return true
+                return true
+            }) }
         }
     )
 }
@@ -2077,6 +2109,8 @@ async function initSSE() {
 
     sseSource.start()
     await sseSource.subServerEvents({"zn": znNumber})
+
+    requestManager.SSE = sseSource
 
     // type: str, uuid: str, new_value: bool
     sseSource.addSSEEvent("done", ({ type, uuid, new_value }) => {

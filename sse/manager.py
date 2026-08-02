@@ -3,7 +3,7 @@ from collections import defaultdict
 from typing import Any, Optional, AsyncGenerator
 
 from fastapi import Request, HTTPException
-from uuid import uuid4, UUID
+from uuid import UUID
 from starlette.responses import StreamingResponse
 
 from .help_functions import make_sse

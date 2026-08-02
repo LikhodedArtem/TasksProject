@@ -3,8 +3,9 @@ from enum import Enum
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from fastapi import APIRouter, Request, HTTPException
+from fastapi import APIRouter, Request, HTTPException, Depends
 
+from help_functions import get_client_id
 from sse.managers import *
 from sse.manager import SSEManager
 
@@ -35,18 +36,22 @@ def get_manager(uuid: UUID) -> SSEManager:
     return manager
 
 
-@sse_router.get("/connect/{type}/{uuid}")
-async def get_sse_events(request: Request, type: ManagerType, uuid: UUID):
+@sse_router.get("/connect/{type}")
+async def get_sse_events(
+        request: Request,
+        type: ManagerType,
+        client_id: UUID | None = Depends(get_client_id)
+):
     manager = managers.get(type, None)
 
     if manager is None:
         raise HTTPException(status_code=404, detail="This type of manager does not exist")
 
-    manager.subscribe(uuid)
+    manager.subscribe(client_id)
 
-    subscriptions[uuid] = manager
+    subscriptions[client_id] = manager
 
-    return manager.streaming_response(request, uuid)
+    return manager.streaming_response(request, client_id)
 
 
 # @sse_router.post("/subscribe/{type}/{uuid}")
@@ -69,19 +74,19 @@ async def get_sse_events(request: Request, type: ManagerType, uuid: UUID):
 #     return uuid
 
 
-@sse_router.put("/unsubscribe/{uuid}")
-async def unsubscribe(uuid: UUID):
-    manager = get_manager(uuid)
+@sse_router.put("/unsubscribe")
+async def unsubscribe(client_id: UUID | None = Depends(get_client_id)):
+    manager = get_manager(client_id)
 
-    manager.unsubscribe(uuid)
+    manager.unsubscribe(client_id)
 
 
-@sse_router.post("/subscribe/events/{uuid}")
+@sse_router.post("/subscribe/events")
 async def subscribe_event(
         request: Request,
-        uuid: UUID
+        client_id: UUID | None = Depends(get_client_id),
 ):
-    manager = get_manager(uuid)
+    manager = get_manager(client_id)
 
     params: dict[str, None | str | list[str]] = await request.json()
 
@@ -89,15 +94,18 @@ async def subscribe_event(
         for event, add_info in params.items():
             if isinstance(add_info, list):
                 for item in add_info:
-                    manager.subscribe_event(uuid, event, item)
+                    manager.subscribe_event(client_id, event, item)
                 continue
 
-            manager.subscribe_event(uuid, event, add_info)
+            manager.subscribe_event(client_id, event, add_info)
 
 
-@sse_router.post("/unsubscribe/events/{uuid}")
-async def unsubscribe_event(request: Request, uuid: UUID):
-    manager = get_manager(uuid)
+@sse_router.post("/unsubscribe/events")
+async def unsubscribe_event(
+        request: Request,
+        client_id: UUID | None = Depends(get_client_id),
+):
+    manager = get_manager(client_id)
 
     params: dict[str, None | str | list[str]] = await request.json()
 
@@ -105,7 +113,7 @@ async def unsubscribe_event(request: Request, uuid: UUID):
         for event, add_info in params.items():
             if isinstance(add_info, list):
                 for item in add_info:
-                    manager.unsubscribe_event(uuid, event, item)
+                    manager.unsubscribe_event(client_id, event, item)
                 continue
 
-            manager.unsubscribe_event(uuid, event, add_info)
+            manager.unsubscribe_event(client_id, event, add_info)

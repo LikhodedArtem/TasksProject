@@ -564,38 +564,6 @@ class SmartContainer {
 }
 
 
-class Queue {
-    constructor() {
-        this._items = {}
-        this._head = 0
-        this._tail = 0
-    }
-
-    push(element) {
-        this._items[this._tail] = element
-        this._tail++
-    }
-
-    get() {
-        if (this.isEmpty()) return undefined
-
-        const item = this._items[this._head]
-        delete this._items[this._head]
-        this._head++
-
-        return item
-    }
-
-    isEmpty() {
-        return this._tail - this._head === 0
-    }
-
-    size () {
-        return this._tail - this._head
-    }
-}
-
-
 class SmartSSESource {
     constructor(type, uuid) {
         this._type = type
@@ -609,11 +577,16 @@ class SmartSSESource {
         this._lastId = null
         this._retry = 3000
 
-        this._stopped = true
-        this._reconnecting = false
+        this.stopped = true
+        this.reconnecting = false
 
         this.STOPPED = {}
         this.LOST_CONNECTION = {}
+
+        this.headers = {
+            'Content-Type': 'application/json',
+            'X-Client-ID': uuid,
+        }
 
         document.addEventListener("visibilitychange", () => {
             if (document.hidden) {
@@ -632,28 +605,26 @@ class SmartSSESource {
         this._controller = new AbortController()
 
         try {
-            const headers = {
-                'Content-Type': 'application/json',
-            }
-
-            if (this._lastId !== null) {
-                headers["Last-Event-ID"] = this._lastId
-            }
-
             const response = await fetch(
-                `${API_PATH}/sse/connect/${this._type}/${this._uuid}`,
+                `${API_PATH}/sse/connect/${this._type}`,
                 {
                     method: 'GET',
                     signal: this._controller.signal,
-                    headers: headers
+                    headers: {
+                        ...this.headers,
+                        'Last-Event-ID': this._lastId
+                    }
                 }
             )
 
             if (Object.keys(this._serverEvents).length) {
-                await smartSendRequest(
-                    `sse/subscribe/events/${this._uuid}`,
-                    "POST",
-                    this._serverEvents
+                await fetch(
+                    `${API_PATH}/sse/subscribe/events`,
+                    {
+                        method: "POST",
+                        body: JSON.stringify(this._serverEvents),
+                        headers: this.headers,
+                    },
                 )
             }
 
@@ -685,7 +656,7 @@ class SmartSSESource {
 
             return this.STOPPED
         } catch (error) {
-            if (this._stopped) return this.STOPPED
+            if (this.stopped) return this.STOPPED
             return this.LOST_CONNECTION
         }
     }
@@ -748,38 +719,36 @@ class SmartSSESource {
 
     async start() {
         try {
+            if (!this.stopped && !this.reconnecting) return
+
             console.log("SSE starting...")
 
-            this._stopped = false
+            this.stopped = false
+            this.reconnecting = false
 
-            await this._connect()
+            const result = await this._connect()
 
-            // if (result === this.STOPPED) {
-            //     return this.STOPPED
-            // } else if (result === this.LOST_CONNECTION) {
-            //     this._stopped = false
-            //     this._reconnecting = true
-            //
-            //     console.log("SSE reconnecting...")
-            //
-            //     setTimeout(() => {
-            //         this.start()
-            //     }, this.delay * 1000)
-            // }
+            if (result === this.STOPPED) {
+                console.log("SSE stopped")
+            } else if (result === this.LOST_CONNECTION) {
+                console.log("SSE lost connection")
+            }
+
+            this.stopped = true
         } catch (e) {
             console.error(`Error while starting SSE connection: ${e}`)
         }
     }
 
     stop() {
-        this._stopped = true
+        this.stopped = true
         this._controller.abort()
 
         console.log("SSE stopped")
     }
 
     addSSEEvent(name, func) {
-        if (this._stopped) return
+        if (this.stopped) return
 
         function eventReact(data) {
             func(data)
@@ -793,7 +762,7 @@ class SmartSSESource {
     }
 
     removeSSEEvent(name) {
-         if (this._stopped) return
+         if (this.stopped) return
 
         if (this._sseEvents[name] === undefined) return
 
@@ -803,10 +772,13 @@ class SmartSSESource {
     // data format: dict[str, null | str | list[str]]
     async subServerEvents(data) {
         try {
-            const result = await smartSendRequest(
-                `sse/subscribe/events/${this._uuid}`,
-                "POST",
-                data
+            const result = await fetch(
+                `${API_PATH}/sse/subscribe/events`,
+                {
+                    method: "POST",
+                    body: JSON.stringify(data),
+                    headers: this.headers,
+                }
             )
 
             if (result !== true) {
@@ -842,10 +814,13 @@ class SmartSSESource {
     // data format: dict[str, null | str | list[str]]
     async unsubServerEvents(data) {
         try {
-            const result = await smartSendRequest(
-                `sse/unsubscribe/events/${this._uuid}`,
-                "POST",
-                data
+            const result = await fetch(
+                `${API_PATH}/sse/unsubscribe/events`,
+                {
+                    method: "POST",
+                    body: JSON.stringify(data),
+                    headers: this.headers,
+                }
             )
 
             if (result !== true) {
@@ -875,25 +850,31 @@ class SmartSSESource {
 
 class RequestContainer {
     constructor() {
-        this._requestQueue = new Queue()
+        this._requestQueue = []
 
         this._reconnectTimeout = null
-        this.delay = 10
+        this.delay = 5
 
         this.CONNECTED = true
 
         this.SSE = null
     }
 
-    async send({
-            addURL,
-            method,
+    run() {
+        this._setTimeout()
+    }
+
+    async send(
+        addURL,
+        method,
+        {
             data = null,
             headers = {},
             credentials = "omit",
-            timeout = 3,
-            func = null,
-            onErrorsFuncs = null,
+            timeout = 1,
+            okFunc = null,
+            anywayFunc = null,
+            errorsFuncs = null,
             changeUUID = false,
        }) {
         let body
@@ -921,15 +902,21 @@ class RequestContainer {
                     },
                     body: body,
                     credentials: credentials,
-                    signal: AbortController.timeout(timeout * 1000)
+                    signal: AbortSignal.timeout(timeout * 1000)
                 }
             )
 
-            if (!response.ok) {
-                if (!onErrorsFuncs
-                    || Object.keys(onErrorsFuncs).indexOf(response.status) === -1) return
+            if (typeof anywayFunc === "function") {
+                anywayFunc()
+            }
 
-                const find = onErrorsFuncs[response.status]
+            if (!response.ok) {
+                const num = response.status.toString()
+
+                if (!errorsFuncs
+                    || Object.keys(errorsFuncs).indexOf(num) === -1) return
+
+                const find = errorsFuncs[num]
 
                 if (typeof find === "function") {
                     find(response)
@@ -942,7 +929,7 @@ class RequestContainer {
                 return
             }
 
-            if (typeof func === "function") {
+            if (typeof okFunc === "function") {
                 let data
                 try {
                     data = await response.json()
@@ -950,7 +937,7 @@ class RequestContainer {
                     data = response.body
                 }
 
-                func(data)
+                okFunc(data)
             }
         }
 
@@ -958,49 +945,77 @@ class RequestContainer {
             await fetchInvoker()
 
             this.CONNECTED = true
-            if (this._reconnectTimeout) clearTimeout(this._reconnectTimeout)
+            this._removeTimeout()
 
             this._runQueue()
-
+            // console.log("Function Success")
         } catch (error) {
             this._requestQueue.push(fetchInvoker)
 
             this.CONNECTED = false
-            if (this._reconnectTimeout) clearTimeout(this._reconnectTimeout)
 
             this._setTimeout()
+            // console.log(`Function Failed by reason: ${error}`)
+            return false
         }
     }
 
     async _runQueue() {
-        if (!this.CONNECTED) {
-            await this._connect()
+        console.log(`New Queue run with CONNECTED: ${this.CONNECTED}`)
+        // console.log(`Queue has functions: ${this._requestQueue.length}`)
 
+        try {
             if (!this.CONNECTED) {
-                this._setTimeout()
-                return
+                await this._connect()
+
+                if (!this.CONNECTED) {
+                    console.log("Queue can't start")
+                    return
+                }
             }
-        }
 
-        while (!this._requestQueue.isEmpty()) {
-            const requestInvoker = this._requestQueue.get()
+            console.log("Queue start")
 
-            try {
-                await requestInvoker()
-            } catch (e) {
+            const results = await Promise.allSettled(this._requestQueue.map((fn) => fn()));
+
+            const remaining = []
+            let hasFailure = false
+
+            results.forEach((result, index) => {
+                if (result.status === "rejected") {
+                    remaining.push(this._requestQueue[index])
+                    hasFailure = true
+                }
+            })
+
+            this._requestQueue = remaining
+
+            if (hasFailure) {
                 this.CONNECTED = false
-                this._setTimeout()
             }
-        }
 
-        if (this.SSE && this.CONNECTED) this.SSE.start()
+            if (this.SSE && this.SSE.stopped) this.SSE.start()
+        } finally {
+            this._setTimeout()
+        }
     }
 
     _setTimeout() {
+        this._removeTimeout()
+
         this._reconnectTimeout = setTimeout(
-            this._runQueue(),
+            () => { this._runQueue() },
             this.delay * 1000
         )
+
+        console.log("New timeout")
+    }
+
+    _removeTimeout() {
+        if (this._reconnectTimeout === null) return
+
+        clearTimeout(this._reconnectTimeout)
+        this._reconnectTimeout = null
     }
 
     async _connect() {
@@ -1015,9 +1030,15 @@ class RequestContainer {
             )
 
             this.CONNECTED = true
+            console.log("Connection Success")
         } catch (error) {
             this.CONNECTED = false
+            console.log("Connection Failed")
         }
+    }
+
+    isEmpty() {
+        return this._requestQueue.length === 0
     }
 }
 
