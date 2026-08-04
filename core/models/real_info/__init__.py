@@ -1,4 +1,4 @@
-from ._base import RealInfoBase
+from .base import RealInfoBase
 from .car import Car
 from .file import File
 from .job import Job

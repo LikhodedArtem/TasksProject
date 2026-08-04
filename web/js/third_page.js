@@ -89,23 +89,7 @@ const CLOSE_SECONDS = 30
 let sseSource = null
 
 
-let startRequestsCount = 4
-const startFunctions = []
-
-function doneStartRequest(func) {
-    startRequestsCount--
-    startFunctions.push(func)
-
-    if (startRequestsCount !== 0) return
-
-    for (const func of startFunctions) {
-        func()
-    }
-
-    initEnd()
-
-    clearLoading()
-}
+startRequestsCount = 4
 
 
 async function start() {
@@ -120,12 +104,12 @@ async function start() {
         return
     }
 
-    setLoading()
-
     initStart()
 }
 
 async function initStart() {
+    await initSSE()
+
     await getZnInfo()
     await uploadJobsTable()
     await uploadPartsTable()
@@ -134,8 +118,6 @@ async function initStart() {
 
 function initEnd(){
     initStartZN()
-
-    initSSE()
 
     initPackagesEvents()
     initTookButton()
@@ -150,7 +132,7 @@ async function getZnInfo() {
         {
             data: {zn_number: znNumber},
             okFunc: (data) => {
-                doneStartRequest(() => {
+                doneStartRequest("zn", data, (data) => {
                     updateZnInfo(data)
                 })
             }
@@ -317,7 +299,7 @@ function renderDetailsRow(row, indx) {
 
 async function uploadJobsTable() {
     return await uploadTable(
-        `info/jobs`,
+        "jobs",
         {zn_number: znNumber},
         (data) => {
             jobsData.replace(data)
@@ -331,35 +313,25 @@ async function uploadJobsTable() {
 
 async function uploadPartsTable() {
     return await uploadTable(
-        `info/parts`,
+        "parts",
         {zn_number: znNumber},
         (data) => {
             partsData.replace(data)
             updatePartsTable()
         },
-        () => {
-            parts.querySelector(".package").className = "package close-forever empty"
-        }
     )
 }
 
-async function uploadTable(url, data, onOk, on404) {
+async function uploadTable(type, data, onOk) {
     return await requestManager.send(
-        url,
+        `/info/${type}`,
         "POST",
         {
             data: data,
             okFunc: (data) => {
-                doneStartRequest(() => {
+                doneStartRequest(type, data, (data) => {
                     onOk(data)
                 })
-            },
-            errorsFuncs: {
-                404: (data) => {
-                    doneStartRequest(() => {
-                        on404(data)
-                    })
-                }
             }
         }
     )
@@ -393,42 +365,24 @@ function constructPinFiles() {
 }
 
 
-// async function saveDone(uuid, type, value, all) {
-//     setLoading()
-//
-//     const done = await sendDone(uuid, type, value, all)
-//
-//     clearLoading()
-//
-//     return done
-// }
-
-
 async function sendDone(uuid, type, value, all) {
-    try {
-        const requestData = {
-            mechanic: mechanic,
-            post: post,
-            zn_number: znNumber,
-            type: type,
-            new_value: value,
-            uuid: uuid,
-        }
-
-        await requestManager.send(
-            `/info/done${(all) ? "/all" : ""}`,
-            "POST",
-            {
-                data: requestData,
-                changeUUID: true,
-            }
-        )
-
-        return true
-    } catch (e) {
-        console.error(e)
-        return false
+    const requestData = {
+        mechanic: mechanic,
+        post: post,
+        zn_number: znNumber,
+        type: type,
+        new_value: value,
+        uuid: uuid,
     }
+
+    await requestManager.send(
+        `info/done${(all) ? "/all" : ""}`,
+        "POST",
+        {
+            data: requestData,
+            changeUUID: true,
+        }
+    )
 }
 
 
@@ -550,17 +504,12 @@ function initPackagesEvents() {
                 : "jobs"
             const value = !rowContent.classList.contains("yes")
 
-            const result = await sendDone(
+            await sendDone(
                 uuid,
                 type,
                 value,
                 false
             )
-
-            if (!result) {
-                createNotification("error", "Нет связи с сервером")
-                return
-            }
 
             const data = type === "jobs" ? jobsData : partsData
 
@@ -624,17 +573,12 @@ function initPackagesEvents() {
 
                     if (!uuids.length) return
 
-                    const done = await sendDone(
+                     await sendDone(
                         uuids,
                         type,
                         value,
                         true
                     )
-
-                    if (!done) {
-                        createNotification("error", "Нет связи с сервером")
-                        return false
-                    }
 
                     const data = type === "jobs" ? jobsData : partsData
 
@@ -2076,6 +2020,24 @@ function initStartZN() {
     }
 }
 
+
+function setStatus(status) {
+    if (status === "never") {
+        setStartStatus()
+    } else if (status === "start") {
+        setUnStartStatus()
+    } else if (status === "stopped") {
+        setUnStartStatus()
+        setStoppedStatus()
+    } else if (status === "paused") {
+        setUnStartStatus()
+        setPausedStatus()
+    } else {
+        console.error("Get wrong status")
+    }
+}
+
+
 async function updateZNStatus() {
     return await requestManager.send(
         "info/status/get",
@@ -2085,22 +2047,8 @@ async function updateZNStatus() {
                 zn_number: znNumber,
                 post: post,
             },
-            okFunc: (result) => { doneStartRequest(() => {
-                if (result === "never") {
-                    setStartStatus()
-                } else if (result === "start") {
-                    setUnStartStatus()
-                } else if (result === "stopped") {
-                    setUnStartStatus()
-                    setStoppedStatus()
-                } else if (result === "paused") {
-                    setUnStartStatus()
-                    setPausedStatus()
-                } else {
-                    return false
-                }
-
-                return true
+            okFunc: (result) => { doneStartRequest("status", result, (result) => {
+                setStatus(result)
             }) }
         }
     )
@@ -2109,6 +2057,35 @@ async function updateZNStatus() {
 
 async function initSSE() {
     sseSource = new SmartSSESource("third_page", MY_UUID)
+    sseSource.reconnectAddInfo = {
+        zn_number: znNumber,
+        post: post,
+    }
+
+    // car_changes: list[dict[str, Any]], zn_changes: list[dict[str, Any]]
+    sseSource.addRecoverHandler("zn", ({ car_changes, zn_changes }) => {
+        const carChange = car_changes[0]
+        const znChange = zn_changes[0]
+
+
+    })
+
+    // done_changes: list[dict[str, Any]], main_changes: list[dict[str, Any]]
+    sseSource.addRecoverHandler("jobs", ({ done_changes, main_changes }) => {
+
+    })
+
+    // done_changes: list[dict[str, Any]], main_changes: list[dict[str, Any]]
+    sseSource.addRecoverHandler("parts", ({ done_changes, main_changes }) => {
+
+    })
+
+    // status: str | None
+    sseSource.addRecoverHandler("status", ({ status }) => {
+        if (status === null) return
+
+        setStatus(status)
+    })
 
     // type: str, uuid: str, new_value: bool
     sseSource.addSSEEvent("done", ({ type, uuid, new_value }) => {

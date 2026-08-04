@@ -1,7 +1,7 @@
 from sqlalchemy import String, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 
-from ._base import RealInfoBase
+from .base import RealInfoBase
 from .help_classes import Life, Stage
 
 

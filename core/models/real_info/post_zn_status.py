@@ -6,7 +6,7 @@ from datetime import datetime
 from sqlalchemy import String, ForeignKey, DateTime, func, Enum as SQLEnum, Integer
 from sqlalchemy.orm import Mapped, mapped_column
 
-from ._base import RealInfoBase
+from .base import RealInfoBase
 from ..common import PostZNStatusEnum
 
 

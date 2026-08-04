@@ -12,4 +12,9 @@ web_router.include_router(info_router)
 web_router.include_router(sse_router)
 
 
+@web_router.head("/")
+async def head():
+    pass
+
+
 __all__ = ["web_router"]

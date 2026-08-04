@@ -91,15 +91,6 @@ async def done(
         client_id: UUID = Depends(get_client_id),
         change_uuid: UUID = Depends(get_change_uuid),
 ):
-    await CreateChange.done(
-        change_uuid=change_uuid,
-        sse_uuid=client_id,
-        identical_str=uuid,
-        value=new_value,
-        mechanic=mechanic,
-        post=post,
-    )
-
     return await Done.done(
         mechanic=mechanic,
         post=post,
@@ -108,6 +99,7 @@ async def done(
         type=type,
         new_value=new_value,
         client_id=client_id,
+        change_uuid=change_uuid,
     )
 
 """Установить сделано или не сделано на все запчасти или все работы заказ наряда"""
@@ -198,13 +190,15 @@ class CreateAnswer:
                 return [data]
 
     @classmethod
-    def _base_create(cls, data, func, if_none: str | None = None):
+    def _base_create(cls, data, func, change_uuid: UUID = None, if_none: str | None = None):
         data = cls._check(data, if_none)
 
-        answer = []
+        answer = {"data": []}
 
         for obj in data:
-            answer.append(func(obj))
+            answer["data"].append(func(obj))
+
+        answer["change_uuid"] = change_uuid
 
         return answer
 
@@ -235,74 +229,26 @@ class CreateAnswer:
     @classmethod
     async def zn(cls, zn_number: str):
         async with db_helper.session_factory() as session:
-            data = await get_zn_with_has_files(
+            return await get_zn(
                 session=session,
                 zn_number=zn_number,
             )
 
-        def parse(data):
-            zn, zn_has_files, rec_has_files = data
-
-            dict_zn = as_dict(zn)
-            dict_zn["car"] = as_dict(zn.car)
-            dict_zn["zn_has_files"] = zn_has_files
-            dict_zn["rec_has_files"] = rec_has_files
-
-            return dict_zn
-
-        return cls._base_create(
-            data=data,
-            func=parse,
-            if_none="Не найдено ни одного заказ наряда под таким номером"
-        )
-
     @classmethod
     async def jobs(cls, zn_number: str):
         async with db_helper.session_factory() as session:
-            data = await get_objects_with_has_files(
+            return await get_zn_jobs(
                 session=session,
-                model=Job,
-                for_find={"is_alive": True, "zn_number": zn_number},
-                for_files={"identical_str": Job.uuid}
+                zn_number=zn_number,
             )
-
-        def parse(data):
-            job, has_files = data
-
-            dict_job = as_dict(job)
-            dict_job["has_files"] = has_files
-
-            return dict_job
-
-        return cls._base_create(
-            data=data,
-            func=parse,
-            if_none="Не найдено ни одной работы под таким номером заказ наряда"
-        )
 
     @classmethod
     async def parts(cls, zn_number: str):
         async with db_helper.session_factory() as session:
-            data = await get_objects_with_has_files(
+            return await get_zn_parts(
                 session=session,
-                model=Part,
-                for_find={"is_alive": True, "zn_number": zn_number},
-                for_files={"identical_str": Part.uuid}
+                zn_number=zn_number,
             )
-
-        def parse(data):
-            part, has_files = data
-
-            dict_part = as_dict(part)
-            dict_part["has_files"] = has_files
-
-            return dict_part
-
-        return cls._base_create(
-            data=data,
-            func=parse,
-            if_none="Не найдено ни одной запчасти под таким номером заказ наряда"
-        )
 
     @classmethod
     async def posts(cls):
@@ -350,17 +296,19 @@ class Done:
             uuid: str,
             type: str,
             new_value: bool,
-            client_id: UUID | None = None,
+            client_id: UUID,
+            change_uuid: UUID,
     ):
         async with db_helper.session_factory() as session:
             await change_done(
                 session=session,
                 mechanic=mechanic,
                 post=post,
-                zn_number=zn_number,
                 uuid=uuid,
                 type=type,
-                new_value=new_value
+                new_value=new_value,
+                client_id=client_id,
+                change_uuid=change_uuid,
             )
 
         await third_page_manager.broadcast(
@@ -380,7 +328,8 @@ class Done:
             type: str,
             zn_number: str,
             new_value: bool,
-            client_id: UUID | None = None,
+            client_id: UUID,
+            change_uuid: UUID,
     ):
         async def fetch_one(obj_uuid):
             async with db_helper.session_factory() as session:
@@ -388,10 +337,11 @@ class Done:
                     session=session,
                     mechanic=mechanic,
                     post=post,
-                    zn_number=zn_number,
                     uuid=obj_uuid,
                     type=type,
                     new_value=new_value,
+                    client_id=client_id,
+                    change_uuid=change_uuid,
                 )
         await asyncio.gather(*(fetch_one(obj_uuid) for obj_uuid in uuid))
 
@@ -412,21 +362,11 @@ class Status:
             post: str,
     ):
         async with db_helper.session_factory() as session:
-            status = await find_objects(
+            return await get_zn_status(
                 session=session,
-                model=PostZNStatus,
                 zn_number=zn_number,
                 post=post,
             )
-
-            if status is None:
-                return "never"
-            if isinstance(status, list):
-                raise HTTPException(
-                    status_code=500,
-                    detail="Ошибка в работе кода"
-                )
-            return status.status
 
     @staticmethod
     async def set(

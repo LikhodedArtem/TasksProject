@@ -1,7 +1,7 @@
 from sqlalchemy import String, ForeignKey, Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column
 
-from ._base import ChangeBase
+from .base import ChangeBase
 from ..common import PostZNStatusEnum
 
 

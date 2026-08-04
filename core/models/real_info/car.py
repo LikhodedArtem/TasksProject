@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from sqlalchemy import String, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from ._base import RealInfoBase
+from .base import RealInfoBase
 from .help_classes import Life, Stage
 
 
@@ -55,13 +55,4 @@ class Car(RealInfoBase, Life, Stage):
     @staticmethod
     def for_value() -> list[str]:
         return ["reg", "model", "year", "millage"]
-
-    def as_dict(self):
-        return {
-            "vin": self.vin,
-            "reg": self.reg,
-            "model": self.model,
-            "year": self.year,
-            "millage": self.millage,
-        }
 

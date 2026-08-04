@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from sqlalchemy import String, ForeignKey, Boolean, func, Float
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from ._base import RealInfoBase
+from .base import RealInfoBase
 from .help_classes import Life, Stage, CanDone
 
 
@@ -81,13 +81,3 @@ class Part(RealInfoBase, Life, Stage, CanDone):
             "quantity",
             "units"
         ]
-
-    def as_dict(self):
-        return {
-            "name": self.name,
-            "manufacturer_code": self.manufacturer_code,
-            "manufacturer": self.manufacturer,
-            "quantity": self.quantity,
-            "units": self.units,
-            "done": self.done,
-        }

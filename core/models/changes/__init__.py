@@ -1,4 +1,4 @@
-from ._base import ChangeBase
+from .base import ChangeBase
 from .car import CarChange
 from .done import DoneChange
 from .file import FileChange

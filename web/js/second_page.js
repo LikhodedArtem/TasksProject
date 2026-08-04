@@ -49,7 +49,9 @@ async function updateTable() {
         `info/zns`,
         "POST",
         {post: post},
-        (data) => {
+        (info) => {
+            const data = info.data
+
             if (!data.length) {
                 infoTable.innerHTML = ""
                 infoTable.style.display = "flex"

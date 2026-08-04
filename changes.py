@@ -1,11 +1,10 @@
 from typing import Optional, Literal
 from uuid import UUID
 
+import uuid6
 from pydantic_core.core_schema import uuid_schema
 
 from core.models.changes import *
-from core.models import db_helper
-from crud import add_object
 from core.models.changes.help_classes import ChangeType
 
 
@@ -14,16 +13,8 @@ class CreateChange:
     async def _make_change(
             change_model,
             **kwargs
-    ) -> UUID:
-        if "change_uuid" in kwargs:
-            print(kwargs["change_uuid"])
-
-        change = change_model(**kwargs)
-
-        async with db_helper.session_factory() as session:
-            await add_object(session, change)
-
-        return change.change_uuid
+    ):
+        return change_model(**kwargs)
 
     @classmethod
     async def zn(
@@ -40,7 +31,7 @@ class CreateChange:
             manager: Optional[str] = None,
     ):
         return await cls._make_change(
-            change_model=ZNChange,
+            ZNChange,
             change_uuid=change_uuid,
             sse_uuid=sse_uuid,
             type=type,
@@ -66,7 +57,7 @@ class CreateChange:
             millage: Optional[int] = None,
     ):
         return await cls._make_change(
-            change_model=CarChange,
+            CarChange,
             change_uuid=change_uuid,
             sse_uuid=sse_uuid,
             vin=vin,
@@ -88,7 +79,7 @@ class CreateChange:
             post: str,
     ):
         return await cls._make_change(
-            change_model=FileChange,
+            FileChange,
             change_uuid=change_uuid,
             sse_uuid=sse_uuid,
             type=type,
@@ -110,7 +101,7 @@ class CreateChange:
             normal_time: Optional[str] = None,
     ):
         return await cls._make_change(
-            change_model=JobChange,
+            JobChange,
             change_uuid=change_uuid,
             sse_uuid=sse_uuid,
             type=type,
@@ -136,7 +127,7 @@ class CreateChange:
             units: Optional[str] = None,
     ):
         return await cls._make_change(
-            change_model=PartChange,
+            PartChange,
             change_uuid=change_uuid,
             sse_uuid=sse_uuid,
             type=type,
@@ -159,7 +150,7 @@ class CreateChange:
             territory: Optional[str] = None,
     ):
         return await cls._make_change(
-            change_model=MainPostChange,
+            MainPostChange,
             change_uuid=change_uuid,
             sse_uuid=sse_uuid,
             type=type,
@@ -179,7 +170,7 @@ class CreateChange:
             date2: Optional[str] = None,
     ):
         return await cls._make_change(
-            change_model=PostChange,
+            PostChange,
             change_uuid=change_uuid,
             sse_uuid=sse_uuid,
             type=type,
@@ -199,7 +190,7 @@ class CreateChange:
             name: Optional[str] = None,
     ):
         return await cls._make_change(
-            change_model=MechanicChange,
+            MechanicChange,
             change_uuid=change_uuid,
             sse_uuid=sse_uuid,
             type=type,
@@ -218,7 +209,7 @@ class CreateChange:
             post: str,
     ) -> UUID:
         return await cls._make_change(
-            change_model=DoneChange,
+            DoneChange,
             change_uuid=change_uuid,
             sse_uuid=sse_uuid,
             identical_str=identical_str,
@@ -238,7 +229,7 @@ class CreateChange:
             status: str,
     ) -> UUID:
         return await cls._make_change(
-            change_model=StatusChange,
+            StatusChange,
             change_uuid=change_uuid,
             sse_uuid=sse_uuid,
             zn_number=zn_number,

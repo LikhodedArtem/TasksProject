@@ -1,7 +1,7 @@
 from sqlalchemy import String, ForeignKey, Integer
 from sqlalchemy.orm import Mapped, mapped_column
 
-from ._base import ChangeBase
+from .base import ChangeBase
 from .help_classes import ChangeType
 
 

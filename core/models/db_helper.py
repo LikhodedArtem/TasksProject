@@ -14,6 +14,7 @@ class DatabaseHelper:
         self.engine = create_async_engine(
             url=url,
             echo=echo,
+            isolation_level = "SERIALIZABLE"
         )
         self.session_factory = async_sessionmaker(
             bind=self.engine,

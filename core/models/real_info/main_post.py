@@ -3,7 +3,7 @@ from __future__ import annotations
 from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from ._base import RealInfoBase
+from .base import RealInfoBase
 from .help_classes import Life, Stage
 
 
@@ -26,9 +26,3 @@ class MainPost(RealInfoBase, Life, Stage):
     @staticmethod
     def for_value() -> list[str]:
         return ["territory"]
-
-    def as_dict(self):
-        return {
-            "name": self.name,
-            "territory": self.territory,
-        }

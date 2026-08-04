@@ -18,27 +18,25 @@ async function start() {
     initTime()
     setLoading()
 
-    const result = await init()
-    if (result !== true) {
-        createNotification("error", `Ошибка загрузки ${result}`)
-    }
-
-    clearLoading()
+    initStart()
 }
 
 
-async function init() {
-    if (!await getPosts()) return "постов"
-    if (!await getMechanics()) return "механиков"
+startRequestsCount = 2
 
+
+async function initStart() {
+    await getPosts()
+    await getMechanics()
+}
+
+async function initEnd() {
     initSuggestsPanels()
     updatePosts()
 
     getNameFromCookie()
 
     returnCookieData()
-
-    return true
 }
 
 
@@ -73,29 +71,43 @@ function initTime() {
 
 
 async function getPosts() {
-    return await smartSendRequest(
-        "info/posts",
-        "GET",
-        null,
-        (data) => {
-            updatePostsData(data)
-        },
-        (data) => {
-            updatePostsData([])
-        }
-    )
+    await getPostsMechanicsData(false)
 }
 
+
 async function getMechanics() {
-    return await smartSendRequest(
-        "info/mechanics",
+    await getPostsMechanicsData(true)
+}
+
+
+async function getPostsMechanicsData(mechanics) {
+    let type
+    let func
+
+    if (mechanics) {
+        type = "mechanics"
+        func = updateMechanicsData
+    } else {
+        type = "posts"
+        func = updatePostsData
+    }
+
+    await requestManager.send(
+        `info/${type}`,
         "GET",
-        null,
-        (data) => {
-            updateMechanicsData(data)
-        },
-        (data) => {
-            updatePostsData([])
+        {
+            okFunc: (data) => {
+                doneStartRequest(type, data, (data) => {
+                    func(data)
+                })
+            },
+            errorsFuncs: {
+                404: (data) => {
+                    doneStartRequest(type, data, (data) => {
+                        func([])
+                    })
+                }
+            }
         }
     )
 }
@@ -351,7 +363,7 @@ function initSuggestsPanels() {
                 suggestsPanel.classList.add("scrollable");
             }
             else {
-                suggestsPanel.style.height = `${currentLength * 3.3 + 0.8}rem`;
+                suggestsPanel.style.height = `${currentLength * 3.3 + 0.5}rem`;
             }
         }
 
@@ -442,7 +454,9 @@ function initSuggestsPanels() {
         const textInput = event.target.closest(".text-input")
 
         selects.forEach((s) => { if (s !== select) s.close() })
-        suggestPanels.forEach((s) => { if (s !== suggest && s.closest(".text-input") !== textInput) s.close() })
+        suggestPanels.forEach((s) => {
+            if (s !== suggest && s.closest(".text-input") !== textInput) s.close()
+        })
     })
 }
 

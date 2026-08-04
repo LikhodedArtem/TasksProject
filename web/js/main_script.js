@@ -155,18 +155,22 @@ function createNotification(operation, mainText) {
     }, 5800);
 }
 
+const loadingIcon = createLoading()
+
 
 function setLoading() {
-    body.append(createLoading())
+    if (loadingIcon.parentNode === body) return
+    body.append(loadingIcon)
 }
 
 function clearLoading() {
-    body.removeChild(body.querySelector(".background-blur"))
+    if (loadingIcon.parentNode !== body) return
+    body.removeChild(loadingIcon)
 }
 
 function createLoading() {
     const backgroundBlur = document.createElement("div")
-    backgroundBlur.className = "background-blur"
+    backgroundBlur.className = "background-blur loading"
 
     const loadingIcon = document.createElement("div")
     loadingIcon.className = "loading-icon"
@@ -569,6 +573,8 @@ class SmartSSESource {
         this._type = type
         this._uuid = uuid
 
+        this._first = true
+
         this._controller = null
 
         this._sseEvents = {}
@@ -577,10 +583,13 @@ class SmartSSESource {
         this._lastIDs = {}
         this._idsSorter = {}
 
+        this._recoverFuncs = {}
+
         this._retry = 3000
 
         this.stopped = true
         this.reconnecting = false
+        this.reconnectAddInfo = null
 
         this.STOPPED = {}
         this.LOST_CONNECTION = {}
@@ -609,19 +618,49 @@ class SmartSSESource {
         this._controller = new AbortController()
 
         try {
-            const response = await fetch(
-                `${API_PATH}/sse/connect/${this._type}`,
+            const subHeaders = {...this.headers}
+
+            if (this._first) {
+                this._first = false
+            } else {
+                subHeaders['Last-Event-IDs'] = JSON.stringify(this._lastIDs)
+            }
+
+            const subResponse = await fetch(
+                `${API_PATH}/sse/subscribe`,
                 {
-                    method: 'GET',
-                    signal: this._controller.signal,
-                    headers: {
-                        ...this.headers,
-                        'Last-Event-IDs': JSON.stringify(this._lastIDs)
-                    }
+                    method: 'POST',
+                    headers: subHeaders,
+                    body: JSON.stringify({
+                        type: this._type,
+                        add_data: this.reconnectAddInfo,
+                    })
                 }
             )
 
-            console.log("SSE connected")
+            if (!subResponse.ok) {
+                throw Error("Sub error")
+            } else {
+                this._handleRecover(await subResponse.json())
+            }
+
+            const response = await fetch(
+                `${API_PATH}/sse/connect`,
+                {
+                    method: 'GET',
+                    signal: this._controller.signal,
+                    headers: this.headers
+                }
+            )
+
+            // const response = await fetch(
+            //     `${API_PATH}/sse/connect/${this._type}`,
+            //     {
+            //         method: 'GET',
+            //         signal: this._controller.signal,
+            //         headers: headers
+            //     }
+            // )
 
             if (Object.keys(this._serverEvents).length) {
                 await this.subServerEvents(
@@ -631,12 +670,12 @@ class SmartSSESource {
                 )
             }
 
-            console.log("SSE subscribed")
+            console.log("SSE connected")
 
             this.stopped = false
             this.reconnecting = false
 
-            this.requests.CONNECTED = true
+            this.requests._setConTrue()
 
             const reader = response.body.getReader()
             const decoder = new TextDecoder()
@@ -664,7 +703,6 @@ class SmartSSESource {
 
             return this.STOPPED
         } catch (error) {
-            console.log(`SSE _connect catch Error: ${error}}`)
             if (this.stopped) return this.STOPPED
             return this.LOST_CONNECTION
         }
@@ -709,8 +747,23 @@ class SmartSSESource {
         }
     }
 
+    _handleRecover(data) {
+        for (const [key, value] of Object.entries(data)) {
+            if (this._recoverFuncs[key] !== undefined && value !== null) {
+                this._lastIDs[key] = value["last_change_uuid"]
+                delete value["last_change_uuid"]
+
+                try {
+                    this._recoverFuncs[key](value)
+                } catch (error) {
+                    console.error(`Error while attempting to run recover func: ${error}`)
+                }
+            }
+        }
+    }
+
     _handleEvent({ event, data, id, retry }) {
-        console.log(event)
+        // console.log(event)
 
         if (this._sseEvents[event] !== undefined) {
             for (const func of this._sseEvents[event]) {
@@ -726,15 +779,6 @@ class SmartSSESource {
             this._lastIDs[this._idsSorter[event]] = id
         }
         if (retry != null) this._retry = retry
-    }
-
-    // dict[str, list[str]] = ID name: [sseEvents]
-    addIdsSorter(data) {
-        for (const [idName, eventList] of data) {
-            for (const sseEvent of eventList) {
-                this._idsSorter[sseEvent] = idName
-            }
-        }
     }
 
     async start() {
@@ -755,7 +799,7 @@ class SmartSSESource {
 
             this.stopped = true
             this.reconnecting = false
-            this.requests.CONNECTED = false
+            this.requests._setConFalse()
         } catch (e) {
             console.error(`Error while starting SSE connection: ${e}`)
         }
@@ -765,7 +809,11 @@ class SmartSSESource {
         this.stopped = true
         this._controller.abort()
 
-        console.log("SSE stopped")
+        // console.log("SSE stopped")
+    }
+
+    addRecoverHandler(name, func) {
+        this._lastIDs[name] = func
     }
 
     addSSEEvent(name, func) {
@@ -911,68 +959,77 @@ class RequestContainer {
         }
 
         async function fetchInvoker() {
-            const response = await fetch(
-                `${API_PATH}/${addURL.replace(/^\/+/, "")}`,
-                {
-                    method: method,
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Client-Id': MY_UUID,
-                        ...headers
-                    },
-                    body: body,
-                    credentials: credentials,
-                    signal: AbortSignal.timeout(timeout * 1000)
-                }
-            )
-
-            if (typeof anywayFunc === "function") {
-                anywayFunc()
-            }
-
-            if (!response.ok) {
-                const num = response.status.toString()
-
-                if (!errorsFuncs
-                    || Object.keys(errorsFuncs).indexOf(num) === -1) return
-
-                const find = errorsFuncs[num]
-
-                if (typeof find === "function") {
-                    find(response)
-                } else {
-                    for (const func of find) {
-                        func(response)
+            try {
+                const response = await fetch(
+                    `${API_PATH}/${addURL.replace(/^\/+/, "")}`,
+                    {
+                        method: method,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Client-Id': MY_UUID,
+                            ...headers
+                        },
+                        body: body,
+                        credentials: credentials,
+                        signal: AbortSignal.timeout(timeout * 1000)
                     }
+                )
+
+                if (typeof anywayFunc === "function") {
+                    anywayFunc()
                 }
 
-                return
-            }
+                if (!response.ok) {
+                    const num = response.status.toString()
 
-            if (typeof okFunc === "function") {
-                let data
-                try {
-                    data = await response.json()
-                } catch (e) {
-                    data = response.body
+                    if (!errorsFuncs
+                        || Object.keys(errorsFuncs).indexOf(num) === -1) return
+
+                    const find = errorsFuncs[num]
+
+                    if (typeof find === "function") {
+                        find(response)
+                    } else {
+                        for (const func of find) {
+                            func(response)
+                        }
+                    }
+
+                    return
                 }
 
-                okFunc(data)
+                if (typeof okFunc === "function") {
+                    let data
+                    try {
+                        data = await response.json()
+                    } catch (e) {
+                        data = response.body
+                    }
+
+                    okFunc(data)
+                }
+            } catch (e) {
+                console.error(e)
+                throw Error()
             }
         }
 
         try {
             await fetchInvoker()
-            this.CONNECTED = true
+            this._setConTrue()
 
             // console.log("Function Success")
 
         } catch (error) {
-            this.CONNECTED = false
+            this._setConFalse()
             this._requestQueue.push(fetchInvoker)
 
             // console.log(`Function Failed by reason: ${error}`)
         }
+    }
+
+    setLastID(key, value) {
+        this.SSE._lastIDs[key] = value
     }
 
     async _runQueue() {
@@ -1033,11 +1090,21 @@ class RequestContainer {
         clearTimeout(this._reconnectTimeout)
         this._reconnectTimeout = null
     }
+    
+    _setConTrue() {
+        clearLoading()
+        this.CONNECTED = true
+    }
+    
+    _setConFalse() {
+        setLoading()
+        this.CONNECTED = false
+    }
 
     async _connect() {
         try {
             await fetch(
-                API_PATH,
+                `${API_PATH}/`,
                 {
                     method: "HEAD",
                     signal: AbortSignal.timeout(4000),
@@ -1045,14 +1112,48 @@ class RequestContainer {
                 }
             )
 
-            this.CONNECTED = true
-            console.log("Connection Success")
+            this._setConTrue()
+            // console.log("Connection Success")
         } catch (error) {
-            this.CONNECTED = false
-            console.log("Connection Failed")
+            this._setConFalse()
+            // console.log("Connection Failed")
         }
     }
 }
 
 const requestManager = new RequestContainer()
 requestManager.run()
+
+
+let startRequestsCount
+const startFunctions = []
+
+
+function doneStartRequest(changeName, info, func) {
+    let data
+
+    if (info.data !== undefined) {
+        try {
+            data = info["data"]
+            const changeUUID = info["change_uuid"]
+
+            requestManager.setLastID(changeName, changeUUID)
+        } catch (e) {
+            console.error(e)
+        }
+
+    } else {
+        data = info
+    }
+
+    startRequestsCount--
+    startFunctions.push([func, data])
+
+    if (startRequestsCount !== 0) return
+
+    for (const [func, data] of startFunctions) {
+        func(data)
+    }
+
+    initEnd()
+}

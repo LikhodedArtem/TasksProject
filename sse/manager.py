@@ -72,11 +72,6 @@ class SSEManager:
 
 
     async def connect(self, request: Request, client_uuid: UUID) -> AsyncGenerator[str, None]:
-        last_event_id = request.headers.get("Last-Event-ID")
-        last_change_uuid = last_event_id if last_event_id != "null" else None
-
-        print(last_change_uuid)
-
         try:
             while True:
                 if await request.is_disconnected():

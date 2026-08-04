@@ -231,7 +231,7 @@ body {
     min-width: min-content;
 
     padding: var(--space-3);
-    min-height: 4.1rem;
+    min-height: 3.8rem;
 
     border: 1px solid var(--color-border);
     border-radius: var(--space-5);
@@ -649,6 +649,10 @@ body {
     align-items: center;
 
     animation: background-blur 3s forwards;
+}
+
+.background-blur.loading {
+    z-index: 900;
 }
 
 .background-blur.fast {
