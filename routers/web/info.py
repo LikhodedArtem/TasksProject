@@ -114,6 +114,7 @@ async def done_all(
         type: Annotated[str, Body()],
         new_value: Annotated[bool, Body()],
         client_id: UUID = Depends(get_client_id),
+        change_uuid: UUID = Depends(get_change_uuid),
 ):
     return await Done.done_all(
         mechanic=mechanic,
@@ -123,6 +124,7 @@ async def done_all(
         type=type,
         new_value=new_value,
         client_id=client_id,
+        change_uuid=change_uuid,
     )
 
 
@@ -153,12 +155,16 @@ async def status_set(
         post: Annotated[str, Body()],
         mechanic: Annotated[str, Body()],
         status: Annotated[str, Body()],
+        client_id: UUID = Depends(get_client_id),
+        change_uuid: UUID = Depends(get_change_uuid),
 ):
     return await Status.set(
         zn_number=zn_number,
         post=post,
         mechanic=mechanic,
         status=status,
+        client_id=client_id,
+        change_uuid=change_uuid,
     )
 
 
@@ -167,11 +173,15 @@ async def status_set(
 @info_router.post("/rec")
 async def rec(
         zn_number: Annotated[str, Body()],
-        rec: Annotated[str, Body()]
+        rec: Annotated[str, Body()],
+        client_id: UUID = Depends(get_client_id),
+        change_uuid: UUID = Depends(get_change_uuid),
 ):
     return await Rec.set(
-        zn_number=zn_number,
         rec=rec,
+        sse_uuid=client_id,
+        zn_number=zn_number,
+        change_uuid=change_uuid,
     )
 
 
@@ -316,7 +326,7 @@ class Done:
             event="done",
             broadcast_event="zn",
             add_info=zn_number,
-            id_="test",
+            id_=change_uuid,
             author=client_id,
         )
 
@@ -343,6 +353,7 @@ class Done:
                     client_id=client_id,
                     change_uuid=change_uuid,
                 )
+
         await asyncio.gather(*(fetch_one(obj_uuid) for obj_uuid in uuid))
 
         await third_page_manager.broadcast(
@@ -350,7 +361,7 @@ class Done:
             event="done_all",
             broadcast_event="zn",
             add_info=zn_number,
-            id_="test",
+            id_=change_uuid,
             author=client_id,
         )
 
@@ -373,7 +384,9 @@ class Status:
             zn_number: str,
             post: str,
             mechanic: str,
-            status: str
+            status: str,
+            change_uuid: UUID,
+            client_id: UUID,
     ):
         async with db_helper.session_factory() as session:
             find_status = await find_objects(
@@ -382,6 +395,15 @@ class Status:
                 zn_number=zn_number,
                 post=post,
             )
+            
+        change = CreateChange.status(
+            change_uuid=change_uuid,
+            sse_uuid=client_id,
+            zn_number=zn_number,
+            post=post,
+            mechanic=mechanic,
+            status=status,
+        )
 
         if find_status is None:
             new_status = PostZNStatus(
@@ -392,7 +414,10 @@ class Status:
             )
 
             async with db_helper.session_factory() as session:
-                await add_object(session, new_status)
+                async with session.begin():
+                    session.add(new_status)
+                    session.add(change)
+                await session.commit()
 
         else:
             async with db_helper.session_factory() as session:
@@ -401,7 +426,17 @@ class Status:
                     model=PostZNStatus,
                     for_find={"post": post, "zn_number": zn_number},
                     for_update={"status": status, "mechanic": mechanic},
+                    for_add=[change],
                 )
+
+        await third_page_manager.broadcast(
+            data={"status": status},
+            event="status",
+            broadcast_event="zn",
+            add_info=zn_number,
+            id_=change_uuid,
+            author=client_id,
+        )
 
 
 class Rec:
@@ -409,11 +444,30 @@ class Rec:
     async def set(
             zn_number: str,
             rec: str,
+            change_uuid: UUID,
+            sse_uuid: UUID,
     ):
+        change = CreateChange.rec(
+            zn_number=zn_number,
+            recommendation=rec,
+            change_uuid=change_uuid,
+            sse_uuid=sse_uuid,
+        )
+        
         async with db_helper.session_factory() as session:
             await update_objects(
                 session=session,
                 model=ZN,
                 for_find={"number": zn_number},
                 for_update={"recommendation": rec},
+                for_add=[change]
             )
+
+        await third_page_manager.broadcast(
+            data={"rec": rec},
+            event="rec",
+            broadcast_event="zn",
+            add_info=zn_number,
+            id_=change_uuid,
+            author=sse_uuid,
+        )

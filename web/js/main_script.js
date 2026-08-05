@@ -202,6 +202,7 @@ function deleteLoading() {
     })
 }
 
+
 function constructCell(text, addClass) {
     const cell = document.createElement("div")
     cell.classList.add("table-cell", addClass)
@@ -497,6 +498,10 @@ class SmartContainer {
         return answer
     }
 
+    // dict
+    // dict
+    // int
+
     update(
         forUpdate,
         forFind=null,
@@ -519,6 +524,8 @@ class SmartContainer {
             }
 
             for (const [key, value] of Object.entries(forUpdate)) {
+                if (value === null) continue
+                if (value === undefined) throw Error("Undefined in update dict")
                 row[key] = value
             }
 
@@ -532,6 +539,9 @@ class SmartContainer {
 
         return indexes
     }
+
+    // dict
+    // int
 
     delete(
         forFind,
@@ -581,7 +591,6 @@ class SmartSSESource {
         this._serverEvents = {}
 
         this._lastIDs = {}
-        this._idsSorter = {}
 
         this._recoverFuncs = {}
 
@@ -754,6 +763,7 @@ class SmartSSESource {
                 delete value["last_change_uuid"]
 
                 try {
+                    console.log(`Event ${key}:`, value)
                     this._recoverFuncs[key](value)
                 } catch (error) {
                     console.error(`Error while attempting to run recover func: ${error}`)
@@ -768,16 +778,14 @@ class SmartSSESource {
         if (this._sseEvents[event] !== undefined) {
             for (const func of this._sseEvents[event]) {
                 try {
-                    func(data)
+                    const idName = func(data)
+                    this._lastIDs[idName] = id
                 } catch (error) {
                     console.error(`SSE Function ${func} on Event: ${event} Error: ${error}`)
                 }
             }
         }
 
-        if (this._idsSorter[event] !== undefined) {
-            this._lastIDs[this._idsSorter[event]] = id
-        }
         if (retry != null) this._retry = retry
     }
 
@@ -812,8 +820,22 @@ class SmartSSESource {
         // console.log("SSE stopped")
     }
 
+    async unsubscribe() {
+        const result = await fetch(
+            `${API_PATH}/sse/unsubscribe`,
+            {
+                method: 'POST',
+                headers: this.headers,
+            }
+        )
+
+        if (!result.ok) {
+            throw Error(`SSE unsubscribe Error: ${result.statusText}`)
+        }
+    }
+
     addRecoverHandler(name, func) {
-        this._lastIDs[name] = func
+        this._recoverFuncs[name] = func
     }
 
     addSSEEvent(name, func) {
@@ -924,6 +946,7 @@ class RequestContainer {
         this.delay = 5
 
         this.CONNECTED = true
+        this.STOPPED = false
 
         this.SSE = null
     }
@@ -1035,13 +1058,14 @@ class RequestContainer {
     async _runQueue() {
         // console.log(`New Queue run with CONNECTED: ${this.CONNECTED}`)
         // console.log(`Queue has functions: ${this._requestQueue.length}`)
+        if (this.STOPPED) return
 
         try {
             if (!this.CONNECTED) {
                 await this._connect()
 
                 if (!this.CONNECTED) {
-                    console.log("Queue can't start")
+                    // console.log("Queue can't start")
                     return
                 }
             }
@@ -1092,12 +1116,10 @@ class RequestContainer {
     }
     
     _setConTrue() {
-        clearLoading()
         this.CONNECTED = true
     }
     
     _setConFalse() {
-        setLoading()
         this.CONNECTED = false
     }
 
@@ -1119,6 +1141,15 @@ class RequestContainer {
             // console.log("Connection Failed")
         }
     }
+
+    stop() {
+        if (this.SSE) {
+            this.SSE.stop()
+            this.SSE.unsubscribe()
+        }
+
+        this.STOPPED = true
+    }
 }
 
 const requestManager = new RequestContainer()
@@ -1137,7 +1168,7 @@ function doneStartRequest(changeName, info, func) {
             data = info["data"]
             const changeUUID = info["change_uuid"]
 
-            requestManager.setLastID(changeName, changeUUID)
+            if (requestManager.SSE) requestManager.setLastID(changeName, changeUUID)
         } catch (e) {
             console.error(e)
         }
@@ -1156,4 +1187,39 @@ function doneStartRequest(changeName, info, func) {
     }
 
     initEnd()
+}
+
+
+function setClosePage() {
+    const blurs = Array.from(body.querySelectorAll(".background-blur"))
+
+    for (const blur of blurs) {
+        body.removeChild(blur)
+    }
+
+    const backgroundBlur = document.createElement("div")
+    backgroundBlur.className = "background-blur fast"
+    backgroundBlur.style.zIndex = 100
+
+    const closePagePanel = document.createElement("div")
+    closePagePanel.className = "close-page-panel"
+
+    const closePageText = document.createElement("div")
+    closePageText.className = "close-page-text"
+    closePageText.textContent = "Связь до этой страницы была удалена или утеряна."
+
+    const closePageButton = document.createElement("button")
+    closePageButton.className = "close-page-button"
+    closePageButton.textContent = "ОК"
+
+    closePagePanel.append(closePageText, closePageButton)
+    backgroundBlur.append(closePagePanel)
+
+    closePageButton.addEventListener("click", () => {
+        window.location.href = "first_page.html"
+    })
+
+    body.append(backgroundBlur)
+
+    requestManager.stop()
 }

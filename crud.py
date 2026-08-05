@@ -223,14 +223,14 @@ async def get_zn(
     if data is None or data.ZN.is_alive is False:
         return None
 
-    zn, zn_has_files, rec_has_files = data
+    zn, zn_has_files, rec_has_files, change_uuid = data
 
     dict_zn = as_dict(zn)
     dict_zn["car"] = as_dict(zn.car)
     dict_zn["zn_has_files"] = zn_has_files
     dict_zn["rec_has_files"] = rec_has_files
 
-    return {"data": dict_zn, "change_uuid": data[-1]}
+    return {"data": dict_zn, "change_uuid": change_uuid}
 
 
 async def get_zn_changes(
@@ -534,17 +534,17 @@ async def get_zn_status_changes(
             StatusChange.change_uuid > last_uuid,
             StatusChange.sse_uuid != client_id,
         )
-        .order_by(StatusChange.change_uuid)
+        .order_by(StatusChange.change_uuid.desc())
         .limit(1)
     )
 
     result = await session.execute(stmt)
     data = result.first()
 
-    status = data[0]
+    if data is None or data[0] is None:
+        return {"status": None, "last_change_uuid": last_uuid}
 
-    if status is None:
-        return {"data": None, "change_uuid": None}
+    status = data[0]
 
     result = {
         "status": status.status,
@@ -556,7 +556,13 @@ async def get_zn_status_changes(
 
 from core.models.changes.help_classes.change_type import ChangeTypeEnum
 
-FORBIDDEN_KEYS = {"change_uuid", "sse_uuid"}
+FORBIDDEN_KEYS = {
+    "change_uuid",
+    "sse_uuid",
+    "post",
+    "mechanic",
+    "type",
+}
 
 def format_change_type_row(
         rows,
@@ -608,7 +614,7 @@ def format_change_type_row(
 
             data[primary] = (str(type), {primary_key: primary})
 
-    return last_change_uuid, [{"type": item[0], "data": {item[1]}} for item in data.values()]
+    return last_change_uuid, [{"type": item[0], "data": item[1]} for item in data.values()]
 
 
 async def get_zns_by_post(
@@ -764,7 +770,7 @@ async def change_done(
     if not hasattr(model, "done"):
         return
 
-    change = await CreateChange.done(
+    change = CreateChange.done(
         change_uuid=change_uuid,
         sse_uuid=client_id,
         identical_str=uuid,

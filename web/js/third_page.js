@@ -5,7 +5,6 @@ let post = null
 
 class RecurringTimer {
     constructor(callback, delay) {
-        console.log(callback)
         this.callback = callback
         this.delay = delay
         this.remaining = delay
@@ -67,6 +66,8 @@ const recPinFiles = document.querySelector("#recPinFiles")
 const recApply = document.querySelector("#recApply")
 const recArea = document.querySelector("#recArea")
 const recInput = document.querySelector("#recInput")
+
+const reasonArea = document.querySelector("#reasonArea")
 
 const jobs = document.querySelector("#jobs")
 const parts = document.querySelector("#parts")
@@ -133,7 +134,7 @@ async function getZnInfo() {
             data: {zn_number: znNumber},
             okFunc: (data) => {
                 doneStartRequest("zn", data, (data) => {
-                    updateZnInfo(data)
+                    updateAllZnInfo(data)
                 })
             }
         }
@@ -178,9 +179,46 @@ function updateHeaderPinFiles() {
     }
 }
 
-async function updateZnInfo(info) {
-    const data = info[0]
+const znNumberText = document.querySelector("#znNumber span")
+const znDateText = document.querySelector("#date span")
+const znManagerText = document.querySelector("#manager span")
+const znAssistantText = document.querySelector("#assistant span")
 
+const carVinText = document.querySelector("#vin span")
+const carReg = document.querySelector("#reg")
+const carModelText = document.querySelector("#model span")
+const carYearText = document.querySelector("#year span")
+const carMillageText = document.querySelector("#millage span")
+
+
+function updateZnInfo({ number, date, manager, assistant, reason, recommendation}) {
+    if (number) znNumberText.textContent = number
+    if (date) znDateText.textContent = createReadableDate(Number(date))
+    if (manager) znManagerText.textContent = manager
+    if (assistant) znAssistantText.textContent = assistant
+    if (reason) {
+        reasonArea.disabled = true
+        reasonArea.value = reason
+    }
+    if (recommendation) {
+        recArea.disabled = true
+        recArea.value = recommendation
+    }
+}
+
+function updateCarReg(reg) {
+    carReg.replaceChild(beautyReg(reg), carReg.querySelector("span"))
+}
+
+function updateCarInfo({ vin, reg, model, year, millage }) {
+    if (vin) carVinText.textContent = vin
+    if (reg) updateCarReg(reg)
+    if (model) carModelText.textContent = model
+    if (year) carYearText.textContent = `${year}г.`
+    if (millage) carMillageText.textContent = `${millage}${millage !== 0 ? "км." : ""}`
+}
+
+async function updateAllZnInfo(data) {
     if (data.zn_has_files) {
         hasFiles(headerPinFiles)
         znHasFiles = true
@@ -191,41 +229,17 @@ async function updateZnInfo(info) {
         hasFiles(recPinFiles)
     }
 
-    document.querySelector("#znNumber span").textContent = data.number
-    const reg = document.querySelector("#reg")
-    reg.replaceChild(beautyReg(data.car.reg), reg.querySelector("span"))
 
-    const znList = ["date", "manager", "assistant"]
-    const carList = ["vin", "model", "year", "millage"]
+    updateZnInfo({
+        number: data.number,
+        date: data.date,
+        manager: data.manager,
+        assistant: data.assistant,
+        reason: data.reason,
+        recommendation: data.recommendation,
+    })
 
-    for(const u of znList) {
-        let text = data[u]
-
-        if (u === "date") {
-            text = createReadableDate(Number(text))
-        }
-
-        document.querySelector(`#${u} span`).textContent = text
-    }
-
-    for(const u of carList) {
-        let text = data.car[u]
-
-        if (u === "millage") {
-            text += "км."
-        } else if (u === "year") {
-            text += "г."
-        }
-
-        document.querySelector(`#${u} span`).textContent = text
-    }
-
-    const reasonArea = document.querySelector("#reasonArea")
-    reasonArea.disabled = true
-    reasonArea.value = data.reason
-
-    recArea.disabled = true
-    recArea.value = data.recommendation
+    updateCarInfo(data.car)
 }
 
 
@@ -1892,24 +1906,25 @@ function initRecommendation() {
 		
         const currentData = recArea.value
 		
-		if (currentData && currentData.slice(currentData.lenght - 1) !== "\n") {
+		if (currentData && currentData.slice(currentData.length - 1) !== "\n") {
 			addData = "\n" + addData
 		}
 		
 		const newData = currentData + addData
 
-        const result = await smartSendRequest(
+        const result = await requestManager.send(
             "info/rec",
             "POST",
             {
-                rec: newData,
-                zn_number: znNumber,
-            },
-            (data) => {
-                recArea.value = newData
+                data: {
+                    rec: newData,
+                    zn_number: znNumber,
+                },
+                changeUUID: true,
             }
         )
 
+        recArea.value = newData
         recInput.value = ""
 
         return result
@@ -2006,16 +2021,19 @@ function initStartZN() {
     })
 
     async function sendStatus(status, onOk) {
-        return await smartSendRequest(
+        onOk()
+        return await requestManager.send(
             "info/status/set",
             "POST",
             {
-                zn_number: znNumber,
-                post: post,
-                mechanic: mechanic,
-                status: status
-            },
-            onOk
+                data: {
+                    zn_number: znNumber,
+                    post: post,
+                    mechanic: mechanic,
+                    status: status
+                },
+                changeUUID: true,
+            }
         )
     }
 }
@@ -2033,7 +2051,7 @@ function setStatus(status) {
         setUnStartStatus()
         setPausedStatus()
     } else {
-        console.error("Get wrong status")
+        console.error(`Get wrong status: ${status}`)
     }
 }
 
@@ -2049,7 +2067,7 @@ async function updateZNStatus() {
             },
             okFunc: (result) => { doneStartRequest("status", result, (result) => {
                 setStatus(result)
-            }) }
+            }) },
         }
     )
 }
@@ -2064,20 +2082,86 @@ async function initSSE() {
 
     // car_changes: list[dict[str, Any]], zn_changes: list[dict[str, Any]]
     sseSource.addRecoverHandler("zn", ({ car_changes, zn_changes }) => {
-        const carChange = car_changes[0]
-        const znChange = zn_changes[0]
+        if (car_changes && car_changes.length !== 0) {
+            const { type, data } = car_changes[0]
 
+            if (type === "delete") {
+                setClosePage()
+                return
+            }
 
+            if (type === "update") {
+                updateCarInfo(data)
+            }
+        }
+
+        if (zn_changes && zn_changes.length !== 0) {
+            const { type, data } = zn_changes[0]
+
+            if (type === "delete") {
+                setClosePage()
+                return
+            }
+
+            if (type === "update") {
+                updateZnInfo(data)
+            }
+        }
     })
+
+    function recoverZnItems(jobs, doneChanges, mainChanges) {
+        let smartData
+
+        if (jobs) {
+            smartData = jobsData
+        } else {
+            smartData = partsData
+        }
+
+        for (const change of mainChanges) {
+            const { type, data } = change
+
+            if (type === "create") {
+                smartData.create(data)
+            } else if (type === "update") {
+                const uuid = data.uuid
+                delete data.uuid
+
+                smartData.update(
+                    data,
+                    {uuid: uuid},
+                    1,
+                )
+            } else {
+                smartData.delete(
+                    {uuid: data.uuid},
+                    1
+                )
+            }
+        }
+
+        for (const data of doneChanges) {
+            if(!smartData.update(
+                {done: data.value},
+                {uuid: data.identical_str},
+                1
+            ).length) {
+                createNotification("error", "Ошибка в полученных")
+                console.error(`Not found: identical_str=${data.identical_str}`)
+            }
+        }
+    }
 
     // done_changes: list[dict[str, Any]], main_changes: list[dict[str, Any]]
     sseSource.addRecoverHandler("jobs", ({ done_changes, main_changes }) => {
-
+        recoverZnItems(true, done_changes, main_changes)
+        updateJobsTable()
     })
 
     // done_changes: list[dict[str, Any]], main_changes: list[dict[str, Any]]
     sseSource.addRecoverHandler("parts", ({ done_changes, main_changes }) => {
-
+        recoverZnItems(false, done_changes, main_changes)
+        updatePartsTable()
     })
 
     // status: str | None
@@ -2101,6 +2185,8 @@ async function initSSE() {
         if (indexes.length) {
             packageWrapper.oneRowDone(new_value, indexes[0])
         }
+
+        return type
     })
 
     // type: str, new_value: bool, uuids: list[str]
@@ -2119,6 +2205,13 @@ async function initSSE() {
                  packageWrapper.oneRowDone(new_value, indexes[0])
             }
         }
+
+        return type
+    })
+
+    // status: str
+    sseSource.addSSEEvent("status", ({ status }) => {
+        setStatus(status)
     })
 
     // type: str, identical_str: str | None, has_files: bool
@@ -2142,7 +2235,7 @@ async function initSSE() {
 
             if (!result.length) {
                 createNotification("error", "Ошибка обновления данных на странице")
-                return
+                throw Error("Wrong result")
             }
 
             pinFiles = Array.from(packageWrapper.querySelectorAll(".pin-files"))[result[0]]
@@ -2151,6 +2244,20 @@ async function initSSE() {
         has_files
             ? pinFiles.classList.add("has-files")
             : pinFiles.classList.remove("has-files")
+
+        return type === "zn" || type === "rec" ? "zn" : type
+    })
+
+    // status: str
+    sseSource.addSSEEvent("status", ({ status }) => {
+        setStatus(status)
+        return "status"
+    })
+
+    // rec: str
+    sseSource.addSSEEvent("rec", ({ rec }) => {
+        recArea.value = rec
+        return "zn"
     })
 
     await sseSource.subServerEvents({"zn": znNumber})
@@ -2160,6 +2267,5 @@ async function initSSE() {
 
     requestManager.SSE = sseSource
 }
-
 
 start()

@@ -90,7 +90,7 @@ async def get_sse_events(
     return manager.streaming_response(request, client_id)
 
 
-@sse_router.put("/unsubscribe")
+@sse_router.post("/unsubscribe")
 async def unsubscribe(client_id: UUID | None = Depends(get_client_id)):
     manager = get_manager(client_id)
 

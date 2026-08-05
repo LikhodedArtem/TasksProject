@@ -16,7 +16,6 @@ let sseSource = null
 async function start() {
     initEscapeButton()
     initTime()
-    setLoading()
 
     initStart()
 }

@@ -10,14 +10,14 @@ from core.models.changes.help_classes import ChangeType
 
 class CreateChange:
     @staticmethod
-    async def _make_change(
+    def _make_change(
             change_model,
             **kwargs
     ):
         return change_model(**kwargs)
 
     @classmethod
-    async def zn(
+    def zn(
             cls,
             change_uuid: UUID,
             sse_uuid: UUID,
@@ -30,7 +30,7 @@ class CreateChange:
             assistant: Optional[str] = None,
             manager: Optional[str] = None,
     ):
-        return await cls._make_change(
+        return cls._make_change(
             ZNChange,
             change_uuid=change_uuid,
             sse_uuid=sse_uuid,
@@ -45,7 +45,24 @@ class CreateChange:
         )
 
     @classmethod
-    async def car(
+    def rec(
+            cls,
+            change_uuid: UUID,
+            sse_uuid: UUID,
+            zn_number: str,
+            recommendation: str,
+    ):
+        return cls._make_change(
+            ZNChange,
+            change_uuid=change_uuid,
+            sse_uuid=sse_uuid,
+            zn_number=zn_number,
+            recommendation=recommendation,
+        )
+
+
+    @classmethod
+    def car(
             cls,
             change_uuid: UUID,
             sse_uuid: UUID,
@@ -56,7 +73,7 @@ class CreateChange:
             year: Optional[int] = None,
             millage: Optional[int] = None,
     ):
-        return await cls._make_change(
+        return cls._make_change(
             CarChange,
             change_uuid=change_uuid,
             sse_uuid=sse_uuid,
@@ -69,7 +86,7 @@ class CreateChange:
         )
 
     @classmethod
-    async def file(
+    def file(
             cls,
             change_uuid: UUID,
             sse_uuid: UUID,
@@ -78,7 +95,7 @@ class CreateChange:
             mechanic: str,
             post: str,
     ):
-        return await cls._make_change(
+        return cls._make_change(
             FileChange,
             change_uuid=change_uuid,
             sse_uuid=sse_uuid,
@@ -89,7 +106,7 @@ class CreateChange:
         )
 
     @classmethod
-    async def job(
+    def job(
             cls,
             change_uuid: UUID,
             sse_uuid: UUID,
@@ -100,7 +117,7 @@ class CreateChange:
             name: Optional[str] = None,
             normal_time: Optional[str] = None,
     ):
-        return await cls._make_change(
+        return cls._make_change(
             JobChange,
             change_uuid=change_uuid,
             sse_uuid=sse_uuid,
@@ -113,7 +130,7 @@ class CreateChange:
         )
 
     @classmethod
-    async def part(
+    def part(
             cls,
             change_uuid: UUID,
             sse_uuid: UUID,
@@ -126,7 +143,7 @@ class CreateChange:
             quantity: Optional[int] = None,
             units: Optional[str] = None,
     ):
-        return await cls._make_change(
+        return cls._make_change(
             PartChange,
             change_uuid=change_uuid,
             sse_uuid=sse_uuid,
@@ -141,7 +158,7 @@ class CreateChange:
         )
 
     @classmethod
-    async def main_post(
+    def main_post(
             cls,
             change_uuid: UUID,
             sse_uuid: UUID,
@@ -149,7 +166,7 @@ class CreateChange:
             name: str,
             territory: Optional[str] = None,
     ):
-        return await cls._make_change(
+        return cls._make_change(
             MainPostChange,
             change_uuid=change_uuid,
             sse_uuid=sse_uuid,
@@ -159,7 +176,7 @@ class CreateChange:
         )
 
     @classmethod
-    async def post(
+    def post(
             cls,
             change_uuid: UUID,
             sse_uuid: UUID,
@@ -169,7 +186,7 @@ class CreateChange:
             date1: Optional[str] = None,
             date2: Optional[str] = None,
     ):
-        return await cls._make_change(
+        return cls._make_change(
             PostChange,
             change_uuid=change_uuid,
             sse_uuid=sse_uuid,
@@ -181,7 +198,7 @@ class CreateChange:
         )
 
     @classmethod
-    async def mechanic(
+    def mechanic(
             cls,
             change_uuid: UUID,
             sse_uuid: UUID,
@@ -189,7 +206,7 @@ class CreateChange:
             key: str,
             name: Optional[str] = None,
     ):
-        return await cls._make_change(
+        return cls._make_change(
             MechanicChange,
             change_uuid=change_uuid,
             sse_uuid=sse_uuid,
@@ -199,7 +216,7 @@ class CreateChange:
         )
 
     @classmethod
-    async def done(
+    def done(
             cls,
             change_uuid: UUID,
             sse_uuid: UUID,
@@ -208,7 +225,7 @@ class CreateChange:
             mechanic: str,
             post: str,
     ) -> UUID:
-        return await cls._make_change(
+        return cls._make_change(
             DoneChange,
             change_uuid=change_uuid,
             sse_uuid=sse_uuid,
@@ -219,7 +236,7 @@ class CreateChange:
         )
 
     @classmethod
-    async def status(
+    def status(
             cls,
             change_uuid: UUID,
             sse_uuid: UUID,
@@ -228,7 +245,7 @@ class CreateChange:
             mechanic: str,
             status: str,
     ) -> UUID:
-        return await cls._make_change(
+        return cls._make_change(
             StatusChange,
             change_uuid=change_uuid,
             sse_uuid=sse_uuid,

@@ -9,6 +9,9 @@ class ChangeTypeEnum(str, Enum):
     CREATE = "create"
     DELETE = "delete"
 
+    def __str__(self):
+        return self.value
+
 
 class ChangeType:
     type: Mapped[str] = mapped_column(
