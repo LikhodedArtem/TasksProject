@@ -763,7 +763,7 @@ class SmartSSESource {
                 delete value["last_change_uuid"]
 
                 try {
-                    console.log(`Event ${key}:`, value)
+                    // console.log(`Event ${key}:`, value)
                     this._recoverFuncs[key](value)
                 } catch (error) {
                     console.error(`Error while attempting to run recover func: ${error}`)

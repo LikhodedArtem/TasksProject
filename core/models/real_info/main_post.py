@@ -4,10 +4,13 @@ from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import RealInfoBase
-from .help_classes import Life, Stage
+from .help_classes import Life, Stage, CanCreateChange
 
 
-class MainPost(RealInfoBase, Life, Stage):
+class MainPost(RealInfoBase, Life, Stage, CanCreateChange):
+    change_func = "main_post"
+
+
     name: Mapped[str] = mapped_column(
         String,
         primary_key=True,

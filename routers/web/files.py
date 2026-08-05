@@ -127,7 +127,7 @@ class Files:
         )
 
         async with db_helper.session_factory() as session:
-            await add_object(session, file_obj)
+            await add_objects(session, file_obj)
 
         return file_id
 

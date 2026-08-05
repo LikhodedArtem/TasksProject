@@ -6,7 +6,7 @@ from sqlalchemy import String, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import RealInfoBase
-from .help_classes import Life, Stage
+from .help_classes import Life, Stage, CanCreateChange
 
 
 if TYPE_CHECKING:
@@ -16,7 +16,10 @@ if TYPE_CHECKING:
     from part import Part
 
 
-class ZN(RealInfoBase, Life, Stage):
+class ZN(RealInfoBase, Life, Stage, CanCreateChange):
+    change_func = "zn"
+
+
     number: Mapped[str] = mapped_column(
         String,
         primary_key=True,
@@ -83,7 +86,7 @@ class ZN(RealInfoBase, Life, Stage):
 
     @staticmethod
     def for_find() -> list[str]:
-        return ["number"]
+        return ["number", "car_vin"]
 
     @staticmethod
     def for_value() -> list[str]:

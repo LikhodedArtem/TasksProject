@@ -1,8 +1,8 @@
 """Обработка xml со стороны 1C"""
 
 
-from dataclasses import dataclass
-from typing import Annotated, Any, Optional, Literal
+from datetime import datetime
+from typing import Annotated, Any, Optional
 from copy import deepcopy
 
 from enum import Enum, auto
@@ -14,7 +14,7 @@ from crud import *
 from core.models import db_helper
 from core.models.real_info import *
 from core.models.changes import *
-from help_functions import as_dict
+from crud import format_change_type_rows
 
 
 onec_router = APIRouter(prefix="/onec", tags=["onec"])
@@ -30,7 +30,7 @@ __all__ = ["onec_router"]
 async def zn(
         xml_string: Annotated[str, Body(embed=True)]
 ):
-    await parse_zn(xml_string)
+    print(f"Parse zn response: {await parse_zn(xml_string)}")
 
 
 """Обработка списка всех механиков"""
@@ -40,7 +40,7 @@ async def zn(
 async def mechanics(
         xml_string: Annotated[str, Body(embed=True)]
 ):
-    await parse_mechanics(xml_string)
+    print(f"Parse mechanics response: {await parse_mechanics(xml_string)}")
 
 
 """Обработка списка всех названий постов"""
@@ -50,7 +50,7 @@ async def mechanics(
 async def posts(
         xml_string: Annotated[str, Body(embed=True)]
 ):
-    await parse_posts(xml_string)
+    print(f"Parse posts response: {await parse_posts(xml_string)}")
 
 
 
@@ -143,43 +143,49 @@ async def parse_zn(xml_string: str):
 
         parts_lst.append(part_obj)
 
-    operations_lst: list[Operation] = []
+    changes = {
+        "zn": (
+            zn_lst,
+            ZN,
+            False
+        ),
+        "car": (
+            car_lst,
+            Car,
+            False
+        ),
+        "posts": (
+            post_lst,
+            Post,
+            False
+        ),
+        "jobs": (
+            job_lst,
+            Job,
+            True,
+            zn_number
+        ),
+        "parts": (
+            parts_lst,
+            Part,
+            True,
+            zn_number
+        ),
+        # "__ZN_mtm_Post": (
+        #     relation_lst,
+        #     ZN_mtm_Post,
+        #     True,
+        #     zn_number
+        # ),
+    }
 
-    operations_lst += await refresh_objects(
-        zn_lst,
-        ZN,
-        False
-    )
-    operations_lst += await refresh_objects(
-        car_lst,
-        Car,
-        False
-    )
-    operations_lst += await refresh_objects(
-        post_lst,
-        Post,
-        False
-    )
-    operations_lst += await refresh_objects(
-        job_lst,
-        Job,
-        True,
-        zn_number
-    )
-    operations_lst += await refresh_objects(
-        parts_lst,
-        Part,
-        True,
-        zn_number
-    )
-    operations_lst += await refresh_objects(
-        relation_lst,
-        ZN_mtm_Post,
-        True,
-        zn_number
-    )
+    data = {}
 
-    return operations_lst
+    for change_name, change_data in changes:
+        data[change_name] = await refresh_objects(*change_data)
+
+    return data
+
 
 async def parse_mechanics(xml_string: str):
     root = ET.fromstring(xml_string)
@@ -198,15 +204,17 @@ async def parse_mechanics(xml_string: str):
         )
         mechanic_lst.append(mechanic_obj)
 
-    operations_lst: list[Operation] = []
-
-    operations_lst += await refresh_objects(
+    last_change_uuid, data = await refresh_objects(
         mechanic_lst,
         Mechanic,
         True
     )
 
-    return operations_lst
+    return {
+        "last_change_uuid": last_change_uuid,
+        "data": data,
+    }
+
 
 async def parse_posts(xml_string: str):
     root = ET.fromstring(xml_string)
@@ -224,69 +232,16 @@ async def parse_posts(xml_string: str):
 
         post_lst.append(post_obj)
 
-    operations_lst: list[Operation] = []
-
-    operations_lst = await refresh_objects(
+    last_change_uuid, data = await refresh_objects(
         data=post_lst,
         model=MainPost,
         delete_old=True,
     )
 
-    return operations_lst
-
-
-class UpdateType(Enum):
-    CREATE = auto()
-    UPDATE = auto()
-    DELETE = auto()
-
-
-@dataclass
-class Operation:
-    model_name: str
-    operation: Literal["create", "update", "delete"]
-    data: dict[str, Any]
-
-
-class OperationConstructor:
-    @classmethod
-    def create(cls, obj) -> Operation:
-        data = {key: getattr(obj, key) for key in as_dict(obj)}
-
-        operation = Operation(
-            model_name=type(obj).__name__.lower(),
-            operation="create",
-            data=data,
-        )
-
-        return operation
-
-    @classmethod
-    def update(cls, obj, data: dict) -> Operation:
-        primary_keys = obj.for_find()
-        got_keys = list(data.keys())
-
-        for key in primary_keys:
-            if key not in got_keys:
-                data[key] = getattr(obj, key)
-
-        operation = Operation(
-            model_name=type(obj).__name__.lower(),
-            operation="update",
-            data=data,
-        )
-
-        return operation
-
-    @classmethod
-    def delete(cls, model, data: dict[str, Any]) -> Operation:
-        operation = Operation(
-            model_name=model.__name__.lower(),
-            operation="delete",
-            data=data,
-        )
-
-        return operation
+    return {
+        "last_change_uuid": last_change_uuid,
+        "data": data,
+    }
 
 
 def compare_objects(obj_new, obj_old) -> dict[str, Any]:
@@ -308,11 +263,11 @@ async def refresh_objects(
         model,
         delete_old: bool = True,
         area_value: Optional[str] = None,
-) -> list[Operation]:
+):
     if not data:
         return []
 
-    operation_list: list[Operation] = []
+    change_list: list[ChangeBase] = []
 
     primary_keys = model.for_find()
     value_keys = model.for_value()
@@ -328,10 +283,15 @@ async def refresh_objects(
                 raise ValueError("Expected one old_object, got two or more")
 
             if old_object is None:
-                await add_object(session, object)
+                change = change_list.append(object.create_change("create"))
 
-                operation_list.append(OperationConstructor.create(object))
+                await add_objects(
+                    session,
+                    [object, change],
+                )
             else:
+                change = None
+
                 for_update = dict()
 
                 if old_object.is_alive:
@@ -340,14 +300,16 @@ async def refresh_objects(
                     if difference:
                         for_update = deepcopy(difference)
 
-                        operation_list.append(OperationConstructor.update(object, difference))
+                        change = object.create_change("update", list(difference.keys()))
+                        change_list.append(change)
                 else:
                     for key in value_keys:
                         for_update[key] = getattr(object, key)
                     for_update["is_alive"] = True
                     for_update["death_time"] = None
 
-                    operation_list.append(OperationConstructor.create(object))
+                    change = object.create_change("create")
+                    change_list.append(change)
 
                 for_update["stage"] = new_stage
 
@@ -355,22 +317,28 @@ async def refresh_objects(
                     session,
                     model,
                     primary_kwargs,
-                    for_update
+                    for_update,
+                    [change] if change is not None else None,
                 )
 
     if delete_old:
         async with db_helper.session_factory() as session:
-            deleted_lst = await kill_old_in_model(
+            delete_lst = await kill_old_in_model(
                 session=session,
                 model=model,
                 alive_stage=new_stage,
-                primary_keys=primary_keys,
                 area_value=area_value,
             )
 
-        for deleted in deleted_lst:
-            primary_keys_delete = {key: value for key, value in zip(primary_keys, deleted)}
+        for delete in delete_lst:
+            change = delete.create_change("delete")
+            async with db_helper.session_factory() as session:
+                await update_objects(
+                    session=session,
+                    model=model,
+                    for_find={key: getattr(delete, key) for key in primary_keys},
+                    for_update={"is_alive": False, "death_time": datetime.now()},
+                    for_add=[change],
+                )
 
-            operation_list.append(OperationConstructor.delete(model, primary_keys_delete))
-
-    return operation_list
+    return format_change_type_rows(change_list, primary_keys)

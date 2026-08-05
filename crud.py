@@ -16,14 +16,18 @@ from core.models.real_info import *
 from help_functions import as_dict
 
 
-async def add_object(
+async def add_objects(
         session: AsyncSession,
-        object,
+        objects: Any | list[Any],
 ) -> None:
-    session.add(object)
+    async with session.begin():
+        if isinstance(objects, list):
+            for obj in objects:
+                session.add(obj)
+        else:
+            session.add(objects)
 
     await session.commit()
-    await session.refresh(object)
 
 
 async def get_current_zn_stage(
@@ -270,8 +274,8 @@ async def get_zn_changes(
         car_changes_raw = (await session.execute(car_changes_stmt)).all()
         zn_changes_raw = (await session.execute(zn_changes_stmt)).all()
 
-    suggest_uuid1, car_changes = format_change_type_row(car_changes_raw, "vin")
-    suggest_uuid2, zn_changes = format_change_type_row(zn_changes_raw, "number")
+    suggest_uuid1, car_changes = format_change_type_rows(car_changes_raw, "vin")
+    suggest_uuid2, zn_changes = format_change_type_rows(zn_changes_raw, "number")
 
     last_change_uuid = max(last_uuid, suggest_uuid1, suggest_uuid2)
 
@@ -469,7 +473,7 @@ async def _get_zn_items_changes(
 
         last_change_uuid = max(last_change_uuid, c.change_uuid)
 
-    suggest_uuid, main_changes = format_change_type_row(main_changes_raw, "uuid")
+    suggest_uuid, main_changes = format_change_type_rows(main_changes_raw, "uuid")
 
     last_change_uuid = max(last_change_uuid, suggest_uuid)
 
@@ -564,10 +568,10 @@ FORBIDDEN_KEYS = {
     "type",
 }
 
-def format_change_type_row(
+def format_change_type_rows(
         rows,
         primary_key: str,
-):
+) -> tuple[str, list[dict[str, Any]]]:
     data: dict[str, tuple[str, Any]] = {}
 
     last_change_uuid = Names.MIN_UUID7
@@ -689,9 +693,8 @@ async def kill_old_in_model(
         session: AsyncSession,
         model,
         alive_stage: int ,
-        primary_keys: list[str],
         area_value: str | None = None,
-) -> list:
+):
     if model == ZN:
         return []
 
@@ -700,34 +703,18 @@ async def kill_old_in_model(
         model.is_alive == True,
     ]
 
-    if model == Job:
-        conditions.append(Job.zn_number == area_value)
-    elif model == Part:
-        conditions.append(Part.zn_number == area_value)
+    if model == Job or model == Part:
+        conditions.append(model.zn_number == area_value)
     elif model == ZN_mtm_Post:
         conditions.append(ZN_mtm_Post.zn_number == area_value)
 
-    death_time = datetime.now()
-
     stmt = (
-        update(model)
+        select(model)
         .where(*conditions)
-        .values(
-            is_alive=False,
-            death_time=death_time,
-        )
-        .returning(*[getattr(model, primary_key) for primary_key in primary_keys])
     )
 
     result = await session.execute(stmt)
-    await session.commit()
-
-    answer = []
-    for value in list(result.scalars().all()):
-        if isinstance(value, str):
-            answer.append([value])
-            continue
-        answer.append(value)
+    answer = result.all()
 
     return answer
 
@@ -788,8 +775,22 @@ async def change_done(
     )
 
 
+async def main():
+    async with db_helper.session_factory() as session:
+        print(await kill_old_in_model(
+            session,
+            Job,
+            100,
+            ["uuid"],
+            "123"
+        ))
+
+
+asyncio.run(main())
+
+
 __all__ = [
-    "add_object",
+    "add_objects",
     "find_objects",
     "update_objects",
     "delete_objects",

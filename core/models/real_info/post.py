@@ -6,14 +6,17 @@ from sqlalchemy import String, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import RealInfoBase
-from .help_classes import Life, Stage
+from .help_classes import Life, Stage, CanCreateChange
 
 
 if TYPE_CHECKING:
     from .zn import ZN
 
 
-class Post(RealInfoBase, Life, Stage):
+class Post(RealInfoBase, Life, Stage, CanCreateChange):
+    change_func = "post"
+
+
     uuid: Mapped[str] = mapped_column(
         String,
         primary_key=True
