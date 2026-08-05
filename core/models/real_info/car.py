@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 
 class Car(RealInfoBase, Life, Stage, CanCreateChange):
-    change_func = "main_post"
+    change_func = "car"
 
 
     vin: Mapped[str] = mapped_column(
@@ -34,7 +34,7 @@ class Car(RealInfoBase, Life, Stage, CanCreateChange):
         unique=False
     )
 
-    year: Mapped[int] = mapped_column(
+    year: Mapped[str] = mapped_column(
         String,
         nullable=False,
         unique=False

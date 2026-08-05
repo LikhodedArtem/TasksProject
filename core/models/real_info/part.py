@@ -73,7 +73,7 @@ class Part(RealInfoBase, Life, Stage, CanDone, CanCreateChange):
 
     @staticmethod
     def for_find() -> list[str]:
-        return ["uuid"]
+        return ["uuid", "zn_number"]
 
     @staticmethod
     def for_value() -> list[str]:

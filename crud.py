@@ -515,7 +515,10 @@ async def get_zn_status(
     result = await session.execute(stmt)
     data = result.first()
 
-    return {"data": data[0].status if data[0] is not None else "never", "change_uuid": data[1]}
+    if data is None:
+        return {"data": "never", "change_uuid": None}
+
+    return {"data": data[0].status, "change_uuid": data[1]}
 
 
 async def get_zn_status_changes(
@@ -570,31 +573,38 @@ FORBIDDEN_KEYS = {
 
 def format_change_type_rows(
         rows,
-        primary_key: str,
+        primary_key: str | list,
 ) -> tuple[str, list[dict[str, Any]]]:
     data: dict[str, tuple[str, Any]] = {}
 
     last_change_uuid = Names.MIN_UUID7
 
+    if type(primary_key) is list:
+        primary_key = primary_key[0]
+
     for row in rows:
-        obj = row[0]
+        try:
+            obj = row[0]
+        except Exception:
+            obj = row
+
         primary = getattr(obj, primary_key)
-        type = obj.type
+        type_ = obj.type
 
         last_change_uuid = max(last_change_uuid, obj.change_uuid)
 
         if primary not in data:
-            if type == ChangeTypeEnum.CREATE or type == ChangeTypeEnum.UPDATE:
+            if type_ == ChangeTypeEnum.CREATE or type_ == ChangeTypeEnum.UPDATE:
                 obj_info = {}
 
                 for key in obj.__table__.columns.keys():
                     if key not in FORBIDDEN_KEYS:
                         obj_info[key] = getattr(obj, key)
 
-                data[primary] = (str(type), obj_info)
+                data[primary] = (str(type_), obj_info)
 
             else:
-                data[primary] = (str(type), {primary_key: primary})
+                data[primary] = (str(type_), {primary_key: primary})
 
             continue
 
@@ -603,7 +613,7 @@ def format_change_type_rows(
         if current_type == "delete":
             continue
 
-        if type == ChangeTypeEnum.UPDATE:
+        if type_ == ChangeTypeEnum.UPDATE:
             for key in current_value.keys():
                 value = getattr(obj, key)
                 if key is not None:
@@ -611,12 +621,12 @@ def format_change_type_rows(
 
             data[primary] = (current_type, current_value)
 
-        if type == ChangeTypeEnum.DELETE:
+        if type_ == ChangeTypeEnum.DELETE:
             if current_type == "create":
                 del data[primary]
                 continue
 
-            data[primary] = (str(type), {primary_key: primary})
+            data[primary] = (str(type_), {primary_key: primary})
 
     return last_change_uuid, [{"type": item[0], "data": item[1]} for item in data.values()]
 
@@ -773,20 +783,6 @@ async def change_done(
         { "done": new_value },
         for_add=[change]
     )
-
-
-async def main():
-    async with db_helper.session_factory() as session:
-        print(await kill_old_in_model(
-            session,
-            Job,
-            100,
-            ["uuid"],
-            "123"
-        ))
-
-
-asyncio.run(main())
 
 
 __all__ = [

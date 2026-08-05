@@ -1,12 +1,12 @@
 """Обработка xml со стороны 1C"""
-
-
+import traceback
 from datetime import datetime
+from pprint import pprint
 from typing import Annotated, Any, Optional
 from copy import deepcopy
 
 from enum import Enum, auto
-from fastapi import APIRouter, Body
+from fastapi import APIRouter, Body, Request
 import xml.etree.ElementTree as ET
 
 from codes import safe_route
@@ -28,29 +28,33 @@ __all__ = ["onec_router"]
 @onec_router.post("/zn")
 @safe_route("Parse zn")
 async def zn(
-        xml_string: Annotated[str, Body(embed=True)]
+        request: Request,
 ):
-    print(f"Parse zn response: {await parse_zn(xml_string)}")
-
+    xml_string = await request.body()
+    print(f"Parse zn response:")
+    pprint(await parse_zn(xml_string))     
 
 """Обработка списка всех механиков"""
 
 @onec_router.post("/mechanics")
 @safe_route("Parse mechanics")
 async def mechanics(
-        xml_string: Annotated[str, Body(embed=True)]
+        request: Request,
 ):
-    print(f"Parse mechanics response: {await parse_mechanics(xml_string)}")
-
+    xml_string = await request.body()
+    print(f"Parse mechanics response:")
+    pprint(await parse_mechanics(xml_string))
 
 """Обработка списка всех названий постов"""
 
 @onec_router.post("/posts")
 @safe_route("Parse posts")
 async def posts(
-        xml_string: Annotated[str, Body(embed=True)]
+        request: Request,
 ):
-    print(f"Parse posts response: {await parse_posts(xml_string)}")
+    xml_string = await request.body()
+    print(f"Parse posts response:")
+    pprint(await parse_posts(xml_string))
 
 
 
@@ -67,6 +71,7 @@ async def parse_zn(xml_string: str):
 
     zn_lst = [
         ZN(
+            car_vin=zn.find("car").find("win").text,
             number=zn_number,
             date=zn.find("zn_date").text.replace("\xa0", ""),
             reason=zn.find("reason_for_contacting").text,
@@ -80,11 +85,10 @@ async def parse_zn(xml_string: str):
     car = zn.find("car")
     car_lst = [
         Car(
-            zn_number=zn_number,
-            win=car.find("win").text,
+            vin=car.find("win").text,
             reg=car.find("reg").text if car.find("reg") is not None else None,
             model=car.find("model").text,
-            year=int(car.find("year").text),
+            year=car.find("year").text,
             millage=int(car.find("millage").text.replace("\xa0", "")),
             stage=new_stage,
         )
@@ -171,18 +175,33 @@ async def parse_zn(xml_string: str):
             True,
             zn_number
         ),
-        # "__ZN_mtm_Post": (
-        #     relation_lst,
-        #     ZN_mtm_Post,
-        #     True,
-        #     zn_number
-        # ),
+        "zn_mtm_post": (
+            relation_lst,
+            ZN_mtm_Post,
+            True,
+            zn_number,
+            False
+        ),
     }
 
     data = {}
 
-    for change_name, change_data in changes:
+    for change_name, change_data in changes.items():
         data[change_name] = await refresh_objects(*change_data)
+
+    async with db_helper.session_factory() as session:
+        for relation in relation_lst:
+            old_relation = await find_objects(
+                session,
+                ZN_mtm_Post,
+                zn_number=relation.zn_number,
+                post_uuid=relation.post_uuid,
+            )
+
+            if old_relation is None:
+                session.add(relation)
+
+        await session.commit()
 
     return data
 
@@ -263,11 +282,12 @@ async def refresh_objects(
         model,
         delete_old: bool = True,
         area_value: Optional[str] = None,
+        changes: bool = True,
 ):
     if not data:
         return []
 
-    change_list: list[ChangeBase] = []
+    if changes: change_list: list[ChangeBase] = []
 
     primary_keys = model.for_find()
     value_keys = model.for_value()
@@ -279,46 +299,50 @@ async def refresh_objects(
         async with db_helper.session_factory() as session:
             old_object = await find_objects(session, model, **primary_kwargs)
 
-            if isinstance(old_object, list):
-                raise ValueError("Expected one old_object, got two or more")
+        if isinstance(old_object, list):
+            raise ValueError("Expected one old_object, got two or more")
 
-            if old_object is None:
-                change = change_list.append(object.create_change("create"))
+        if old_object is None:
+            if changes:
+                change = object.create_change("create")
+                change_list.append(change)
 
+            async with db_helper.session_factory() as session:
                 await add_objects(
                     session,
-                    [object, change],
+                    [object, change] if changes else [object],
                 )
+        else:
+            change = None
+
+            for_update = dict()
+
+            if old_object.is_alive:
+                difference = compare_objects(object, old_object)
+
+                if difference:
+                    for_update = deepcopy(difference)
+
+                    change = object.create_change("update", list(difference.keys()))
+                    if changes: change_list.append(change)
             else:
-                change = None
+                for key in value_keys:
+                    for_update[key] = getattr(object, key)
+                for_update["is_alive"] = True
+                for_update["death_time"] = None
 
-                for_update = dict()
+                change = object.create_change("create")
+                if changes: change_list.append(change)
 
-                if old_object.is_alive:
-                    difference = compare_objects(object, old_object)
+            for_update["stage"] = new_stage
 
-                    if difference:
-                        for_update = deepcopy(difference)
-
-                        change = object.create_change("update", list(difference.keys()))
-                        change_list.append(change)
-                else:
-                    for key in value_keys:
-                        for_update[key] = getattr(object, key)
-                    for_update["is_alive"] = True
-                    for_update["death_time"] = None
-
-                    change = object.create_change("create")
-                    change_list.append(change)
-
-                for_update["stage"] = new_stage
-
+            async with db_helper.session_factory() as session:
                 await update_objects(
-                    session,
-                    model,
-                    primary_kwargs,
-                    for_update,
-                    [change] if change is not None else None,
+                    session=session,
+                    model=model,
+                    for_find=primary_kwargs,
+                    for_update=for_update,
+                    for_add=[change] if change is not None else None,
                 )
 
     if delete_old:
@@ -331,14 +355,16 @@ async def refresh_objects(
             )
 
         for delete in delete_lst:
-            change = delete.create_change("delete")
+            if changes: change = delete.create_change("delete")
+            if changes: change_list.append(change)
             async with db_helper.session_factory() as session:
                 await update_objects(
                     session=session,
                     model=model,
                     for_find={key: getattr(delete, key) for key in primary_keys},
                     for_update={"is_alive": False, "death_time": datetime.now()},
-                    for_add=[change],
+                    for_add=[change] if changes else None,
                 )
 
-    return format_change_type_rows(change_list, primary_keys)
+    if changes:
+        return format_change_type_rows(change_list, primary_keys)

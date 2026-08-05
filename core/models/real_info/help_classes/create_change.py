@@ -14,20 +14,20 @@ class CanCreateChange:
             type_: Literal["create", "update", "delete"],
             changed_strokes: list[str] | None = None,
     ):
-        primary_keys = {key: getattr(self, key) for key in self.for_find}
+        primary_keys = {key: getattr(self, key) for key in self.for_find()}
 
         if type_ == "delete":
             data = {}
         else:
-            data = {key: getattr(self, key) for key in self.for_value}
+            data = {key: getattr(self, key) for key in self.for_value()}
 
             if type_ == "update":
-                for key in data:
-                    if key not in changed_strokes:
+                for key in list(data.keys()):
+                    if key in changed_strokes:
                         continue
                     del data[key]
 
-        return getattr(CreateChange, "CHANGE_FUNC")(
+        return getattr(CreateChange, getattr(self, "change_func"))(
             change_uuid=uuid7(),
             sse_uuid=uuid7(),
             type=type_,
