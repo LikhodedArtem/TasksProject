@@ -10,12 +10,13 @@ from fastapi import APIRouter, Body, Request
 import xml.etree.ElementTree as ET
 
 from codes import safe_route
+from core import Names
 from crud import *
 from core.models import db_helper
 from core.models.real_info import *
 from core.models.changes import *
 from crud import format_change_type_rows
-
+from sse.managers import third_page_manager
 
 onec_router = APIRouter(prefix="/onec", tags=["onec"])
 
@@ -31,8 +32,21 @@ async def zn(
         request: Request,
 ):
     xml_string = await request.body()
-    print(f"Parse zn response:")
-    pprint(await parse_zn(xml_string))     
+    response, zn_number = await parse_zn(xml_string)
+
+    for event, info in response.items():
+        last_uuid, data = info
+
+        if not data: continue
+
+        await third_page_manager.broadcast(
+            data=data,
+            event=event,
+            broadcast_event="zn",
+            add_info=zn_number,
+            id_=last_uuid if last_uuid != Names.MIN_UUID7 else "skip",
+        )
+
 
 """Обработка списка всех механиков"""
 
@@ -42,8 +56,7 @@ async def mechanics(
         request: Request,
 ):
     xml_string = await request.body()
-    print(f"Parse mechanics response:")
-    pprint(await parse_mechanics(xml_string))
+    response = await parse_mechanics(xml_string)
 
 """Обработка списка всех названий постов"""
 
@@ -53,13 +66,10 @@ async def posts(
         request: Request,
 ):
     xml_string = await request.body()
-    print(f"Parse posts response:")
-    pprint(await parse_posts(xml_string))
+    response = await parse_posts(xml_string)
 
 
-
-
-async def parse_zn(xml_string: str):
+async def parse_zn(xml_string: bytes):
     root = ET.fromstring(xml_string)
 
     zn = root.find('zn')
@@ -175,7 +185,7 @@ async def parse_zn(xml_string: str):
             True,
             zn_number
         ),
-        "zn_mtm_post": (
+        "__zn_mtm_post": (
             relation_lst,
             ZN_mtm_Post,
             True,
@@ -187,7 +197,10 @@ async def parse_zn(xml_string: str):
     data = {}
 
     for change_name, change_data in changes.items():
-        data[change_name] = await refresh_objects(*change_data)
+        response = await refresh_objects(*change_data)
+
+        if not change_name.startswith("__"):
+            data[change_name] = response
 
     async with db_helper.session_factory() as session:
         for relation in relation_lst:
@@ -203,10 +216,10 @@ async def parse_zn(xml_string: str):
 
         await session.commit()
 
-    return data
+    return data, zn_number
 
 
-async def parse_mechanics(xml_string: str):
+async def parse_mechanics(xml_string: bytes):
     root = ET.fromstring(xml_string)
 
     mechanics = root.find('mechanics')
@@ -235,7 +248,7 @@ async def parse_mechanics(xml_string: str):
     }
 
 
-async def parse_posts(xml_string: str):
+async def parse_posts(xml_string: bytes):
     root = ET.fromstring(xml_string)
 
     async with db_helper.session_factory() as session:

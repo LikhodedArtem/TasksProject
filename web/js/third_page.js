@@ -215,7 +215,7 @@ function updateCarInfo({ vin, reg, model, year, millage }) {
     if (reg) updateCarReg(reg)
     if (model) carModelText.textContent = model
     if (year) carYearText.textContent = `${year}г.`
-    if (millage) carMillageText.textContent = `${millage}${millage !== 0 ? "км." : ""}`
+    if (millage !== null) carMillageText.textContent = `${millage}${millage !== 0 ? "км." : ""}`
 }
 
 async function updateAllZnInfo(data) {
@@ -2080,36 +2080,30 @@ async function initSSE() {
         post: post,
     }
 
-    // car_changes: list[dict[str, Any]], zn_changes: list[dict[str, Any]]
-    sseSource.addRecoverHandler("zn", ({ car_changes, zn_changes }) => {
-        if (car_changes && car_changes.length !== 0) {
-            const { type, data } = car_changes[0]
+    function handleDone(jobs, doneChanges) {
+        let smartData
 
-            if (type === "delete") {
-                setClosePage()
-                return
-            }
-
-            if (type === "update") {
-                updateCarInfo(data)
-            }
+        if (jobs) {
+            smartData = jobsData
+        } else {
+            smartData = partsData
         }
 
-        if (zn_changes && zn_changes.length !== 0) {
-            const { type, data } = zn_changes[0]
-
-            if (type === "delete") {
-                setClosePage()
-                return
-            }
-
-            if (type === "update") {
-                updateZnInfo(data)
+        for (const data of doneChanges) {
+            if(!smartData.update(
+                {done: data.value},
+                {uuid: data.identical_str},
+                1
+            ).length) {
+                createNotification("error", "Ошибка в полученных")
+                console.error(`Not found: identical_str=${data.identical_str}`)
             }
         }
-    })
+    }
 
-    function recoverZnItems(jobs, doneChanges, mainChanges) {
+    function handleZnItems(jobs, mainChanges) {
+        console.log(`Handle zn_items: ${mainChanges}`)
+
         let smartData
 
         if (jobs) {
@@ -2122,6 +2116,7 @@ async function initSSE() {
             const { type, data } = change
 
             if (type === "create") {
+                console.log("create", data)
                 smartData.create(data)
             } else if (type === "update") {
                 const uuid = data.uuid
@@ -2139,30 +2134,79 @@ async function initSSE() {
                 )
             }
         }
+    }
 
-        for (const data of doneChanges) {
-            if(!smartData.update(
-                {done: data.value},
-                {uuid: data.identical_str},
-                1
-            ).length) {
-                createNotification("error", "Ошибка в полученных")
-                console.error(`Not found: identical_str=${data.identical_str}`)
+    function handleCar(carChanges) {
+        if (carChanges && carChanges.length !== 0) {
+            const {type, data} = carChanges[0]
+
+            if (type === "delete") {
+                setClosePage()
+                return
+            }
+
+            if (type === "update") {
+                updateCarInfo(data)
             }
         }
     }
 
+    function handleZn(znChanges) {
+        if (znChanges && znChanges.length !== 0) {
+            const { type, data } = znChanges[0]
+
+            if (type === "delete") {
+                setClosePage()
+                return
+            }
+
+            if (type === "update") {
+                updateZnInfo(data)
+            }
+        }
+    }
+
+
+    // car_changes: list[dict[str, Any]], zn_changes: list[dict[str, Any]]
+    sseSource.addRecoverHandler("zn", ({ car_changes, zn_changes }) => {
+        handleCar(car_changes)
+        handleZn(zn_changes)
+    })
+    sseSource.addSSEEvent("zn", (changes) => {
+        handleZn(changes)
+    })
+    sseSource.addSSEEvent("car", (changes) => {
+        handleCar(changes)
+    })
+
+
     // done_changes: list[dict[str, Any]], main_changes: list[dict[str, Any]]
     sseSource.addRecoverHandler("jobs", ({ done_changes, main_changes }) => {
-        recoverZnItems(true, done_changes, main_changes)
+        handleZnItems(true, main_changes)
+        handleDone(true, done_changes)
+
+        updateJobsTable()
+    })
+    sseSource.addSSEEvent("jobs", (changes) => {
+        handleZnItems(true, changes)
+
         updateJobsTable()
     })
 
+
     // done_changes: list[dict[str, Any]], main_changes: list[dict[str, Any]]
     sseSource.addRecoverHandler("parts", ({ done_changes, main_changes }) => {
-        recoverZnItems(false, done_changes, main_changes)
+        handleZnItems(false, main_changes)
+        handleDone(false, done_changes)
+
         updatePartsTable()
     })
+    sseSource.addSSEEvent("parts", (changes) => {
+        handleZnItems(false, changes)
+
+        updatePartsTable()
+    })
+
 
     // status: str | None
     sseSource.addRecoverHandler("status", ({ status }) => {

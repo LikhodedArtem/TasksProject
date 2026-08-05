@@ -759,7 +759,7 @@ class SmartSSESource {
     _handleRecover(data) {
         for (const [key, value] of Object.entries(data)) {
             if (this._recoverFuncs[key] !== undefined && value !== null) {
-                this._lastIDs[key] = value["last_change_uuid"]
+                if (value["last_change_uuid"] !== "skip") this._lastIDs[key] = value["last_change_uuid"]
                 delete value["last_change_uuid"]
 
                 try {
@@ -773,13 +773,14 @@ class SmartSSESource {
     }
 
     _handleEvent({ event, data, id, retry }) {
-        // console.log(event)
+        console.log(event, data, id, retry)
+        console.log(this._sseEvents[event])
 
         if (this._sseEvents[event] !== undefined) {
             for (const func of this._sseEvents[event]) {
                 try {
                     const idName = func(data)
-                    this._lastIDs[idName] = id
+                    if (id !== "skip") this._lastIDs[idName] = id
                 } catch (error) {
                     console.error(`SSE Function ${func} on Event: ${event} Error: ${error}`)
                 }
