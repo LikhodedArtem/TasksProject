@@ -56,7 +56,8 @@ class CreateChange:
             ZNChange,
             change_uuid=change_uuid,
             sse_uuid=sse_uuid,
-            zn_number=zn_number,
+            type="update",
+            number=zn_number,
             recommendation=recommendation,
         )
 

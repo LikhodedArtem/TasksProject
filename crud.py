@@ -4,7 +4,7 @@ from itertools import chain
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import select, update, delete, func, exists, case
+from sqlalchemy import select, update, delete, func, exists, case, Row
 from sqlalchemy.orm import selectinload, joinedload
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -200,8 +200,6 @@ async def _get_first_page_items_changes(
         last_uuid: UUID,
         client_id: UUID,
 ):
-    print(last_uuid)
-
     if type(last_uuid) is str:
         last_uuid = UUID(last_uuid)
     if type(client_id) is str:
@@ -293,6 +291,11 @@ async def get_zns_by_post(
             posts_last_uuid
         ) = row
 
+        uuids = [zn_last_uuid, car_last_uuid, posts_last_uuid]
+        for i in range(len(uuids)):
+            if uuids[i] is None:
+                uuids[i] = Names.MIN_UUID7
+
         dict_zn = as_dict(zn)
         dict_zn["post_uuid"] = post_uuid
         dict_zn["car"] = as_dict(zn.car)
@@ -301,9 +304,7 @@ async def get_zns_by_post(
 
         data["data"].append(dict_zn)
         data["change_uuid"] = max(
-            zn_last_uuid,
-            car_last_uuid,
-            posts_last_uuid,
+            *uuids,
             data["change_uuid"],
         )
 
@@ -621,8 +622,8 @@ async def _get_zn_items_changes(
 ):
     if type(last_uuid) is str:
         last_uuid = UUID(last_uuid)
-    if type(last_uuid) is str:
-        last_uuid = UUID(last_uuid)
+    if type(client_id) is str:
+        client_id = UUID(client_id)
 
     if jobs:
         main_model = Job
@@ -791,6 +792,10 @@ def format_change_type_rows(
         primary_key = primary_key[0]
 
     for obj in rows:
+        if isinstance(obj, Row):
+            if len(obj) == 1:
+                obj = obj[0]
+
         primary = getattr(obj, primary_key)
         type_ = obj.type
 
@@ -970,7 +975,13 @@ async def change_done(
 
 async def main():
     async with db_helper.session_factory() as session:
-        result = await get_zns_by_post(session, "4 пост Спиридонов А.С.")
+        result = await get_zn_parts_changes(
+            session,
+            "АМКДС20770",
+            "019fe15fe99e79f397d2683dfd49307c",
+            "019fd336368e7c79bddc3707f1817885",
+        )
+
         print(result)
 
 

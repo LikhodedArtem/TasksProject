@@ -22,5 +22,5 @@ __all__ = [
     "PartChange",
     "PostChange",
     "StatusChange",
-    "ZNChange"
+    "ZNChange",
 ]

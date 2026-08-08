@@ -105,6 +105,8 @@ async function start() {
         return
     }
 
+    initPackagesEvents()
+
     setLoading()
 
     initStart()
@@ -122,7 +124,6 @@ async function initStart() {
 function initEnd(){
     initStartZN()
 
-    initPackagesEvents()
     initTookButton()
     initCustomPinFiles()
     initRecommendation()
@@ -255,7 +256,9 @@ function closePackageForever(el, addClass) {
 
 
 
-function renderData(data, tableValue, renderRow) {
+function renderData(smartData, tableValue, renderRow) {
+    const data = smartData.data()
+
     if (data.length === 0) {
         closePackageForever(tableValue, "empty")
         return
@@ -265,28 +268,68 @@ function renderData(data, tableValue, renderRow) {
 
     let count = 1
 
-    for (const row of data) {
-        tableValue.append(
-            renderRowWrapper(
-                renderRow(row, count),
-                row.done,
-                row.uuid,
-                row.has_files
+    let forObserve = 0
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+            if (!entry.isIntersecting) {
+                return
+            }
+
+            const rowEl = entry.target
+            const rowContent = rowEl.closest(".row-content")
+
+            smartData.update(
+                { checked: true },
+                { uuid: rowContent.dataset.uuid },
+                1
             )
+
+            tableValue.changeCounterSub()
+
+            observer.unobserve(rowEl)
+        })
+    }, {
+        root: null,
+        rootMargin: '0px',
+        threshold: 0.5,
+    })
+
+    for (const row of data) {
+        const rowObj = renderRowWrapper(
+            renderRow(row, count),
+            row.done,
+            row.uuid,
+            row.has_files,
+            row.change,
         )
+
+        if (row.change && !row.checked) {
+            observer.observe(Array.from(rowObj.children)[0])
+            forObserve++
+        }
+
+        tableValue.append(
+            rowObj
+        )
+
         count++
     }
+
+    tableValue.changeCounterSet(forObserve)
 }
 
-function renderRowWrapper(cells, done, uuid, isHasFiles) {
+function renderRowWrapper(cells, done, uuid, isHasFiles, change) {
     const rowWrapper = document.createElement("div")
     rowWrapper.className = "row-content"
-    if (done) rowWrapper.classList.add("yes")
     rowWrapper.dataset.uuid = uuid
+
+    if (done) rowWrapper.classList.add("yes")
 
     rowWrapper.append(...cells)
 
     if (isHasFiles) hasFiles(rowWrapper.querySelector(".pin-files"))
+    if (change) rowWrapper.querySelector(".table-cell.number").classList.add(change)
 
     return rowWrapper
 }
@@ -356,11 +399,11 @@ async function uploadTable(type, data, onOk) {
 }
 
 async function updateJobsTable() {
-    renderData(jobsData.data(), worksTableValue, renderWorksRow)
+    renderData(jobsData, worksTableValue, renderWorksRow)
 }
 
 async function updatePartsTable() {
-    renderData(partsData.data(), detailsTableValue, renderDetailsRow)
+    renderData(partsData, detailsTableValue, renderDetailsRow)
 }
 
 function removePackageRightPanel(packageP) {
@@ -393,7 +436,7 @@ async function sendDone(uuid, type, value, all) {
         uuid: uuid,
     }
 
-    await requestManager.send(
+    requestManager.send(
         `info/done${(all) ? "/all" : ""}`,
         "POST",
         {
@@ -464,7 +507,7 @@ function initPackagesEvents() {
         const wrapper = packageP.closest(".package-wrapper")
         const valueWrapper = wrapper.querySelector(".package-value-wrapper")
         const value = valueWrapper.querySelector(".package-value")
-        const tableContent = value.querySelector(".table-content")
+        const tableContent = wrapper.querySelector(".table-content")
 
         value.style.height = pxToRem(value.scrollHeight) + 'rem'
 
@@ -489,6 +532,9 @@ function initPackagesEvents() {
         }
 
         const doneAll = packageP.querySelector(".select-all .checkbox")
+        const changeCounter = packageP.querySelector(".change-counter")
+        const changeCounterInner = packageP.querySelector(".change-counter span")
+
         let rowContents = value.querySelectorAll(".row-content")
 
         function refreshRowContents() {
@@ -656,7 +702,29 @@ function initPackagesEvents() {
             }
         }
 
+        function changeCounterSet(newNum) {
+            if (!changeCounterInner) return
+            if (newNum === 0) return
+            changeCounter.classList.remove("hide")
+            changeCounterInner.textContent = newNum
+        }
+
+        function changeCounterSub() {
+            if (!changeCounterInner) return
+            if (changeCounterInner.textContent === "0") return
+
+            changeCounterInner.textContent = Number(changeCounterInner.textContent) - 1
+
+            if (changeCounterInner.textContent === "0") {
+                changeCounter.classList.add("hide")
+            }
+        }
+
         wrapper.oneRowDone = oneRowDone
+        if (tableContent) {
+            tableContent.changeCounterSet = changeCounterSet
+            tableContent.changeCounterSub = changeCounterSub
+        }
     })
 }
 
@@ -1910,7 +1978,7 @@ function initRecommendation() {
 		
 		const newData = currentData + addData
 
-        const result = await requestManager.send(
+        requestManager.send(
             "info/rec",
             "POST",
             {
@@ -1924,8 +1992,6 @@ function initRecommendation() {
 
         recArea.value = newData
         recInput.value = ""
-
-        return result
     })
 }
 
@@ -2020,7 +2086,7 @@ function initStartZN() {
 
     async function sendStatus(status, onOk) {
         onOk()
-        return await requestManager.send(
+        requestManager.send(
             "info/status/set",
             "POST",
             {
@@ -2063,8 +2129,8 @@ async function updateZNStatus() {
                 zn_number: znNumber,
                 post: post,
             },
-            okFunc: (result) => { doneStartRequest("status", result, (result) => {
-                setStatus(result)
+            okFunc: (result) => { doneStartRequest("status", result, (data) => {
+                setStatus(data)
             }) },
         }
     )
@@ -2087,6 +2153,8 @@ async function initSSE() {
             smartData = partsData
         }
 
+        let any = false
+
         for (const data of doneChanges) {
             if(!smartData.update(
                 {done: data.value},
@@ -2096,7 +2164,10 @@ async function initSSE() {
                 createNotification("error", "Ошибка в полученных")
                 console.error(`Not found: identical_str=${data.identical_str}`)
             }
+            any = true
         }
+
+        return any
     }
 
     function handleZnItems(jobs, mainChanges) {
@@ -2108,8 +2179,13 @@ async function initSSE() {
             smartData = partsData
         }
 
+        let any = false
+
         for (const change of mainChanges) {
             const { type, data } = change
+
+            data.change = type
+            data.checked = false
 
             if (type === "create") {
                 smartData.create(data)
@@ -2119,16 +2195,19 @@ async function initSSE() {
 
                 smartData.update(
                     data,
-                    {uuid: uuid},
+                    { uuid: uuid },
                     1,
                 )
             } else {
                 smartData.delete(
-                    {uuid: data.uuid},
+                    { uuid: data.uuid },
                     1
                 )
             }
+
+            any = true
         }
+        return any
     }
 
     function handleCar(carChanges) {
@@ -2177,29 +2256,23 @@ async function initSSE() {
 
     // done_changes: list[dict[str, Any]], main_changes: list[dict[str, Any]]
     sseSource.addRecoverHandler("jobs", ({ done_changes, main_changes }) => {
-        handleZnItems(true, main_changes)
-        handleDone(true, done_changes)
+        if (handleZnItems(true, main_changes)
+            || handleDone(true, done_changes))
 
         updateJobsTable()
     })
     sseSource.addSSEEvent("jobs", (changes) => {
-        handleZnItems(true, changes)
-
-        updateJobsTable()
+        if (handleZnItems(true, changes)) updateJobsTable()
     })
 
 
     // done_changes: list[dict[str, Any]], main_changes: list[dict[str, Any]]
     sseSource.addRecoverHandler("parts", ({ done_changes, main_changes }) => {
-        handleZnItems(false, main_changes)
-        handleDone(false, done_changes)
-
-        updatePartsTable()
+        if (handleZnItems(false, main_changes)
+            || handleDone(false, done_changes)) updatePartsTable()
     })
     sseSource.addSSEEvent("parts", (changes) => {
-        handleZnItems(false, changes)
-
-        updatePartsTable()
+        if (handleZnItems(false, changes)) updatePartsTable()
     })
 
 

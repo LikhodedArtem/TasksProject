@@ -34,8 +34,6 @@ async def zn(
     xml_string = await request.body()
     response, zn_number = await parse_zn(xml_string)
 
-    print(response)
-
     for event, info in response.items():
         last_uuid, data = info
 

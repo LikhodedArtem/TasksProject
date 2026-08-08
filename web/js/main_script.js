@@ -307,12 +307,12 @@ async function smartSendRequest(
                     on500(response)
                     return true
                 } else {
-                    console.error(response.statusText)
+                    console.error(`Answer code 500 response text: ${response.statusText}`)
                     createNotification("warning", "На сервере произошла ошибка")
                 }
                 break
             default:
-                console.error(`Unexpected code: ${code}`)
+                console.error(`Unexpected code: ${response.status}`)
                 createNotification("error", "Произошла неизвестная ошибка")
         }
 
@@ -526,6 +526,7 @@ class SmartContainer {
             for (const [key, value] of Object.entries(forUpdate)) {
                 if (value === null) continue
                 if (value === undefined) throw Error("Undefined in update dict")
+                console.log(key, value)
                 row[key] = value
             }
 
@@ -707,7 +708,7 @@ class SmartSSESource {
 
             return this.STOPPED
         } catch (error) {
-            console.error(error)
+            console.log(`SSE escape error: ${error}`)
             if (this.stopped) return this.STOPPED
             return this.LOST_CONNECTION
         }
@@ -777,7 +778,7 @@ class SmartSSESource {
 
     _handleRecover(data) {
         for (const [key, value] of Object.entries(data)) {
-            if (this._recoverFuncs[key] !== undefined && value !== null && value["data"].length !== 0) {
+            if (this._recoverFuncs[key] !== undefined && value !== null && (!value.data || value.data.length !== 0)) {
                 if (value["last_change_uuid"] !== "skip") this._lastIDs[key] = value["last_change_uuid"]
                 delete value["last_change_uuid"]
 
@@ -1004,7 +1005,6 @@ class RequestContainer {
 
         if (changeUUID) {
             headers['X-Change-UUID'] = generateUUIDv7()
-            console.log(headers['X-Change-UUID'])
         }
 
         async function fetchInvoker() {
@@ -1058,7 +1058,7 @@ class RequestContainer {
                     okFunc(data)
                 }
             } catch (e) {
-                console.error(e)
+                console.error(`Fetch Invoker error: ${e}`)
                 throw Error()
             }
         }
@@ -1209,8 +1209,6 @@ function doneStartRequest(changeName, info, func) {
         try {
             data = info["data"]
             const changeUUID = info["change_uuid"]
-
-            console.log(requestManager.SSE === null, changeName, changeUUID)
 
             requestManager.setLastID(changeName, changeUUID)
         } catch (e) {

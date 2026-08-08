@@ -351,7 +351,7 @@
         font-weight: 400;
     }
 
-    .right-panel.select-all::before {
+    .right-panel.select-all span {
         content: "Выбрать всё";
         font-size: 0.9rem;
         font-weight: 400;
@@ -530,6 +530,44 @@
         -webkit-hyphens: auto;
         -moz-hyphens: auto;
     }
+}
+
+.table-cell.number {
+    transition: var(--transition-fast);
+}
+
+.table-cell.number.create {
+    font-weight: 600 !important;
+    background-color: color-mix(in oklch, var(--color-blue) 40%, transparent) !important;
+    color: var(--color-blue-text) !important;
+    border-color: var(--color-blue-text) !important;
+}
+
+.row-content .table-cell.number.create {
+    box-shadow: 0 0 .5rem .2rem color-mix(in oklch, var(--color-blue-text) 40%, transparent) !important;
+}
+
+.table-cell.number.update {
+    font-weight: 600 !important;
+    background-color: color-mix(in oklch, #fff4c1 40%, transparent) !important;
+    color: #c0a002 !important;
+    border-color: #c0a002 !important;
+}
+
+.row-content .table-cell.number.update {
+    box-shadow: 0 0 .5rem .2rem color-mix(in oklch, #c0a002 40%, transparent) !important;
+}
+
+.table-cell.number.delete {
+    font-weight: 600 !important;
+    background-color: color-mix(in oklch, var(--color-red) 40%, transparent) !important;
+    color: var(--color-red-text) !important;
+    border-color: var(--color-red-text) !important;
+
+}
+
+.row-content .table-cell.number.delete {
+    box-shadow: 0 0 .5rem .2rem color-mix(in oklch, var(--color-red-text) 40%, transparent) !important;
 }
 
 .table-content {
@@ -1296,6 +1334,37 @@
 .header {
     grid-template-columns: repeat(2, 1fr) auto;
 }
+
+
+.change-counter {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+
+    user-select: none;
+
+    background: linear-gradient(180deg, color-mix(var(--color-primary), var(--color-primary-gradient)), var(--color-primary-gradient));
+    color: var(--color-primary);
+
+    margin-right: var(--space-3);
+    transition: var(--transition-fast);
+
+    span {
+        font-size: 1rem !important;
+        font-weight: 600 !important;
+        color: var(--color-bg-contrast);
+    }
+}
+
+
+.change-counter.hide {
+    transform: scale(0);
+}
+
 
 @keyframes again-rotate {
     0% {

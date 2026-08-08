@@ -15,7 +15,8 @@ class ZNChange(ChangeBase, ChangeType):
     car_vin: Mapped[str] = mapped_column(
         String,
         ForeignKey('cars.vin'),
-        primary_key=True,
+        nullable=True,
+        unique=False,
     )
 
     date: Mapped[str] = mapped_column(
