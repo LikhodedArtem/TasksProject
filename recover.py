@@ -7,7 +7,10 @@ from crud import (
     get_zn_jobs_changes,
     get_zn_parts_changes,
     get_zn_changes,
-    get_zn_status_changes
+    get_zn_status_changes,
+    get_posts_changes,
+    get_mechanics_changes,
+    get_zns_changes_by_post,
 )
 
 
@@ -17,9 +20,34 @@ class Recover:
             cls,
             last_uuids: dict[str, UUID | None],
             client_id: UUID,
+            add_data: dict[str, Any],
     ):
-        print(last_uuids)
-        return None
+        if last_uuids is None: return {}
+
+        posts = last_uuids.get("posts", None)
+        mechanics = last_uuids.get("mechanics", None)
+
+        answer = {}
+
+        if posts is None: posts = Names.MIN_UUID7
+        if mechanics is None: mechanics = Names.MIN_UUID7
+
+        async with db_helper.session_factory() as session:
+            answer["posts"] = await get_posts_changes(
+                session=session,
+                last_uuid=posts,
+                client_id=client_id,
+            )
+
+        async with db_helper.session_factory() as session:
+            answer["mechanics"] = await get_mechanics_changes(
+                session=session,
+                last_uuid=mechanics,
+                client_id=client_id,
+            )
+
+        return answer
+
 
 
     @classmethod
@@ -27,9 +55,24 @@ class Recover:
             cls,
             last_uuids: dict[str, UUID | None],
             client_id: UUID,
+            add_data: dict[str, Any],
     ):
-        print(last_uuids)
-        return None
+        post = add_data["post"]
+        zns = last_uuids.get("zns", None)
+
+        answer = {}
+
+        if zns is None: zns = Names.MIN_UUID7
+
+        async with db_helper.session_factory() as session:
+            answer["zns"] = await get_zns_changes_by_post(
+                session=session,
+                post=post,
+                last_uuid=zns,
+                client_id=client_id,
+            )
+
+        return answer
 
 
     @classmethod

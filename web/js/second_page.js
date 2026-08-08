@@ -1,30 +1,44 @@
 const infoTable = document.querySelector(".info-table")
-const infoTableContent = infoTable.querySelector(".table-content")
 const postNumbers = infoTable.querySelectorAll(".table-cell.number p")
 
+let mechanic = null
+let post = null
+
+startRequestsCount = 1
+
+const znsData = new SmartContainer()
 
 async function start() {
     initEscapeButton()
+
+    post = Cookie.get("post")
+    mechanic = Cookie.get("mechanic")
+
+    if (!mechanic || !post) {
+        createNotification("error", "")
+        return
+    }
+
     updateUserSelect()
+
     setLoading()
 
-    if (!await init()) {
-        createNotification("error", "Ошибка загрузки страницы")
-    }
+    initStart()
+}
+
+
+async function initStart() {
+    await initSSE()
+
+    await updateTable()
+}
+
+async function initEnd() {
+    initEvents()
 
     clearLoading()
 }
 
-
-async function init() {
-    const table = await updateTable()
-    if (!table) {
-        return false
-    }
-    initEvents()
-
-    return true
-}
 
 
 function updateUserSelect() {
@@ -40,53 +54,79 @@ function updateUserSelect() {
 }
 
 
+function renderData() {
+    const data = znsData.data()
+
+    infoTable.innerHTML = '' +
+        '<div class="table-column-name no-break">\n' +
+        '            <span>Время</span>\n' +
+        '          </div>\n' +
+        '          <div class="table-column-name">\n' +
+        '            <span>№ Заказ наряда</span>\n' +
+        '          </div>\n' +
+        '          <div class="table-column-name">\n' +
+        '            <span>Автомобиль</span>\n' +
+        '          </div>\n' +
+        '          <div></div>\n' +
+        '  \n' +
+        '          <div class="table-content">\n' +
+        '  \n' +
+        '          </div>'
+
+    if (!data.length) {
+        infoTable.innerHTML = ""
+        infoTable.style.display = "flex"
+        infoTable.style.alignItems = "center"
+        infoTable.style.justifyContent = "center"
+
+        const nothing = document.createElement("span")
+        nothing.className = "nothing-text"
+        nothing.textContent = "По этой выборке ничего не найдено..."
+
+        infoTable.append(nothing)
+        return
+    }
+
+    const infoTableContent = infoTable.querySelector(".table-content")
+    infoTableContent.innerHTML = ""
+
+    for (const row of data) {
+        const rowContent = document.createElement("div")
+        rowContent.className = "row-content"
+        rowContent.dataset.znNumber = row.number
+
+        rowContent.append(
+            constructCell(`${createReadableDate(row.date1)}<br>${createReadableDate(row.date2)}`, "time"),
+            constructCell(row.number, "number"),
+            constructCarCell(row.car),
+            constructTaskEquip()
+        )
+
+        const addData = constructAddData(row)
+        const nothing = document.createElement("div")
+
+        rowContent.append(addData, nothing)
+
+        infoTableContent.append(rowContent)
+    }
+}
+
+
 async function updateTable() {
     const post = Cookie.get("post")
 
     if (!post) return
 
-    return await smartSendRequest(
+    return await requestManager.send(
         `info/zns`,
         "POST",
-        {post: post},
-        (info) => {
-            const data = info.data
-
-            if (!data.length) {
-                infoTable.innerHTML = ""
-                infoTable.style.display = "flex"
-                infoTable.style.alignItems = "center"
-                infoTable.style.justifyContent = "center"
-
-                const nothing = document.createElement("span")
-                nothing.className = "nothing-text"
-                nothing.textContent = "По этой выборке ничего не найдено..."
-
-                infoTable.append(nothing)
-                return
-            }
-
-            infoTableContent.innerHTML = ""
-            const rowContent = document.createElement("div")
-            rowContent.className = "row-content"
-
-            for (const row of data) {
-                const clone = rowContent.cloneNode(true)
-                clone.dataset.znNumber = row.number
-
-                clone.append(
-                    constructCell(`${createReadableDate(row.date1)}<br>${createReadableDate(row.date2)}`, "time"),
-                    constructCell(row.number, "number"),
-                    constructCarCell(row.car),
-                    constructTaskEquip()
-                )
-
-                const addData = constructAddData(row)
-                const nothing = document.createElement("div")
-
-                clone.append(addData, nothing)
-
-                infoTableContent.append(clone)
+        {
+            data: {post: post},
+            okFunc: (data) => {
+                doneStartRequest("zns", data, (data) => {
+                    znsData.replace(data)
+                    renderData()
+                })
             }
         }
     )
@@ -224,6 +264,109 @@ function initEscapeButton() {
     escapeButton.addEventListener("click", () => {
         window.location.href = "first_page.html"
     })
+}
+
+
+async function initSSE() {
+    sseSource = new SmartSSESource("second_page", MY_UUID)
+    sseSource.reconnectAddInfo = {post: post}
+
+    await sseSource.subServerEvents({post: post})
+
+    function handleCarChanges(carChanges) {
+        for (const carChange of carChanges) {
+            const { type, data } = carChange
+
+            if (type === "create" || type === "update") {
+                znsData.update(
+                    { car: data },
+                    { "car_vin": data["vin"] },
+                )
+            } else if (type === "delete") {
+                znsData.delete(
+                    { "car_vin": data["vin"] },
+                )
+            }
+        }
+    }
+
+    function handleZNChanges(znChanges) {
+        for (const znChange of znChanges) {
+            const { type, data } = znChange
+
+            if (type === "create") {
+                znsData.create(data)
+            } else if (type === "update") {
+                const number = data.number
+                delete data.number
+
+                znsData.update(
+                    data,
+                    { number: number },
+                    1
+                )
+            } else if (type === "delete") {
+                znsData.delete(
+                    { number: data.number },
+                    1
+                )
+            }
+        }
+    }
+
+    function handlePostsChanges(postsChanges) {
+        for (const postChange of postsChanges) {
+            const { type, data } = postChange
+
+            if (type === "create" || type === "update") {
+                const forUpdate = {}
+                if (data.date1) forUpdate.date1 = data.date1
+                if (data.date1) forUpdate.date1 = data.date1
+
+                znsData.update(
+                    forUpdate,
+                    { post_uuid: data.uuid },
+                    1
+                )
+            } else {
+                znsData.delete(
+                    { post_uuid: data.uuid },
+                    1
+                )
+            }
+        }
+    }
+
+    sseSource.addSSEEvent("zn", (info) => {
+        handleZNChanges(info)
+    })
+
+    sseSource.addSSEEvent("car", (info) => {
+        handleCarChanges(info)
+    })
+
+    sseSource.addSSEEvent("posts", (info) => {
+        handlePostsChanges(info)
+    })
+
+    sseSource.addRecoverHandler("zns", (
+        {
+            zn_changes,
+            car_changes,
+            posts_changes,
+        }
+    ) => {
+        handleZNChanges(zn_changes)
+        handleCarChanges(car_changes)
+        handlePostsChanges(posts_changes)
+
+        znsData.orderBy("date1", true)
+    })
+
+    sseSource.requests = requestManager
+    sseSource.start()
+
+    requestManager.SSE = sseSource
 }
 
 

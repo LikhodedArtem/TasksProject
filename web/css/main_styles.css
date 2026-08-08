@@ -652,7 +652,7 @@ body {
 }
 
 .background-blur.loading {
-    z-index: 900;
+    z-index: 10;
 }
 
 .background-blur.fast {
@@ -729,6 +729,7 @@ body {
 }
 
 .escape {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -805,4 +806,45 @@ body {
 
         font-weight: 500;
     }
+}
+
+
+.disconnect-warning {
+    display: none;
+    position: relative;
+    color: var(--color-red-text);
+    transition: var(--transition-slow);
+    opacity: 0;
+}
+
+.disconnect-warning::before {
+    content: "Нет связи с сервером. Работа с данными происходит в оффлайн режиме.";
+    position: absolute;
+    display: flex;
+    align-items: center;
+
+    height: 5rem;
+    width: 12rem;
+    border-radius: var(--space-2);
+
+    background-color: var(--color-red-text);
+    border: 1px solid var(--color-red-text);
+    color: var(--color-bg);
+    box-shadow: 0 10px 5px 0 color-mix(var(--color-red-text) 20%);
+
+    pointer-events: none;
+    text-align: center;
+    font-size: 0.8rem;
+
+    top: -1rem;
+    left: 100%;
+
+    z-index: 101;
+
+    transition: var(--transition-fast);
+    opacity: 0;
+}
+
+.disconnect-warning:hover::before {
+    opacity: 1;
 }

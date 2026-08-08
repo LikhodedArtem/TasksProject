@@ -17,6 +17,8 @@ async function start() {
     initEscapeButton()
     initTime()
 
+    setLoading()
+
     initStart()
 }
 
@@ -25,6 +27,8 @@ startRequestsCount = 2
 
 
 async function initStart() {
+    await initSSE()
+
     await getPosts()
     await getMechanics()
 }
@@ -33,9 +37,9 @@ async function initEnd() {
     initSuggestsPanels()
     updatePosts()
 
-    getNameFromCookie()
-
     returnCookieData()
+
+    clearLoading()
 }
 
 
@@ -121,27 +125,24 @@ function updatePosts() {
     }
 }
 
+
 function updatePostsData(newData) {
     postsData.replace(newData)
     postsDataM = postsData.select({ territory: "Мысхако" }, ["name"])
     postsDataK = postsData.select({ territory: "Кирилловка" }, ["name"])
 }
 
+
 function updateMechanics() {
     nameInput.changeData(mechanicsData.select(null, ["name"]))
     nameInput.updateOptions()
 }
 
+
 function updateMechanicsData(newData) {
     mechanicsData.replace(newData)
 }
 
-function getNameFromCookie() {
-    const name = Cookie.get("name")
-    if (name) {
-        nameInput.value = name
-    }
-}
 
 selects.forEach((select) => {
     const realSelect = select.querySelector("select")
@@ -434,6 +435,7 @@ function initSuggestsPanels() {
 
         function changeData(newData) {
             data = newData
+            renderSuggests(newData)
         }
 
         function isInData(object) {
@@ -458,5 +460,62 @@ function initSuggestsPanels() {
         })
     })
 }
+
+
+async function initSSE() {
+    sseSource = new SmartSSESource("first_page", MY_UUID)
+    sseSource.reconnectAddInfo = {}
+
+    function handleUpdate(mechanics, info) {
+
+        const smartData = mechanics ? mechanicsData : postsData
+        const primaryKey = mechanics ? "key" : "name"
+
+        for (const row of info) {
+            const { type, data } = row
+            if (type === "create") {
+                smartData.create(data)
+            } else if (type === "update") {
+                const primary = data[primaryKey]
+                delete data[primaryKey]
+
+                smartData.update(
+                    data,
+                    { primaryKey: primary },
+                    1,
+                )
+            } else {
+                smartData.delete(
+                    { primaryKey: data[primaryKey] },
+                    1
+                )
+            }
+        }
+    }
+
+    function handlePosts(info) {
+        handleUpdate(false, info["data"])
+        postsDataM = postsData.select({ territory: "Мысхако" }, ["name"])
+        postsDataK = postsData.select({ territory: "Кирилловка" }, ["name"])
+        updatePosts()
+    }
+
+    function handleMechanics(info) {
+        handleUpdate(true, info["data"])
+        updateMechanics()
+    }
+
+    sseSource.addRecoverHandler("posts", handlePosts)
+    sseSource.addSSEEvent("posts", handlePosts)
+
+    sseSource.addRecoverHandler("mechanics", handleMechanics)
+    sseSource.addSSEEvent("mechanics", handleMechanics)
+
+    sseSource.requests = requestManager
+    sseSource.start()
+
+    requestManager.SSE = sseSource
+}
+
 
 start()

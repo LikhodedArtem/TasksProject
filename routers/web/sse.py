@@ -23,69 +23,68 @@ class ManagerType(str, Enum):
     SECOND_PAGE = "second_page"
     THIRD_PAGE = "third_page"
 
-managers: dict[str, SSEManager] = {
-    ManagerType.FIRST_PAGE: first_page_manager,
-    ManagerType.SECOND_PAGE: second_page_manager,
-    ManagerType.THIRD_PAGE: third_page_manager,
+data_dict: dict[str, tuple[SSEManager, Any]] = {
+    ManagerType.FIRST_PAGE: (first_page_manager, Recover.first),
+    ManagerType.SECOND_PAGE: (second_page_manager, Recover.second),
+    ManagerType.THIRD_PAGE: (third_page_manager, Recover.third),
 }
 
-subscriptions: dict[UUID, SSEManager] = {}
-
-recover_data = {
-    ManagerType.FIRST_PAGE: Recover.first,
-    ManagerType.SECOND_PAGE: Recover.second,
-    ManagerType.THIRD_PAGE: Recover.third,
-}
+subscriptions: dict[UUID, tuple[SSEManager, Any]] = {}
 
 
-def get_manager(uuid: UUID) -> SSEManager:
-    manager = subscriptions.get(uuid, None)
+def get_data(type: ManagerType) -> tuple[SSEManager, Any]:
+    data = data_dict.get(type, None)
 
-    if manager is None:
-        raise HTTPException(status_code=404, detail="Unexpected UUID")
-
-    return manager
-
-
-def get_recover(type: ManagerType):
-    recover = recover_data.get(type, None)
-
-    if recover is None:
+    if data is None:
         raise HTTPException(status_code=404, detail="Unexpected type")
 
-    return recover
+    return data
 
 
-@sse_router.post("/subscribe")
-async def subscribe(
+def get_manager(uuid: UUID) -> Any:
+    data = subscriptions.get(uuid, None)
+
+    if data is None:
+        raise HTTPException(status_code=404, detail="Unexpected uuid")
+
+    return data[0]
+
+
+def get_recover(uuid: UUID) -> Any:
+    data = subscriptions.get(uuid, None)
+
+    if data is None:
+        raise HTTPException(status_code=404, detail="Unexpected uuid")
+
+    return data[1]
+
+
+@sse_router.post("/recover")
+async def recover(
         request: Request,
-        type: Annotated[str, Body()],
         client_id: UUID = Depends(get_client_id),
-        add_data: Annotated[dict[str, Any] | None, Body()] = None,
+        add_data: Annotated[dict[str, Any] | None, Body(embed=True)] = None,
 ):
-    manager = managers.get(type, None)
-
-    if manager is None:
-        raise HTTPException(status_code=404, detail="This type of manager does not exist")
-
-    manager.subscribe(client_id)
-
-    subscriptions[client_id] = manager
+    recover = get_recover(client_id)
 
     last_event_id = request.headers.get("Last-Event-IDs")
     last_change_uuids = json.loads(last_event_id) if last_event_id != "null" and last_event_id is not None else None
 
-    recover = get_recover(ManagerType(type))
-
     return await recover(last_change_uuids, client_id, add_data)
 
 
-@sse_router.get("/connect")
-async def get_sse_events(
+@sse_router.post("/connect")
+async def connect(
         request: Request,
-        client_id: UUID = Depends(get_client_id)
+        type: Annotated[str, Body(embed=True)],
+        client_id: UUID = Depends(get_client_id),
 ):
-    manager = get_manager(client_id)
+    data = get_data(ManagerType(type))
+
+    subscriptions[client_id] = data
+    manager = data[0]
+
+    manager.subscribe(client_id)
 
     return manager.streaming_response(request, client_id)
 

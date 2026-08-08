@@ -128,7 +128,7 @@ class SSEManager:
 
         tasks = set()
 
-        for client_uuid in current_clients:
+        for client_uuid in set(current_clients):
             if (client_uuid not in self._clients) or (client_uuid == author):
                 continue
 

@@ -16,7 +16,7 @@ from core.models import db_helper
 from core.models.real_info import *
 from core.models.changes import *
 from crud import format_change_type_rows
-from sse.managers import third_page_manager
+from sse.managers import third_page_manager, first_page_manager
 
 onec_router = APIRouter(prefix="/onec", tags=["onec"])
 
@@ -34,6 +34,8 @@ async def zn(
     xml_string = await request.body()
     response, zn_number = await parse_zn(xml_string)
 
+    print(response)
+
     for event, info in response.items():
         last_uuid, data = info
 
@@ -48,6 +50,17 @@ async def zn(
         )
 
 
+async def broadcast_posts_mechanics(type: str, last_change_uuid, data):
+    await first_page_manager.broadcast(
+        data=data,
+        event=type,
+        broadcast_event=None,
+        add_info=None,
+        id_=last_change_uuid,
+        broadcast_all=True,
+    )
+
+
 """Обработка списка всех механиков"""
 
 @onec_router.post("/mechanics")
@@ -56,7 +69,10 @@ async def mechanics(
         request: Request,
 ):
     xml_string = await request.body()
-    response = await parse_mechanics(xml_string)
+    last_change_uuid, data = await parse_mechanics(xml_string)
+
+    await broadcast_posts_mechanics("mechanics", last_change_uuid, data)
+
 
 """Обработка списка всех названий постов"""
 
@@ -66,7 +82,9 @@ async def posts(
         request: Request,
 ):
     xml_string = await request.body()
-    response = await parse_posts(xml_string)
+    last_change_uuid, data = await parse_posts(xml_string)
+
+    await broadcast_posts_mechanics("posts", last_change_uuid, data)
 
 
 async def parse_zn(xml_string: bytes):
@@ -242,10 +260,7 @@ async def parse_mechanics(xml_string: bytes):
         True
     )
 
-    return {
-        "last_change_uuid": last_change_uuid,
-        "data": data,
-    }
+    return last_change_uuid, data
 
 
 async def parse_posts(xml_string: bytes):
@@ -270,10 +285,7 @@ async def parse_posts(xml_string: bytes):
         delete_old=True,
     )
 
-    return {
-        "last_change_uuid": last_change_uuid,
-        "data": data,
-    }
+    return last_change_uuid, data
 
 
 def compare_objects(obj_new, obj_old) -> dict[str, Any]:

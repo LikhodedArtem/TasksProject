@@ -14,6 +14,7 @@ from help_functions import as_dict, get_client_id, get_change_uuid
 from sse.managers import *
 
 from changes import CreateChange
+from web.uuid7_generator import uuid7_generator
 
 info_router = APIRouter(prefix="/info", tags=["info"])
 
@@ -186,55 +187,13 @@ async def rec(
 
 
 class CreateAnswer:
-    @staticmethod
-    def _check(data, if_none: str | None = None) -> list:
-        if data is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=if_none if if_none is not None else "Объект не найден"
-            )
-        else:
-            if isinstance(data, list):
-                return data
-            else:
-                return [data]
-
-    @classmethod
-    def _base_create(cls, data, func, change_uuid: UUID = None, if_none: str | None = None):
-        data = cls._check(data, if_none)
-
-        answer = {"data": []}
-
-        for obj in data:
-            answer["data"].append(func(obj))
-
-        answer["change_uuid"] = change_uuid
-
-        return answer
-
     @classmethod
     async def zns(cls, post: str):
         async with db_helper.session_factory() as session:
-            data = await get_zns_by_post(
+            return await get_zns_by_post(
                 session=session,
                 post=post,
             )
-
-        def parse(data):
-            zn, date1, date2 = data
-
-            dict_zn = as_dict(zn)
-            dict_zn["car"] = as_dict(zn.car)
-            dict_zn["date1"] = date1
-            dict_zn["date2"] = date2
-
-            return dict_zn
-
-        return cls._base_create(
-            data=data,
-            func=parse,
-            if_none="Не найдено ни одного заказ наряда по такому посту"
-        )
 
     @classmethod
     async def zn(cls, zn_number: str):
@@ -263,38 +222,16 @@ class CreateAnswer:
     @classmethod
     async def posts(cls):
         async with db_helper.session_factory() as session:
-            data = await find_objects(
+            return await get_posts(
                 session=session,
-                model=MainPost,
-                is_alive=True,
             )
-
-        def parse(post):
-            return as_dict(post)
-
-        return cls._base_create(
-            data=data,
-            func=parse,
-            if_none="Не найдено ни одного поста"
-        )
 
     @classmethod
     async def mechanics(cls):
         async with db_helper.session_factory() as session:
-            data = await find_objects(
+            return await get_mechanics(
                 session=session,
-                model=Mechanic,
-                is_alive=True,
             )
-
-        def parse(mechanic):
-            return as_dict(mechanic)
-
-        return cls._base_create(
-            data=data,
-            func=parse,
-            if_none="Не найдено ни одного механика"
-        )
 
 
 class Done:
@@ -341,7 +278,11 @@ class Done:
             client_id: UUID,
             change_uuid: UUID,
     ):
+        change_uuid_gen = uuid7_generator(change_uuid)
+
         async def fetch_one(obj_uuid):
+            nonlocal change_uuid_gen
+
             async with db_helper.session_factory() as session:
                 await change_done(
                     session=session,
@@ -351,7 +292,7 @@ class Done:
                     type=type,
                     new_value=new_value,
                     client_id=client_id,
-                    change_uuid=change_uuid,
+                    change_uuid=next(change_uuid_gen),
                 )
 
         await asyncio.gather(*(fetch_one(obj_uuid) for obj_uuid in uuid))

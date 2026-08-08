@@ -105,6 +105,8 @@ async function start() {
         return
     }
 
+    setLoading()
+
     initStart()
 }
 
@@ -124,6 +126,8 @@ function initEnd(){
     initTookButton()
     initCustomPinFiles()
     initRecommendation()
+
+    clearLoading()
 }
 
 async function getZnInfo() {
@@ -485,9 +489,14 @@ function initPackagesEvents() {
         }
 
         const doneAll = packageP.querySelector(".select-all .checkbox")
-        const rowContents = value.querySelectorAll(".row-content")
+        let rowContents = value.querySelectorAll(".row-content")
+
+        function refreshRowContents() {
+            rowContents = value.querySelectorAll(".row-content")
+        }
 
         function updateDoneAll() {
+            refreshRowContents()
             let allFlag = true
 
             for (const rowContent of rowContents) {
@@ -580,6 +589,7 @@ function initPackagesEvents() {
                 async function rowContentUpdate(func) {
                     const uuids = []
                     const value = !doneAll.classList.contains("yes")
+                    refreshRowContents()
 
                     for (const rowContent of rowContents) {
                         uuids.push(rowContent.dataset.uuid)
@@ -645,18 +655,6 @@ function initPackagesEvents() {
                 noCheckbox(doneAll)
             }
         }
-
-        // function allRowDone(done) {
-        //     if (done) {
-        //         Array.from(rowContents).forEach((rowContent) => { rowContent.classList.add("yes") })
-        //         yesCheckbox(doneAll)
-        //     } else {
-        //         Array.from(rowContents).forEach((rowContent) => { rowContent.classList.remove("yes") })
-        //         noCheckbox(doneAll)
-        //     }
-        // }
-        //
-        // wrapper.allRowDone = allRowDone
 
         wrapper.oneRowDone = oneRowDone
     })
@@ -1386,7 +1384,7 @@ function createRecordPanel(addClass, addButtons, appendFile) {
                 return true
             } catch (e) {
                 console.error(`Start Recording error: ${e}`)
-                console.log(`Error code: ${e.code}`)
+                console.error(`Error code: ${e.code}`)
                 resetRecordPanel()
                 deleteRecorder()
                 return false
@@ -2102,8 +2100,6 @@ async function initSSE() {
     }
 
     function handleZnItems(jobs, mainChanges) {
-        console.log(`Handle zn_items: ${mainChanges}`)
-
         let smartData
 
         if (jobs) {
@@ -2116,7 +2112,6 @@ async function initSSE() {
             const { type, data } = change
 
             if (type === "create") {
-                console.log("create", data)
                 smartData.create(data)
             } else if (type === "update") {
                 const uuid = data.uuid

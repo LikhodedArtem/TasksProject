@@ -3,7 +3,8 @@
     top: 0;
 
     display: grid;
-    grid-template-columns: auto 1fr;
+    grid-template-columns: auto 1fr 2rem;
+    gap: var(--space-2);
 
     padding: var(--space-2);
 
@@ -301,4 +302,11 @@
 
 .table-content {
     display: contents;
+}
+
+.disconnect-warning::before {
+    left: unset !important;
+    bottom: unset !important;
+    top: 100% !important;
+    right: 0 !important;
 }

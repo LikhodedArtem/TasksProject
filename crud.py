@@ -125,52 +125,260 @@ async def find_objects(
     return answer
 
 
-# async def get_objects_with_has_files(
-#         session: AsyncSession,
-#         model,
-#         for_files: dict,
-#         selectinload_lst: list | None = None,
-#         joinedload_lst: list | None = None,
-#         for_find: dict[str, Any] | None = None,
-# ) -> list[tuple[Any, bool]] | tuple[Any, bool] | None:
-#     files_conditions = build_conditions(File, for_files)
-#
-#     has_files = exists().where(
-#         File.is_alive.is_(True),
-#         *files_conditions
-#     )
-#
-#     stmt = (
-#         select(model, has_files.label("has_files"))
-#     )
-#
-#     if for_find:
-#         stmt = stmt.where(*build_conditions(model, for_find))
-#
-#     if selectinload_lst or joinedload_lst:
-#         options = []
-#
-#         if selectinload_lst:
-#             for selectin in selectinload_lst:
-#                 options.append(selectinload(selectin))
-#
-#         if joinedload_lst:
-#             for joined in joinedload_lst:
-#                 options.append(joinedload(joined))
-#
-#         stmt = stmt.options(*options)
-#
-#     result = await session.execute(stmt)
-#
-#     answer = result.all()
-#
-#     if not answer:
-#         return None
-#
-#     if len(answer) == 1:
-#         return answer[0]
-#
-#     return answer
+async def get_posts(
+        session: AsyncSession,
+):
+    return await _get_first_page_items(session, False)
+
+
+async def get_mechanics(
+        session: AsyncSession,
+):
+    return await _get_first_page_items(session, True)
+
+
+async def _get_first_page_items(
+        session: AsyncSession,
+        mechanics: bool,
+):
+    if mechanics:
+        main_model = Mechanic
+        changes_model = MechanicChange
+    else:
+        main_model = MainPost
+        changes_model = MainPostChange
+
+
+    last_change_uuid_stmt = (
+        select(func.max(changes_model.change_uuid))
+        .scalar_subquery()
+    )
+
+    stmt = (
+        select(
+            main_model,
+            last_change_uuid_stmt,
+        ).where(
+            main_model.is_alive.is_(True),
+        )
+    )
+
+    result = await session.execute(stmt)
+    info = result.all()
+
+    data = {
+        "data": [],
+        "change_uuid": Names.MIN_UUID7
+    }
+
+    for row in info:
+        data["data"].append(as_dict(row[0]))
+        data["change_uuid"] = max(row[1], data["change_uuid"])
+
+    return data
+
+
+async def get_posts_changes(
+        session: AsyncSession,
+        last_uuid: UUID,
+        client_id: UUID,
+):
+    return await _get_first_page_items_changes(session, False, last_uuid, client_id)
+
+
+async def get_mechanics_changes(
+        session: AsyncSession,
+        last_uuid: UUID,
+        client_id: UUID,
+):
+    return await _get_first_page_items_changes(session, True, last_uuid, client_id)
+
+
+async def _get_first_page_items_changes(
+        session: AsyncSession,
+        mechanics: bool,
+        last_uuid: UUID,
+        client_id: UUID,
+):
+    print(last_uuid)
+
+    if type(last_uuid) is str:
+        last_uuid = UUID(last_uuid)
+    if type(client_id) is str:
+        client_id = UUID(client_id)
+
+    if mechanics:
+        change_model = MechanicChange
+        primary_key = "key"
+    else:
+        change_model = MainPostChange
+        primary_key = "name"
+
+    stmt = (
+        select(change_model)
+        .where(
+            change_model.change_uuid > last_uuid,
+            change_model.sse_uuid != client_id,
+        )
+    )
+
+    result = await session.execute(stmt)
+    rows = result.all()
+
+    last_change_uuid, data = format_change_type_rows(rows, primary_key)
+    return {"data": data, "last_change_uuid": last_change_uuid}
+
+
+async def get_zns_by_post(
+        session: AsyncSession,
+        post: str,
+):
+    zn_last_uuid_stmt = (
+        select(func.max(ZNChange.change_uuid))
+        .where(
+            ZN.number == ZNChange.number,
+        )
+        .correlate(ZN)
+        .scalar_subquery()
+    )
+
+    car_last_uuid_stmt = (
+        select(func.max(CarChange.change_uuid))
+        .where(
+            ZN.car_vin == CarChange.vin,
+        )
+        .correlate(ZN)
+        .scalar_subquery()
+    )
+
+    posts_last_uuid_stmt = (
+        select(func.max(PostChange.change_uuid))
+        .where(
+            PostChange.main_post_name == post,
+        )
+        .scalar_subquery()
+    )
+
+    stmt = (
+        select(
+            ZN,
+            Post.uuid,
+            Post.date1,
+            Post.date2,
+            zn_last_uuid_stmt,
+            car_last_uuid_stmt,
+            posts_last_uuid_stmt
+        )
+        .join(ZN_mtm_Post, ZN_mtm_Post.zn_number == ZN.number)
+        .join(Post, ZN_mtm_Post.post_uuid == Post.uuid)
+        .join(MainPost, MainPost.name == Post.main_post_name)
+        .where(MainPost.name == post)
+        .options(joinedload(ZN.car))
+        .order_by(Post.date1.asc())
+    )
+
+    result = await session.execute(stmt)
+    rows = result.all()
+
+    data = {"data": [], "change_uuid": Names.MIN_UUID7}
+
+    for row in rows:
+        (
+            zn,
+            post_uuid,
+            date1,
+            date2,
+            zn_last_uuid,
+            car_last_uuid,
+            posts_last_uuid
+        ) = row
+
+        dict_zn = as_dict(zn)
+        dict_zn["post_uuid"] = post_uuid
+        dict_zn["car"] = as_dict(zn.car)
+        dict_zn["date1"] = date1
+        dict_zn["date2"] = date2
+
+        data["data"].append(dict_zn)
+        data["change_uuid"] = max(
+            zn_last_uuid,
+            car_last_uuid,
+            posts_last_uuid,
+            data["change_uuid"],
+        )
+
+    return data
+
+
+async def get_zns_changes_by_post(
+        session: AsyncSession,
+        post: str,
+        client_id: UUID | str,
+        last_uuid: UUID | str,
+):
+    if type(last_uuid) is str:
+        last_uuid = UUID(last_uuid)
+    if type(client_id) is str:
+        client_id = UUID(client_id)
+
+    posts_changes_stmt = (
+        select(PostChange)
+        .where(
+            PostChange.main_post_name == post,
+            PostChange.change_uuid > last_uuid,
+            PostChange.sse_uuid != client_id,
+        )
+    )
+
+    car_changes_stmt = (
+        select(CarChange)
+        .join(ZN, ZN.car_vin == CarChange.vin)
+        .join(ZN_mtm_Post, ZN_mtm_Post.zn_number == ZN.number)
+        .join(Post, ZN_mtm_Post.post_uuid == Post.uuid)
+        .join(MainPost, MainPost.name == Post.main_post_name)
+        .where(
+            MainPost.name == post,
+            CarChange.change_uuid > last_uuid,
+            CarChange.sse_uuid != client_id,
+        )
+    )
+
+    zn_changes_stmt = (
+        select(ZNChange, Post.uuid.label("post_uuid"))
+        .join(ZN, ZN.number == ZNChange.number)
+        .join(ZN_mtm_Post, ZN_mtm_Post.zn_number == ZN.number)
+        .join(Post, ZN_mtm_Post.post_uuid == Post.uuid)
+        .join(MainPost, MainPost.name == Post.main_post_name)
+        .where(
+            MainPost.name == post,
+            ZNChange.change_uuid > last_uuid,
+            ZNChange.sse_uuid != client_id,
+        )
+    )
+
+    async with session.begin():
+        await session.connection(execution_options={"isolation_level": "SERIALIZABLE"})
+
+        car_changes_raw = (await session.execute(car_changes_stmt)).all()
+        zn_changes_raw = (await session.execute(zn_changes_stmt)).all()
+        posts_changes_raw = (await session.execute(posts_changes_stmt)).all()
+
+    suggest_uuid1, car_changes = format_change_type_rows(car_changes_raw, "vin")
+    suggest_uuid2, zn_changes = format_change_type_rows(zn_changes_raw, "number")
+    suggest_uuid3, posts_changes = format_change_type_rows(posts_changes_raw, "uuid")
+
+    last_change_uuid = max(last_uuid, suggest_uuid1, suggest_uuid2, suggest_uuid3)
+
+    result = {
+        "data": {
+            "car_changes": car_changes,
+            "zn_changes": zn_changes,
+            "posts_changes": posts_changes
+        },
+        "last_change_uuid": last_change_uuid,
+    }
+
+    return result
 
 
 async def get_zn(
@@ -582,12 +790,7 @@ def format_change_type_rows(
     if type(primary_key) is list:
         primary_key = primary_key[0]
 
-    for row in rows:
-        try:
-            obj = row[0]
-        except Exception:
-            obj = row
-
+    for obj in rows:
         primary = getattr(obj, primary_key)
         type_ = obj.type
 
@@ -629,26 +832,6 @@ def format_change_type_rows(
             data[primary] = (str(type_), {primary_key: primary})
 
     return last_change_uuid, [{"type": item[0], "data": item[1]} for item in data.values()]
-
-
-async def get_zns_by_post(
-    session: AsyncSession,
-    post: str
-):
-    stmt = (
-        select(ZN, Post.date1, Post.date2)
-        .join(ZN_mtm_Post, ZN_mtm_Post.zn_number == ZN.number)
-        .join(Post, ZN_mtm_Post.post_uuid == Post.uuid)
-        .join(MainPost, MainPost.name == Post.main_post_name)
-        .where(MainPost.name == post)
-        .options(joinedload(ZN.car))
-        .order_by(Post.date1.asc())
-    )
-
-    result = await session.execute(stmt)
-    answer = result.unique().all()
-
-    return answer
 
 
 async def delete_objects(
@@ -785,6 +968,16 @@ async def change_done(
     )
 
 
+async def main():
+    async with db_helper.session_factory() as session:
+        result = await get_zns_by_post(session, "4 пост Спиридонов А.С.")
+        print(result)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
+
+
 __all__ = [
     "add_objects",
     "find_objects",
@@ -792,11 +985,19 @@ __all__ = [
     "delete_objects",
     "kill_old_in_model",
     "change_done",
-    "get_zns_by_post",
     "get_current_mechanics_stage",
     "get_current_zn_stage",
     "get_current_main_posts_stage",
     "has_files",
+
+    "get_posts",
+    "get_mechanics",
+
+    "get_posts_changes",
+    "get_mechanics_changes",
+
+    "get_zns_by_post",
+    "get_zns_changes_by_post",
 
     "get_zn",
     "get_zn_jobs",

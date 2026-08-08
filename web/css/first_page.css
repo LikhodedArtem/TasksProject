@@ -175,3 +175,16 @@
         margin-left: auto;
     }
 }
+
+.disconnect-warning {
+    width: 2rem;
+    height: 2rem;
+    margin-left: auto;
+}
+
+.disconnect-warning::before {
+    left: unset !important;
+    bottom: unset !important;
+    top: 100% !important;
+    right: 0 !important;
+}
