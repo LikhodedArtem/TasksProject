@@ -72,6 +72,7 @@ const SVG = {
 
 const $notification = document.createElement("div")
 $notification.className = "notification"
+$notification.style.display = "none"
 
 const $notificationIcon = document.createElement("div")
 $notificationIcon.className = "notification-icon"
@@ -146,12 +147,14 @@ function createNotification(operation, mainText) {
     $notification.classList.remove("hide")
 
     hideTimer = setTimeout(() => {
+        $notification.style.display = "grid"
         $notification.classList.remove('show');
         $notification.classList.add('hide');
     }, 5000);
 
     removeClassTimer = setTimeout(() => {
         $notification.classList.remove('hide');
+        $notification.style.display = "none"
     }, 5800);
 }
 

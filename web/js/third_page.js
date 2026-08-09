@@ -106,6 +106,7 @@ async function start() {
     }
 
     initPackagesEvents()
+    initMakeTasks()
 
     setLoading()
 
@@ -2370,6 +2371,25 @@ async function initSSE() {
     sseSource.start()
 
     requestManager.SSE = sseSource
+}
+
+function initMakeTasks() {
+    const tasksButtons = document.querySelectorAll(".borderus .pin-files-icon")
+
+    tasksButtons.forEach((tasksButton) => {
+        tasksButton.addEventListener("click", () => {
+            const borderus = tasksButton.closest(".borderus")
+            const position = borderus.querySelector("label").textContent
+            const name = borderus.querySelector("span").textContent
+            const carVin = document.querySelector("#vin span").textContent
+
+            Cookie.set("position", position)
+            Cookie.set("name", name)
+            Cookie.set("carVin", carVin)
+
+            window.location.href = "fourth_page.html"
+        })
+    })
 }
 
 start()

@@ -94,6 +94,7 @@
     background: linear-gradient(-45deg, color-mix(in oklch, var(--color-primary-gradient) 30%, transparent), color-mix(in oklch, var(--color-primary) 60%, transparent));
     border: none;
     background-size: 100% 100%;
+    box-shadow: 0 5px 10px color-mix(in oklch, var(--color-primary-gradient) 20%, transparent);
 
     transition: var(--transition-fast);
 
@@ -123,6 +124,36 @@
     width: 100%;
 }
 
+.task-value-wrapper,
+.create-new-panel-wrapper {
+    display: flex;
+
+    overflow: hidden;
+    width: 100%;
+    height: 0;
+
+    opacity: 0;
+
+    transition: var(--transition-slow);
+
+    mask-image: linear-gradient(180deg, black 0%, transparent 100%);
+    mask-size: 300% 300%;
+    mask-position: 0 100%;
+}
+
+.task.opened .task-value-wrapper,
+.create-new-panel-wrapper.opened {
+    opacity: 1;
+    padding: var(--space-2) 0;
+    mask-image: linear-gradient(180deg, black 100%, transparent 100%);
+    mask-position: 0 0;
+}
+
+.create-new-panel-wrapper.opened {
+    margin-bottom: var(--space-4);
+}
+
+.task-value,
 .create-new-panel {
     position: relative;
 
@@ -136,10 +167,12 @@
     padding: var(--space-4);
 
     height: 10rem;
+    width: 100%;
     border-radius: var(--space-4);
 
     background-color: var(--color-bg-contrast);
     border: 1px solid var(--color-border);
+    box-shadow: 0 5px 10px color-mix(in oklch, var(--color-shadow) 5%, transparent);
 
     .create-new-panel-head {
 
@@ -150,17 +183,20 @@
         }
     }
 
+    .task-value-main,
     .create-new-panel-main {
         display: grid;
         grid-template-columns: 1fr min-content;
         grid-template-rows: repeat(2, 1fr);
         gap: var(--space-2) var(--space-4);
         box-sizing: border-box;
+        width: 100%;
         height: 100%;
 
-        textarea {
-            width: 100%;
-            height: 100%;
+        .textarea {
+
+            width: 100% !important;
+            height: 100% !important;
 
             grid-row: span 2;
         }
@@ -186,6 +222,8 @@
 
     filter: saturate(0);
 
+    transition: var(--transition-fast);
+
     svg {
         width: 60%;
         aspect-ratio: 1 / 1;
@@ -194,4 +232,120 @@
 
 .pin-files.has-files {
     filter: saturate(1);
+}
+
+.send-task {
+    height: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 20%;
+
+    background: linear-gradient(-45deg, var(--color-primary), var(--color-primary-gradient));
+    background-size: 150% 150%;
+    box-shadow: 0 5px 10px color-mix(in oklch, var(--color-shadow) 30%, transparent);
+    border: none;
+
+    transition: var(--transition-fast);
+
+    svg {
+        color: var(--color-bg);
+        transform: rotate(180deg);
+        width: 100%;
+        aspect-ratio: 1 / 1;
+    }
+}
+
+.send-task:hover,
+.pin-files:hover {
+    background-position: 100% 100%;
+}
+
+.task {
+    width: 100%;
+
+    .task-head {
+        display: grid;
+        grid-template-columns: min-content 1fr;
+        align-items: center;
+
+        height: 3rem;
+        width: 100%;
+        border-radius: 1.5rem;
+        box-sizing: border-box;
+
+        background-color: var(--color-bg-contrast);
+        border: 1px solid var(--color-border);
+        box-shadow: 0 5px 10px color-mix(in oklch, var(--color-shadow) 5%, transparent);
+        padding-inline: var(--space-2);
+
+        svg {
+            color: var(--color-text-contrast);
+            height: 1.5rem;
+            width: 1.5rem;
+
+            transition: var(--transition-fast);
+        }
+
+        .task-head-content {
+            display: grid;
+            grid-template-columns: 10% repeat(4, auto);
+            gap: var(--space-4);
+
+            width: 100%;
+            height: 100%;
+            min-width: 0;
+            min-height: 0;
+
+            .address-name {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+
+                span {
+                    font-size: 0.8rem;
+                    color: var(--color-text-contrast);
+                    font-weight: 500;
+                    user-select: none;
+                }
+            }
+
+            .from {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                overflow: hidden;
+                text-overflow: ellipsis;
+
+                min-width: 0;
+                min-height: 0;
+
+                .from-content {
+                    font-size: 0.8rem;
+                    color: var(--color-text);
+                    font-weight: 500;
+
+                    user-select: none;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    text-align: center;
+
+                    min-width: 0;
+                    min-height: 0;
+                }
+            }
+        }
+    }
+}
+
+
+.task.opened {
+    .task-head {
+        svg {
+            transform: rotate(90deg);
+        }
+    }
+}
+
+.task-value {
+    height: 7.75rem;
+    grid-template-rows: 1fr;
 }

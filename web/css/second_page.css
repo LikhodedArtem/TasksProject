@@ -233,7 +233,7 @@
 
 .add-data-wrapper.opened {
     opacity: 1;
-    padding: var(--space-2) var(--space-2) var(--space-2) var(--space-2);
+    padding: var(--space-2);
 }
 
 @keyframes equip-button {
