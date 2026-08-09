@@ -747,6 +747,7 @@ body {
         height: 2.8rem;
         border-radius: 50%;
         color: var(--color-text-contrast);
+        transition: var(--transition-fast);
     }
 }
 

@@ -9,7 +9,7 @@ startRequestsCount = 1
 const znsData = new SmartContainer()
 
 async function start() {
-    initEscapeButton()
+    initEscapeButton("first_page.html")
 
     post = Cookie.get("post")
     mechanic = Cookie.get("mechanic")
@@ -257,15 +257,6 @@ function initEvents() {
         }
     })
 }
-
-function initEscapeButton() {
-    const escapeButton = document.querySelector(".escape")
-
-    escapeButton.addEventListener("click", () => {
-        window.location.href = "first_page.html"
-    })
-}
-
 
 async function initSSE() {
     sseSource = new SmartSSESource("second_page", MY_UUID)

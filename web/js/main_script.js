@@ -1289,3 +1289,12 @@ function disconnectRemove() {
         { once: true }
     )
 }
+
+
+function initEscapeButton(href) {
+    const escapeButton = document.querySelector(".escape")
+
+    escapeButton.addEventListener("click", () => {
+        window.location.href = href
+    })
+}

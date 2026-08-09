@@ -94,7 +94,7 @@ startRequestsCount = 4
 
 
 async function start() {
-    initEscapeButton()
+    initEscapeButton("second_page.html")
 
     post = Cookie.get("post")
     znNumber = Cookie.get("znNumber")
@@ -1949,14 +1949,6 @@ function noCheckbox(checkBox) {
         checkBox.classList.add("no")
         checkBox.classList.remove("yes")
     }
-}
-
-function initEscapeButton() {
-    const escapeButton = document.querySelector(".escape")
-
-    escapeButton.addEventListener("click", () => {
-        window.location.href = "second_page.html"
-    })
 }
 
 
