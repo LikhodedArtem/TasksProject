@@ -9,6 +9,7 @@ from .post_zn_status import PostZNStatus
 from .zn import ZN
 from .post import Post
 from .zn_mtm_post import ZN_mtm_Post
+from .task import Task
 
 
 __all__ = [
@@ -22,5 +23,6 @@ __all__ = [
     "PostZNStatus",
     "Post",
     "ZN",
-    "ZN_mtm_Post"
+    "ZN_mtm_Post",
+    "Task",
 ]

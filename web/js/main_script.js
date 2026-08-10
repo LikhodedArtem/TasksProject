@@ -1287,6 +1287,7 @@ function setClosePage() {
 const disconnectWarning = document.querySelector(".disconnect-warning")
 
 function disconnectSet() {
+    if (!disconnectWarning) return
     disconnectWarning.style.transition = "none"
     disconnectWarning.style.display = "flex"
 
@@ -1299,6 +1300,7 @@ function disconnectSet() {
 }
 
 function disconnectRemove() {
+    if (!disconnectWarning) return
     disconnectWarning.style.opacity = "0"
 
     disconnectWarning.addEventListener(

@@ -1,7 +1,9 @@
 """ Работа с информацией на web части """
+
+
 import asyncio
 from typing import Annotated
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Body, Depends
 
@@ -182,6 +184,36 @@ async def rec(
         sse_uuid=client_id,
         zn_number=zn_number,
         change_uuid=change_uuid,
+    )
+
+
+@info_router.post("/tasks/create")
+async def create_task(
+        to_name: Annotated[str, Body()],
+        value: Annotated[str, Body()],
+        post: Annotated[str, Body()],
+        mechanic: Annotated[str, Body()],
+        zn_number: Annotated[str, Body()],
+        vin: Annotated[str, Body()],
+        client_id: UUID = Depends(get_client_id),
+        change_uuid: UUID = Depends(get_change_uuid),
+):
+    await Tasks.create(
+        to_name=to_name,
+        value=value,
+        post=post,
+        mechanic=mechanic,
+        zn_number=zn_number,
+        vin=vin,
+    )
+
+
+@info_router.post("/tasks/get")
+async def tasks_get(
+        to_name: Annotated[str, Body(embed=True)],
+):
+    return await Tasks.get(
+        to_name=to_name,
     )
 
 
@@ -370,7 +402,7 @@ class Status:
                 )
 
         await third_page_manager.broadcast(
-            data={"status": status},
+            data={"status": status, "post_name": post},
             event="status",
             broadcast_event="zn",
             add_info=zn_number,
@@ -420,3 +452,44 @@ class Rec:
             id_=change_uuid,
             author=sse_uuid,
         )
+
+
+class Tasks:
+    @staticmethod
+    async def create(
+            to_name: str,
+            value: str,
+            post: str,
+            mechanic: str,
+            zn_number: str,
+            vin: str,
+    ):
+        task = Task(
+            uuid=uuid4(),
+            to_name=to_name,
+            value=value,
+            post=post,
+            mechanic=mechanic,
+            zn_number=zn_number,
+            vin=vin,
+        )
+
+        async with db_helper.session_factory() as session:
+            await add_objects(
+                session=session,
+                objects=task,
+            )
+
+
+    @staticmethod
+    async def get(
+            to_name: str,
+    ):
+        async with db_helper.session_factory() as session:
+            return {
+                "data": await get_tasks(
+                    session=session,
+                    to_name=to_name,
+                ),
+                "change_uuid": None,
+            }

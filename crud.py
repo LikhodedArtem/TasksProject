@@ -973,20 +973,40 @@ async def change_done(
     )
 
 
-async def main():
-    async with db_helper.session_factory() as session:
-        result = await get_zn_parts_changes(
-            session,
-            "АМКДС20770",
-            "019fe15fe99e79f397d2683dfd49307c",
-            "019fd336368e7c79bddc3707f1817885",
-        )
+async def get_tasks(
+        session: AsyncSession,
+        to_name: str,
+):
+    stmt = (
+        select(Task)
+        .where(Task.to_name == to_name)
+    )
 
-        print(result)
+    result = await session.execute(stmt)
+    tasks = result.scalars().all()
+
+    answer = []
+
+    for task in tasks:
+        answer.append(as_dict(task))
+
+    return answer
 
 
-if __name__ == "__main__":
-    asyncio.run(main())
+# async def main():
+#     async with db_helper.session_factory() as session:
+#         result = await get_zn_parts_changes(
+#             session,
+#             "АМКДС20770",
+#             "019fe15fe99e79f397d2683dfd49307c",
+#             "019fd336368e7c79bddc3707f1817885",
+#         )
+#
+#         print(result)
+#
+#
+# if __name__ == "__main__":
+#     asyncio.run(main())
 
 
 __all__ = [
@@ -1019,4 +1039,6 @@ __all__ = [
     "get_zn_jobs_changes",
     "get_zn_parts_changes",
     "get_zn_status_changes",
+
+    "get_tasks",
 ]

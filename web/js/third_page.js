@@ -2317,11 +2317,6 @@ async function initSSE() {
         return type
     })
 
-    // status: str
-    sseSource.addSSEEvent("status", ({ status }) => {
-        setStatus(status)
-    })
-
     // type: str, identical_str: str | None, has_files: bool
     sseSource.addSSEEvent("has_files", ({ type, identical_str, has_files }) => {
         let pinFiles
@@ -2357,7 +2352,8 @@ async function initSSE() {
     })
 
     // status: str
-    sseSource.addSSEEvent("status", ({ status }) => {
+    sseSource.addSSEEvent("status", ({ status, post_name }) => {
+        if (post_name !== post) return
         setStatus(status)
         return "status"
     })
