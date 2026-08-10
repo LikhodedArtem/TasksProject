@@ -388,6 +388,15 @@ class Rec:
             change_uuid: UUID,
             sse_uuid: UUID,
     ):
+        async with db_helper.session_factory() as session:
+            current_zn: ZN = await find_objects(
+                session=session,
+                model=ZN,
+            )
+
+        if (current_zn.recommendation is not None
+            and len(current_zn.recommendation) >= len(rec)): return
+
         change = CreateChange.rec(
             zn_number=zn_number,
             recommendation=rec,

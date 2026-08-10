@@ -65,14 +65,14 @@ const SVG = {
     x: '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="5" x2="19" y2="19" /><line x1="5" y1="19" x2="19" y2="5" /></svg>',
 
     zn: '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5H6a2 2 0 0 0-2 2v13h16V7a2 2 0 0 0-2-2h-2"/><rect x="8" y="3" width="8" height="4" rx="1.5"/><path d="M8 11h8M8 15h8"/></svg>',
-    job: '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m5 19 8.5-8.5"/><path d="M14.5 4.5a4 4 0 0 0-4.8 5.8L4.6 15.4a2.5 2.5 0 0 0 3.5 3.5l5.1-5.1a4 4 0 0 0 5.8-4.8l-2.7 2.7-2.5-.5-.5-2.5z"/><circle cx="6.4" cy="17.1" r=".6"/></svg>',
-    part: '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5H6a2 2 0 0 0-2 2v13h16V7a2 2 0 0 0-2-2h-2"/><rect x="8" y="3" width="8" height="4" rx="1.5"/><path d="M8 11h8M8 15h8"/></svg>',
+    job: '<svg viewBox="1 1 23 23" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6.12 20.75C5.36 20.75 4.64 20.45 4.09 19.91C2.97 18.79 2.97 16.98 4.09 15.86L9.6 10.35C9.1 8.40997 9.64 6.31997 11.06 4.89997C12.49 3.46997 14.59 2.90997 16.54 3.43997C16.8 3.50997 17 3.70997 17.07 3.96997C17.14 4.22997 17.07 4.49997 16.88 4.68997L14.43 7.13997L14.95 9.04997L16.86 9.56997L19.31 7.11997C19.5 6.92997 19.78 6.85997 20.03 6.92997C20.29 6.99997 20.49 7.19997 20.56 7.45997C21.09 9.40997 20.54 11.51 19.1 12.94C17.68 14.36 15.59 14.9 13.65 14.4L8.14 19.91C7.6 20.45 6.88 20.75 6.12 20.75ZM14.68 4.76997C13.72 4.84997 12.81 5.26997 12.11 5.96997C10.97 7.10997 10.6 8.77997 11.15 10.32C11.25 10.59 11.18 10.9 10.97 11.1L5.14 16.93C4.61 17.46 4.61 18.33 5.14 18.86C5.4 19.12 5.74 19.26 6.11 19.26C6.47 19.26 6.82 19.12 7.07 18.86L12.9 13.03C13.11 12.82 13.41 12.76 13.68 12.85C15.22 13.39 16.89 13.03 18.03 11.89C18.73 11.19 19.14 10.28 19.23 9.31997L17.6 10.95C17.41 11.14 17.13 11.21 16.87 11.14L14.13 10.39C13.87 10.32 13.67 10.12 13.6 9.85997L12.85 7.11997C12.78 6.85997 12.85 6.57997 13.04 6.38997L14.67 4.75997L14.68 4.76997Z" fill="currentColor"/></svg>',
+    part: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://w3.org"><circle cx="12" cy="12" r="4" /><path d="M10.5 2h3l.5 2.5c.6.2 1.1.5 1.6.9l2.4-1 2.1 2.1-1 2.4c.4.5.7 1 1 1.6l2.5.5v3l-2.5.5c-.2.6-.5 1.1-.9 1.6l1 2.4-2.1 2.1-2.4-1c-.5.4-1 .7-1.6 1l-.5 2.5h-3l-.5-2.5c-.6-.2-1.1-.5-1.6-.9l-2.4 1-2.1-2.1 1-2.4c-.4-.5-.7-1-1-1.6l-2.5-.5v-3l2.5-.5c.2-.6.5-1.1.9-1.6l-1-2.4 2.1-2.1 2.4 1c.5-.4 1-.7 1.6-1z" /></svg>',
     rec: '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-8l-4 4v-4H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><path d="m8 11 2.5 2.5L16 8"/></svg>',
 }
 
 const $notification = document.createElement("div")
 $notification.className = "notification"
-$notification.style.display = "none"
+$notification.style.pointerEvents = "none"
 
 const $notificationIcon = document.createElement("div")
 $notificationIcon.className = "notification-icon"
@@ -89,11 +89,13 @@ $notificationAddTextElement.className = "notification-text-add"
 const $notificationClose = document.createElement("button")
 $notificationClose.className = "notification-close"
 $notificationClose.innerHTML = SVG.x
+// Тест
+$notificationClose.style.display = "none"
 
 $notificationText.append($notificationMainTextElement, $notificationAddTextElement)
 $notification.append($notificationIcon, $notificationText, $notificationClose)
 
-$notificationClose.addEventListener("click", () => {
+$notification.addEventListener("click", () => {
     clearTimeout(hideTimer)
     clearTimeout(removeClassTimer)
 
@@ -143,19 +145,20 @@ function createNotification(operation, mainText) {
 
     $notificationMainTextElement.textContent = mainText
 
+    $notification.style.pointerEvents = "all"
+
     $notification.classList.add("show")
     $notification.classList.remove("hide")
 
     hideTimer = setTimeout(() => {
-        $notification.style.display = "grid"
         $notification.classList.remove('show');
         $notification.classList.add('hide');
+        $notification.style.pointerEvents = "none"
     }, 5000);
 
     removeClassTimer = setTimeout(() => {
         $notification.classList.remove('hide');
-        $notification.style.display = "none"
-    }, 5800);
+    }, 5100);
 }
 
 const loadingIcon = createLoading()
@@ -1111,22 +1114,34 @@ class RequestContainer {
                 this.SSE._recoverData()
             }
 
-            const batch = this._requestQueue.splice(0, this._requestQueue.length)
-            const results = await Promise.allSettled(batch.map(([, fn]) => fn()))
-
             const remaining = []
 
-            results.forEach((result, index) => {
-                if (result.status === "rejected") {
-                    const item = batch[index]
-                    item[0]++
-                    if (item[0] < this.maxAttempts) {
-                        remaining.push(item)
-                    }
-                    createNotification("error", "Ошибка выполнения запроса")
-                    console.error("Error while request function!")
+            const copy = this._requestQueue.splice(0, this._requestQueue.length)
+
+            for (const request of copy) {
+                const [attempts, requestFunc] = request
+
+                if (attempts > this.maxAttempts) continue
+
+                try {
+                    await requestFunc()
+                } catch (e) {
+                    console.log(`Request Container Func Error: ${e}`)
+                    remaining.push([attempts + 1, requestFunc])
                 }
-            })
+            }
+
+            // results.forEach((result, index) => {
+            //     if (result.status === "rejected") {
+            //         const item = batch[index]
+            //         item[0]++
+            //         if (item[0] < this.maxAttempts) {
+            //             remaining.push(item)
+            //         }
+            //         createNotification("error", "Ошибка выполнения запроса")
+            //         console.error("Error while request function!")
+            //     }
+            // })
 
             this._requestQueue = [...remaining, ...this._requestQueue]
 

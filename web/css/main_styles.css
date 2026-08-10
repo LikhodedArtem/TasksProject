@@ -345,6 +345,7 @@ body {
     box-shadow: 0 .6rem .6rem color-mix(in oklch, var(--color-shadow) 10%, transparent);
 
     z-index: 1000;
+    user-select: none;
 
     .notification-icon {
         height: var(--space-10);

@@ -346,7 +346,7 @@
     }
 
     .right-panel.auto-close::before {
-        content: "Авто-закрытие";
+        content: "Автозакрытие";
         font-size: 0.9rem;
         font-weight: 400;
     }

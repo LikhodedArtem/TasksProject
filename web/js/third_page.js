@@ -318,6 +318,7 @@ function renderData(smartData, tableValue, renderRow) {
     }
 
     tableValue.changeCounterSet(forObserve)
+    tableValue.updateDoneAll()
 }
 
 function renderRowWrapper(cells, done, uuid, isHasFiles, change) {
@@ -725,6 +726,7 @@ function initPackagesEvents() {
         if (tableContent) {
             tableContent.changeCounterSet = changeCounterSet
             tableContent.changeCounterSub = changeCounterSub
+            tableContent.updateDoneAll = updateDoneAll
         }
     })
 }
@@ -1087,6 +1089,7 @@ function constructPinFilesCell(addClass, type, rowContent) {
         }
 
         function renderFiles() {
+            console.log(realInput._storedTypes)
             filePanel.innerHTML = ""
 
             let hasZN = false
