@@ -217,6 +217,15 @@ async def tasks_get(
     )
 
 
+@info_router.post("/checklist/get")
+async def checklist(
+        zn_number: Annotated[str, Body(embed=True)],
+):
+    return await Checklists.get(
+        zn_number=zn_number,
+    )
+
+
 class CreateAnswer:
     @classmethod
     async def zns(cls, post: str):
@@ -419,15 +428,6 @@ class Rec:
             change_uuid: UUID,
             sse_uuid: UUID,
     ):
-        async with db_helper.session_factory() as session:
-            current_zn: ZN = await find_objects(
-                session=session,
-                model=ZN,
-            )
-
-        if (current_zn.recommendation is not None
-            and len(current_zn.recommendation) >= len(rec)): return
-
         change = CreateChange.rec(
             zn_number=zn_number,
             recommendation=rec,
@@ -493,3 +493,10 @@ class Tasks:
                 ),
                 "change_uuid": None,
             }
+
+
+class Checklists:
+    @staticmethod
+    async def get(zn_number: str):
+        async with db_helper.session_factory() as session:
+            await get_checklist(session=session, zn_number=zn_number)

@@ -1,3 +1,6 @@
+initEscapeButton("first_page.html")
+
+
 const infoTable = document.querySelector(".info-table")
 const postNumbers = infoTable.querySelectorAll(".table-cell.number p")
 
@@ -9,13 +12,11 @@ startRequestsCount = 1
 const znsData = new SmartContainer()
 
 async function start() {
-    initEscapeButton("first_page.html")
-
     post = Cookie.get("post")
     mechanic = Cookie.get("mechanic")
 
     if (!mechanic || !post) {
-        createNotification("error", "")
+        createNotification("error", "Ошибка данных Cookie")
         return
     }
 
@@ -330,14 +331,17 @@ async function initSSE() {
 
     sseSource.addSSEEvent("zn", (info) => {
         handleZNChanges(info)
+		return "zns"
     })
 
     sseSource.addSSEEvent("car", (info) => {
         handleCarChanges(info)
+		return "zns"
     })
 
     sseSource.addSSEEvent("posts", (info) => {
         handlePostsChanges(info)
+		return "zns"
     })
 
     sseSource.addRecoverHandler("zns", (

@@ -100,6 +100,7 @@ $notification.addEventListener("click", () => {
     clearTimeout(removeClassTimer)
 
     $notification.classList.remove('show')
+    $notification.style.pointerEvents = "none"
 })
 
 body.append($notification)
@@ -107,11 +108,13 @@ body.append($notification)
 let hideTimer
 let removeClassTimer
 
-// const baseUrl = window.location.origin;
-//
-// const API_PATH = baseUrl + ':8000/api/web';
+const baseUrl = window.location.origin
 
-const API_PATH = "http://192.168.50.95:8000/api/web";
+const API_PATH = baseUrl + ':8000/api/web'
+
+// const API_PATH = "http://192.168.50.95:8000/api/web"
+
+// const API_PATH = "http://192.168.30.93:8000/api/web"
 
 function createNotification(operation, mainText) {
     clearTimeout(hideTimer)
@@ -158,6 +161,7 @@ function createNotification(operation, mainText) {
 
     removeClassTimer = setTimeout(() => {
         $notification.classList.remove('hide');
+        $notification.style.pointerEvents = "none"
     }, 5100);
 }
 
@@ -681,7 +685,9 @@ class SmartSSESource {
 
             console.log("SSE connected")
 
-            await this._recoverData()
+			setTimeout(() => {
+				this._recoverData()
+			}, 5000)
 
             this.stopped = false
             this.reconnecting = false
@@ -783,6 +789,8 @@ class SmartSSESource {
     }
 
     _handleRecover(data) {
+		console.log("Recover event handle with data:", data)
+		
         for (const [key, value] of Object.entries(data)) {
             if (this._recoverFuncs[key] !== undefined && value !== null && (!value.data || value.data.length !== 0)) {
                 if (value["last_change_uuid"] !== "skip") this._lastIDs[key] = value["last_change_uuid"]
@@ -799,7 +807,7 @@ class SmartSSESource {
     }
 
     _handleEvent({ event, data, id, retry }) {
-        // console.log(event, data, id, retry)
+        console.log("SSE event handle with:", id, event, data, retry)
         // console.log(this._sseEvents[event])
 
         if (this._sseEvents[event] !== undefined) {

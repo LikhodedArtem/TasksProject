@@ -11,8 +11,8 @@
     padding: var(--space-2);
     margin-bottom: var(--space-6);
 
-    min-height: 7rem;
-    max-height: 7rem;
+    min-height: 5rem;
+    max-height: 5rem;
 
     position: sticky;
     top: 0;
@@ -23,6 +23,7 @@
     display: grid;
     grid-template-columns: 10% repeat(4, 1fr);
     grid-template-rows: 50% 50%;
+	gap: var(--space-2);
 
     height: 100%;
     width: 100%;
@@ -33,6 +34,7 @@
         justify-content: center;
 
         span {
+            font-size: 0.8rem;
             font-weight: 500;
             color: var(--color-text-contrast);
             user-select: none;
@@ -53,7 +55,7 @@
 
             label {
                 color: var(--color-text-contrast);
-                font-size: 0.6rem;
+                font-size: 0.4rem;
                 user-select: none;
             }
 
@@ -62,7 +64,7 @@
                 font-weight: 600;
                 overflow: hidden;
                 text-overflow: ellipsis;
-                font-size: 0.8rem;
+                font-size: 0.6rem;
             }
         }
     }
@@ -73,7 +75,7 @@
 }
 
 .main {
-    padding-inline: var(--space-4) 5.5rem;
+    padding-inline: var(--space-4);
     display: flex;
 }
 
@@ -279,6 +281,7 @@
     mask-size: 300% 300%;
     mask-position: 0 100%;
     opacity: 0;
+	height: 0;
 }
 
 .task-wrapper.opened {
@@ -348,7 +351,7 @@
                 min-height: 0;
 
                 .from-content {
-                    font-size: 0.8rem;
+                    font-size: 0.6rem;
                     color: var(--color-text);
                     font-weight: 500;
 

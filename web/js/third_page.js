@@ -1,3 +1,6 @@
+initEscapeButton("second_page.html")
+
+
 let mechanic = null
 let znNumber = null
 let post = null
@@ -94,19 +97,18 @@ startRequestsCount = 4
 
 
 async function start() {
-    initEscapeButton("second_page.html")
-
     post = Cookie.get("post")
     znNumber = Cookie.get("znNumber")
     mechanic = Cookie.get("mechanic")
 
     if (!mechanic || !znNumber || !post) {
-        createNotification("error", "")
+        createNotification("error", "Ошибка данных Cookie")
         return
     }
 
     initPackagesEvents()
     initMakeTasks()
+    initChecklistButton()
 
     setLoading()
 
@@ -257,7 +259,7 @@ function closePackageForever(el, addClass) {
 
 
 
-function renderData(smartData, tableValue, renderRow) {
+function renderData(smartData, tableValue, renderRow, removeChanges) {
     const data = smartData.data()
 
     if (data.length === 0) {
@@ -305,6 +307,9 @@ function renderData(smartData, tableValue, renderRow) {
             row.change,
         )
 
+        console.log(row.change && !row.checked)
+		// body.append(`${row.change}, ${row.checked}, ${row.change && !row.checked} |||`)
+
         if (row.change && !row.checked) {
             observer.observe(Array.from(rowObj.children)[0])
             forObserve++
@@ -317,7 +322,8 @@ function renderData(smartData, tableValue, renderRow) {
         count++
     }
 
-    tableValue.changeCounterSet(forObserve)
+	try { tableValue.changeCounterSet(forObserve) } catch(e) {console.error(e) }
+    
     tableValue.updateDoneAll()
 }
 
@@ -705,15 +711,15 @@ function initPackagesEvents() {
         }
 
         function changeCounterSet(newNum) {
-            if (!changeCounterInner) return
-            if (newNum === 0) return
+            if (!changeCounterInner || newNum === 0) return
+			// body.innerHTML += `<span>${newNum} ||| ${changeCounterInner}</span>`
             changeCounter.classList.remove("hide")
             changeCounterInner.textContent = newNum
         }
 
         function changeCounterSub() {
-            if (!changeCounterInner) return
-            if (changeCounterInner.textContent === "0") return
+            if (!changeCounterInner || changeCounterInner.textContent === "0") return
+			// body.innerHTML += `<span>${changeCounterInner}, ${changeCounterInner.textContent}</span>`
 
             changeCounterInner.textContent = Number(changeCounterInner.textContent) - 1
 
@@ -2184,6 +2190,8 @@ async function initSSE() {
             data.checked = false
 
             if (type === "create") {
+				if (smartData.select({uuid: data.uuid}).length !== 0) continue
+				
                 smartData.create(data)
             } else if (type === "update") {
                 const uuid = data.uuid
@@ -2244,14 +2252,17 @@ async function initSSE() {
     })
     sseSource.addSSEEvent("zn", (changes) => {
         handleZn(changes)
+		return "zn"
     })
     sseSource.addSSEEvent("car", (changes) => {
         handleCar(changes)
+		return "zn"
     })
 
 
     // done_changes: list[dict[str, Any]], main_changes: list[dict[str, Any]]
     sseSource.addRecoverHandler("jobs", ({ done_changes, main_changes }) => {
+		// body.append("jooooooooooooooobs")
         if (handleZnItems(true, main_changes)
             || handleDone(true, done_changes))
 
@@ -2259,25 +2270,28 @@ async function initSSE() {
     })
     sseSource.addSSEEvent("jobs", (changes) => {
         if (handleZnItems(true, changes)) updateJobsTable()
-    })
+		return "jobs"
+	})
 
 
     // done_changes: list[dict[str, Any]], main_changes: list[dict[str, Any]]
     sseSource.addRecoverHandler("parts", ({ done_changes, main_changes }) => {
+		// body.append("paaaaaaaaaaaaaaaaaaaaaaaarts")
         if (handleZnItems(false, main_changes)
             || handleDone(false, done_changes)) updatePartsTable()
     })
     sseSource.addSSEEvent("parts", (changes) => {
         if (handleZnItems(false, changes)) updatePartsTable()
+		return "parts"
     })
 
 
     // status: str | None
-    sseSource.addRecoverHandler("status", ({ status }) => {
-        if (status === null) return
+    // sseSource.addRecoverHandler("status", ({ status }) => {
+    //     if (status === null) return
 
-        setStatus(status)
-    })
+    //     setStatus(status)
+    // })
 
     // type: str, uuid: str, new_value: bool
     sseSource.addSSEEvent("done", ({ type, uuid, new_value }) => {
@@ -2353,7 +2367,7 @@ async function initSSE() {
 
     // status: str
     sseSource.addSSEEvent("status", ({ status, post_name }) => {
-        if (post_name !== post) return
+        if (post_name !== post || status === null) return
         setStatus(status)
         return "status"
     })
@@ -2388,6 +2402,21 @@ function initMakeTasks() {
 
             window.location.href = "fourth_page.html"
         })
+    })
+}
+
+function initChecklistButton() {
+    const checklistButton = document.querySelector("#checklistButton")
+
+    checklistButton.addEventListener("click", () => {
+        checklistButton.classList.add("clicked")
+
+        setTimeout(() => {
+            window.location.href = "fifth_page.html"
+            setTimeout(() => {
+                checklistButton.classList.remove("clicked")
+            }, 100)
+        }, 500)
     })
 }
 

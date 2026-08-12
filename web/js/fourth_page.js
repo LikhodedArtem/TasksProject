@@ -1,3 +1,6 @@
+initEscapeButton("third_page.html")
+
+
 let post
 let znNumber
 let mechanic
@@ -11,8 +14,6 @@ const tasksList = document.querySelector(".tasks-list")
 
 
 async function start() {
-    initEscapeButton("third_page.html")
-
     post = Cookie.get("post")
     znNumber = Cookie.get("znNumber")
     mechanic = Cookie.get("mechanic")
@@ -149,6 +150,8 @@ function constructTask(value, postName, mechanicName, znName, vinName) {
     taskHead.className = "task-head"
 
     const taskHeadArrow = document.createElement("div")
+	taskHeadArrow.style.maxHeight = "1.5rem"
+	taskHeadArrow.style.maxWidth = "1.5rem"
     taskHeadArrow.innerHTML = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6" stroke-linecap="round" stroke-linejoin="round"></path></svg>'
 
     const taskHeadContent = document.createElement("div")
@@ -202,12 +205,14 @@ function constructTask(value, postName, mechanicName, znName, vinName) {
 
     taskHead.addEventListener("click", () => {
         if (task.classList.contains("opened")) {
-            taskValueWrapper.style.height = "0"
+            taskValueWrapper.style.height = "0px"
             taskWrapper.style.height = `${taskHead.offsetHeight}px`
             task.classList.remove("opened")
         } else {
-            taskValueWrapper.style.height = `${taskValue.offsetHeight}px`
-            taskWrapper.style.height = `${taskHead.offsetHeight + taskValue.offsetHeight + 16}px`
+            const contentHeight = taskValueWrapper.scrollHeight
+            
+            taskValueWrapper.style.height = `${contentHeight}px`
+            taskWrapper.style.height = `${taskHead.offsetHeight + contentHeight + 16}px`
             task.classList.add("opened")
         }
     })
@@ -247,6 +252,7 @@ function renderTasks(data) {
         )
         newTask.style.marginBottom = "var(--space-2)"
         newTask.classList.add("opened")
+		newTask.style.height = "auto"
 
         tasksList.append(newTask)
     }

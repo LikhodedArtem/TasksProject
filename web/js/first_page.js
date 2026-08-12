@@ -1,3 +1,6 @@
+initEscapeButton("index.html")
+
+
 const selects = document.querySelectorAll(".select");
 
 const territorySelect = document.querySelector("#territorySelect")
@@ -14,7 +17,6 @@ let sseSource = null
 
 
 async function start() {
-    initEscapeButton("index.html")
     initTime()
 
     setLoading()
@@ -497,10 +499,16 @@ async function initSSE() {
     }
 
     sseSource.addRecoverHandler("posts", handlePosts)
-    sseSource.addSSEEvent("posts", handlePosts)
+    sseSource.addSSEEvent("posts", (info) => {
+		handlePosts(info)
+		return "posts"
+	})
 
     sseSource.addRecoverHandler("mechanics", handleMechanics)
-    sseSource.addSSEEvent("mechanics", handleMechanics)
+    sseSource.addSSEEvent("mechanics", (info) => {
+		handleMechanics(info)
+		return "mechanics"
+	})
 
     sseSource.requests = requestManager
     sseSource.start()

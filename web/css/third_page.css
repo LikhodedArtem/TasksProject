@@ -10,7 +10,7 @@
 
     min-height: 10rem;
     max-height: 10rem;
-
+ 
     position: sticky;
     top: 0;
     z-index: 100;
@@ -255,7 +255,7 @@
 
     label {
         color: var(--color-text-contrast);
-        font-size: 0.6rem;
+        font-size: 0.5rem;
         user-select: none;
     }
 
@@ -264,7 +264,7 @@
         font-weight: 500;
         overflow: hidden;
         text-overflow: ellipsis;
-        font-size: 0.8rem;
+        font-size: 0.6rem;
     }
 }
 
@@ -285,7 +285,7 @@
     grid-template-columns: 1fr;
     gap: var(--space-5);
 
-    margin-top: 6vh;
+    margin-top: var(--space-4);
     margin-bottom: var(--space-20);
     padding-inline: var(--space-6);
 }
@@ -347,13 +347,13 @@
 
     .right-panel.auto-close::before {
         content: "Автозакрытие";
-        font-size: 0.9rem;
+        font-size: 0.7rem;
         font-weight: 400;
     }
 
     .right-panel.select-all span {
         content: "Выбрать всё";
-        font-size: 0.9rem;
+        font-size: 0.7rem;
         font-weight: 400;
     }
 }
@@ -374,7 +374,7 @@
     .package-name::after {
         content: "";
         font-weight: 400;
-        font-size: 1.25rem;
+        font-size: 1rem;
         color: var(--color-text-contrast);
         margin-bottom: 0.1rem;
         margin-left: 1rem;
@@ -399,7 +399,7 @@
 
 .package-name {
     font-weight: 400;
-    font-size: 1.25rem;
+    font-size: 1rem;
 }
 
 .package-value-wrapper {
@@ -490,6 +490,7 @@
     user-select: none;
 
     span {
+		font-size: 0.8rem;
         font-weight: 500;
         color: var(--color-text-contrast);
     }
@@ -502,12 +503,14 @@
 }
 
 .table-cell {
+    overflow: hidden;
+    text-overflow: ellipsis;
     display: flex;
     box-sizing: border-box;
     justify-content: center;
     align-items: center;
 
-    padding: var(--space-3);
+    padding: var(--space-1);
 
     border: 1px solid var(--color-border);
     border-radius: var(--space-3);
@@ -517,7 +520,12 @@
     background-color: var(--color-bg-contrast);
 
     span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        min-width: 0;
+        min-height: 0;
         text-align: center;
+        font-size: 0.9rem;
     }
 }
 
@@ -543,7 +551,7 @@
     border-color: var(--color-blue-text) !important;
 }
 
-.row-content .table-cell.number.create {
+.row-content.yes .table-cell.number.create {
     box-shadow: 0 0 .5rem .2rem color-mix(in oklch, var(--color-blue-text) 40%, transparent) !important;
 }
 
@@ -554,7 +562,7 @@
     border-color: #c0a002 !important;
 }
 
-.row-content .table-cell.number.update {
+.row-content.yes .table-cell.number.update {
     box-shadow: 0 0 .5rem .2rem color-mix(in oklch, #c0a002 40%, transparent) !important;
 }
 
@@ -566,7 +574,7 @@
 
 }
 
-.row-content .table-cell.number.delete {
+.row-content.yes .table-cell.number.delete {
     box-shadow: 0 0 .5rem .2rem color-mix(in oklch, var(--color-red-text) 40%, transparent) !important;
 }
 
@@ -1363,6 +1371,77 @@
 
 .change-counter.hide {
     transform: scale(0);
+}
+
+
+.checklist {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: 1fr;
+    gap: var(--space-4);
+    height: 3rem;
+    align-items: center;
+    justify-items: center;
+
+    margin-top: var(--space-4);
+
+    padding-inline: var(--space-4);
+
+    .checklist-counter {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        grid-template-rows: 1fr;
+        gap: var(--space-1);
+        box-sizing: border-box;
+
+        height: 100%;
+        border-radius: var(--space-4);
+
+        background-color: var(--color-bg-contrast);
+        box-shadow: 0 10px 10px color-mix(in oklch, var(--color-shadow) 10%, transparent);
+        padding: var(--space-2);
+        border: 1px solid var(--color-border);
+
+        .checklist-cell-counter {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--space-2);
+            width: 3rem;
+
+            span {
+                font-weight: 600;
+                font-size: 0.7rem;
+                user-select: none;
+                color: var(--color-bg-contrast);
+            }
+        }
+
+        .checklist-cell-counter.red {
+            background-color: var(--color-red-text);
+        }
+        .checklist-cell-counter.yellow {
+            background-color: #e4bd04;
+        }
+        .checklist-cell-counter.green {
+            background-color: #42ba52;
+        }
+        .checklist-cell-counter.gray {
+            background-color: var(--color-text-contrast);
+        }
+    }
+}
+
+#checklistButton {
+    width: auto !important;
+    height: 100% !important;
+    padding-inline: var(--space-5);
+    font-size: unset !important;
+
+    span {
+        font-size: 0.8rem !important;
+        margin-bottom: 0.5rem;
+    }
 }
 
 

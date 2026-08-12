@@ -14,20 +14,24 @@ from core.models import db_helper
 from core.models.changes import *
 from core.models.real_info import *
 from help_functions import as_dict
+from routers.web.info import Checklist
 
 
 async def add_objects(
         session: AsyncSession,
         objects: Any | list[Any],
 ) -> None:
-    async with session.begin():
-        if isinstance(objects, list):
-            for obj in objects:
-                session.add(obj)
-        else:
-            session.add(objects)
+    try:
+        async with session.begin():
+            if isinstance(objects, list):
+                for obj in objects:
+                    session.add(obj)
+            else:
+                session.add(objects)
 
-    await session.commit()
+        await session.commit()
+    except Exception:
+        await session.rollback()
 
 
 async def get_current_zn_stage(
@@ -993,6 +997,31 @@ async def get_tasks(
     return answer
 
 
+async def get_checklist(
+        session: AsyncSession,
+        zn_number: str,
+):
+    last_change_stmt = (
+        select(func.max(ZNChange.change_uuid))
+        .where(ZNChange.number == zn_number)
+    )
+
+    main_stmt = (
+        select(ZN.car_vin, ZN.date)
+        .where(ZN.number == zn_number)
+        .limit(1)
+    )
+
+    async with session.begin():
+        await session.connection(execution_options={"isolation_level": "SERIALIZABLE"})
+
+        last_change = await session.execute(last_change_stmt)
+        zn_info = (await session.execute(main_stmt)).first()
+
+    print(last_change, zn_info)
+
+
+
 # async def main():
 #     async with db_helper.session_factory() as session:
 #         result = await get_zn_parts_changes(
@@ -1041,4 +1070,5 @@ __all__ = [
     "get_zn_status_changes",
 
     "get_tasks",
+    "get_checklist"
 ]
