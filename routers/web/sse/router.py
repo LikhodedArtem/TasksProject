@@ -6,7 +6,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Request, HTTPException, Depends, Body
 
-from help_functions import get_client_id
+from dependencies import GetClientID
 from sse import *
 from sse.manager import SSEManager
 
@@ -61,8 +61,9 @@ def get_recover(uuid: UUID) -> Any:
 
 @sse_router.post("/recover")
 async def recover(
+        client_id: GetClientID,
+
         request: Request,
-        client_id: UUID = Depends(get_client_id),
         add_data: Annotated[dict[str, Any] | None, Body(embed=True)] = None,
 ):
     recover = get_recover(client_id)
@@ -75,9 +76,10 @@ async def recover(
 
 @sse_router.post("/connect")
 async def connect(
+        client_id: GetClientID,
+
         request: Request,
         type: Annotated[str, Body(embed=True)],
-        client_id: UUID = Depends(get_client_id),
 ):
     data = get_data(ManagerType(type))
 
@@ -90,7 +92,7 @@ async def connect(
 
 
 @sse_router.post("/unsubscribe")
-async def unsubscribe(client_id: UUID | None = Depends(get_client_id)):
+async def unsubscribe(client_id: GetClientID):
     manager = get_manager(client_id)
 
     manager.unsubscribe(client_id)
@@ -98,8 +100,9 @@ async def unsubscribe(client_id: UUID | None = Depends(get_client_id)):
 
 @sse_router.post("/subscribe/events")
 async def subscribe_events(
+        client_id: GetClientID,
+
         request: Request,
-        client_id: UUID | None = Depends(get_client_id),
 ):
     manager = get_manager(client_id)
 
@@ -117,8 +120,9 @@ async def subscribe_events(
 
 @sse_router.post("/unsubscribe/events")
 async def unsubscribe_events(
+        client_id: GetClientID,
+
         request: Request,
-        client_id: UUID | None = Depends(get_client_id),
 ):
     manager = get_manager(client_id)
 

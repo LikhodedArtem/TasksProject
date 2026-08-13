@@ -18,6 +18,7 @@ async def checklist(
 
         zn_number: Annotated[str, Body(embed=True)],
 ):
+    """Получить первоначальные данные для загрузки страницы с задачами"""
     service = ChecklistService(session)
 
     return await service.get(
