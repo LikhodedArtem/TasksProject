@@ -108,11 +108,11 @@ body.append($notification)
 let hideTimer
 let removeClassTimer
 
-const baseUrl = window.location.origin
+// const baseUrl = window.location.origin
+//
+// const API_PATH = baseUrl + ':8000/api/web'
 
-const API_PATH = baseUrl + ':8000/api/web'
-
-// const API_PATH = "http://192.168.50.95:8000/api/web"
+const API_PATH = "http://192.168.50.95:8000/api/web"
 
 // const API_PATH = "http://192.168.30.93:8000/api/web"
 

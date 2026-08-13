@@ -60,7 +60,7 @@
         z-index: 1;
         background: currentColor;
 
-        filter: saturate(0.5);
+        filter: saturate(0.2);
         box-shadow: 0 10px 10px color-mix(var(--color-shadow) 10%, transparent);
         border: none;
     }
@@ -84,7 +84,7 @@
     }
 
     .triple-button-point.red {
-        color: var(--color-red-text);
+        color: #d83747;
     }
 
     .triple-button-point.yellow {
@@ -110,8 +110,6 @@
     .triple-button-point.inactive {
         width: 2rem;
         height: 2rem;
-
-        filter: saturate(0.3);
     }
 }
 
@@ -167,7 +165,7 @@
     }
 
     .checklist-cell-counter.red {
-        background-color: var(--color-red-text);
+        background-color: #d83747;
     }
     .checklist-cell-counter.yellow {
         background-color: #e4bd04;

@@ -1418,7 +1418,7 @@
         }
 
         .checklist-cell-counter.red {
-            background-color: var(--color-red-text);
+            background-color: #d83747;
         }
         .checklist-cell-counter.yellow {
             background-color: #e4bd04;
