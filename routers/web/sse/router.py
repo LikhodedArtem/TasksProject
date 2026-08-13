@@ -1,13 +1,13 @@
 """Подписка на различные обновления данных на каждой странице."""
 import json
 from enum import Enum
-from typing import Awaitable, Callable, Annotated, Any
+from typing import Annotated, Any
 from uuid import UUID
 
 from fastapi import APIRouter, Request, HTTPException, Depends, Body
 
 from help_functions import get_client_id
-from sse.managers import *
+from sse import *
 from sse.manager import SSEManager
 
 from recover import Recover

@@ -1,1 +1,1 @@
-from .router import sse_router
+from routers.web.sse.router import sse_router

@@ -1,8 +1,7 @@
 """Обработка XML со стороны 1C"""
-from fastapi import APIRouter, Request, BackgroundTasks
-from codes import safe_route
+from fastapi import APIRouter, BackgroundTasks
 from core import Names
-from sse.managers import first_page_manager, third_page_manager
+from sse import first_page_manager, third_page_manager
 
 from dependencies import GetSession
 

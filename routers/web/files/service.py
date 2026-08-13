@@ -6,16 +6,15 @@ from io import BytesIO
 from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZipFile
 
-from fastapi import BackgroundTasks, UploadFile
+from fastapi import UploadFile
 from fastapi.responses import StreamingResponse
 
-from core.services.base_service import BaseService
+from core.services import BaseService
 from uuid import uuid4, UUID
 
-from core.models.db_helper import *
 from core.models.real_info import *
 from crud import *
-from sse.managers import *
+from sse import *
 
 
 UPLOAD_DIR = Path("files")

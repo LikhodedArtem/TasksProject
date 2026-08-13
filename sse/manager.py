@@ -1,12 +1,11 @@
 import asyncio
+import json
 from collections import defaultdict
 from typing import Any, Optional, AsyncGenerator
 
 from fastapi import Request, HTTPException
 from uuid import UUID
 from starlette.responses import StreamingResponse
-
-from .help_functions import make_sse
 
 class SSEManager:
     _ALL = object()
@@ -15,6 +14,27 @@ class SSEManager:
         self._clients: dict[UUID, asyncio.Queue] = dict()
         self._events: defaultdict[str, defaultdict[str, set[UUID]]] = defaultdict(lambda: defaultdict(set))
         self._subscriptions: defaultdict[UUID, set[tuple[str, str]]] = defaultdict(set)
+
+    @staticmethod
+    def make_sse(
+            data: dict[str, Any] | None = None,
+            event: str | None = None,
+            id_: int | None = None,
+    ) -> str:
+        parts = []
+
+        if event is not None:
+            parts.append(f"event: {event}")
+
+        if data:
+            parts.append(f"data: {json.dumps(data, ensure_ascii=False)}")
+        else:
+            parts.append("data: {}")
+
+        if id_ is not None:
+            parts.append(f"id: {id_}")
+
+        return "\n".join(parts) + "\n\n"
 
     def subscribe(self, uuid: UUID) -> None:
         if uuid not in self._clients:
@@ -80,7 +100,7 @@ class SSEManager:
                 try:
                     message = await asyncio.wait_for(self._clients[client_uuid].get(), timeout=15)
                 except asyncio.TimeoutError:
-                    message = make_sse(event="heartbeat")
+                    message = SSEManager.make_sse(event="heartbeat")
                 except KeyError:
                     break
 
@@ -120,7 +140,7 @@ class SSEManager:
         else:
             current_clients = self._clients
 
-        message = make_sse(
+        message = SSEManager.make_sse(
             data=data,
             event=event,
             id_=id_

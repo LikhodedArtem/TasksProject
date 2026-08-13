@@ -1,4 +1,4 @@
-from core.services.base_service import BaseService
+from core.services import BaseService
 
 
 import xml.etree.ElementTree as ET
