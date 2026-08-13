@@ -24,6 +24,6 @@ if __name__ == "__main__":
         app,
         host="0.0.0.0",
         port=8000,
-        ssl_certfile="/etc/nginx/ssl/likhoded.ru.crt",
-        ssl_keyfile="/etc/nginx/ssl/likhoded.ru.key",
+        # ssl_certfile="/etc/nginx/ssl/likhoded.ru.crt",
+        # ssl_keyfile="/etc/nginx/ssl/likhoded.ru.key",
     )

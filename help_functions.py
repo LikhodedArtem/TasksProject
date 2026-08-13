@@ -14,7 +14,6 @@ FORBIDDEN_KEYS = {
 
 
 def as_dict(obj) -> dict[str, Any]:
-
     if isinstance(obj, ChangeBase):
         return {key: getattr(obj, key) for key in obj.__table__.columns.keys() if key not in FORBIDDEN_KEYS}
 
