@@ -1,4 +1,6 @@
 """Работа с файлами"""
+
+
 from typing import Annotated
 
 import json
@@ -16,7 +18,6 @@ from fastapi.responses import StreamingResponse
 from help_functions import get_client_id
 
 from core.models.db_helper import *
-from core.models.changes import *
 from core.models.real_info import *
 from crud import *
 from sse.managers import *
@@ -25,13 +26,6 @@ files_router = APIRouter(prefix="/files", tags=["files"])
 
 
 __all__ = ["files_router"]
-
-
-"""
-Сохранить файлы для элементов заказ наряда.
-Возвращает uuid'ы под которыми были сохранены файлы.
-"""
-
 
 @files_router.post("/create")
 async def create(
@@ -43,6 +37,11 @@ async def create(
     post: str = Form(...),
     client_id: UUID | None = Depends(get_client_id),
 ) -> list[str]:
+    """
+    Сохранить файлы для элементов заказ наряда.
+    Возвращает uuid'ы под которыми были сохранены файлы.
+    """
+
     return await Files.create(
         zn_number=zn_number,
         type=type,

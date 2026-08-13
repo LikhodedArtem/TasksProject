@@ -1,6 +1,5 @@
 """ Работа с информацией на web части """
 
-
 import asyncio
 from typing import Annotated
 from uuid import UUID, uuid4
@@ -19,11 +18,10 @@ from uuid7_generator import uuid7_generator
 
 info_router = APIRouter(prefix="/info", tags=["info"])
 
-
 __all__ = ["info_router"]
 
-
 """Получить все действующие заказ наряды на посту по названию поста"""
+
 
 @info_router.post("/zns")
 @safe_route("Get zns")
@@ -35,6 +33,7 @@ async def zns(
 
 """Получить заказ наряд по его номеру"""
 
+
 @info_router.post("/zn")
 @safe_route("Get zn")
 async def zn(
@@ -44,6 +43,7 @@ async def zn(
 
 
 """Получить все действующие работы заказ наряда, зная его номер"""
+
 
 @info_router.post("/jobs")
 @safe_route("Get jobs")
@@ -55,6 +55,7 @@ async def jobs(
 
 """Получить все действующие запчасти заказ наряда, зная его номер"""
 
+
 @info_router.post("/parts")
 @safe_route("Get parts")
 async def parts(
@@ -65,6 +66,7 @@ async def parts(
 
 """Получить названия всех постов"""
 
+
 @info_router.get("/posts")
 @safe_route("Get posts")
 async def posts():
@@ -73,6 +75,7 @@ async def posts():
 
 """Получить всех механиков"""
 
+
 @info_router.get("/mechanics")
 @safe_route("Get mechanics")
 async def mechanics():
@@ -80,6 +83,7 @@ async def mechanics():
 
 
 """Установить сделано или не сделано на запчасть или работу заказ наряда"""
+
 
 @info_router.post("/done")
 @safe_route("Set done")
@@ -104,7 +108,9 @@ async def done(
         change_uuid=change_uuid,
     )
 
+
 """Установить сделано или не сделано на все запчасти или все работы заказ наряда"""
+
 
 @info_router.post("/done/all")
 @safe_route("Set done all")
@@ -135,6 +141,7 @@ async def done_all(
 Установка по номеру заказ наряда, механику и посту.
 """
 
+
 @info_router.post("/status/get")
 async def status_get(
         zn_number: Annotated[str, Body()],
@@ -150,6 +157,7 @@ async def status_get(
 Получить текущее состояние работы у определённого поста к заказ наряду.
 Если пост ни разу не устанавливал статус, то будет возращено 'never'.
 """
+
 
 @info_router.post("/status/set")
 async def status_set(
@@ -171,6 +179,7 @@ async def status_set(
 
 
 """Изменить рекомендацию к заказ наряду"""
+
 
 @info_router.post("/rec")
 async def rec(
@@ -376,7 +385,7 @@ class Status:
                 zn_number=zn_number,
                 post=post,
             )
-            
+
         change = CreateChange.status(
             change_uuid=change_uuid,
             sse_uuid=client_id,
@@ -434,7 +443,7 @@ class Rec:
             change_uuid=change_uuid,
             sse_uuid=sse_uuid,
         )
-        
+
         async with db_helper.session_factory() as session:
             await update_objects(
                 session=session,
@@ -479,7 +488,6 @@ class Tasks:
                 session=session,
                 objects=task,
             )
-
 
     @staticmethod
     async def get(
