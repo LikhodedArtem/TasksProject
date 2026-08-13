@@ -1,12 +1,14 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Annotated
+from uuid import UUID
 
+from pydantic import Field
 from sqlalchemy import String, ForeignKey, Boolean, func, Float
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from .base import RealInfoBase
-from .help_classes import Life, Stage, CanDone, CanCreateChange
+from core.models.real_info.base import RealInfoBase
+from core.models.real_info.help_classes import Life, Stage, CanDone, CanCreateChange
 
 
 if TYPE_CHECKING:
@@ -47,16 +49,16 @@ class Job(RealInfoBase, Life, Stage, CanDone, CanCreateChange):
         unique=False
     )
 
-    zn: Mapped[ZN] = relationship(
-        "ZN",
-        back_populates="jobs"
-    )
-
     done: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
         server_default=func.false(),
         default=False
+    )
+
+    zn: Mapped[ZN] = relationship(
+        "ZN",
+        back_populates="jobs"
     )
 
     @staticmethod
@@ -66,3 +68,15 @@ class Job(RealInfoBase, Life, Stage, CanDone, CanCreateChange):
     @staticmethod
     def for_value() -> list[str]:
         return ["number", "name", "normal_time"]
+
+
+    class JobSchema(RealInfoBase.BaseSchema):
+        uuid: Annotated[UUID, Field(...)]
+        zn_number: Annotated[str, Field(..., serialization_alias="znNumber")]
+        number: Annotated[float, Field(...)]
+        name: Annotated[str, Field(...)]
+        normal_time: Annotated[float, Field(..., serialization_alias="normalTime")]
+        done: Annotated[bool, Field(...)]
+
+
+    as_dict_model = JobSchema

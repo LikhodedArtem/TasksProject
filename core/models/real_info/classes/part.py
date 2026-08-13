@@ -1,12 +1,14 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Annotated
+from uuid import UUID
 
+from pydantic import Field
 from sqlalchemy import String, ForeignKey, Boolean, func, Float
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from .base import RealInfoBase
-from .help_classes import Life, Stage, CanDone, CanCreateChange
+from core.models.real_info.base import RealInfoBase
+from core.models.real_info.help_classes import Life, Stage, CanDone, CanCreateChange
 
 
 if TYPE_CHECKING:
@@ -84,3 +86,14 @@ class Part(RealInfoBase, Life, Stage, CanDone, CanCreateChange):
             "quantity",
             "units"
         ]
+
+    class PartSchema(RealInfoBase.BaseSchema):
+        uuid: Annotated[UUID, Field(...)]
+        zn_number: Annotated[str, Field(..., serialization_alias="znNumber")]
+        name: Annotated[str, Field(...)]
+        manufacturer_code: Annotated[str, Field(..., serialization_alias="manufacturerCode")]
+        manufacturer: Annotated[str, Field(...)]
+        quantity: Annotated[float, Field(...)]
+        units: Annotated[str, Field(...)]
+
+    as_dict_model = PartSchema

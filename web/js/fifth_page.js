@@ -40,7 +40,6 @@ async function start() {
         return
     }
 
-
     await init()
 }
 

@@ -2,12 +2,16 @@ from __future__ import annotations
 
 from enum import Enum
 from datetime import datetime
+from typing import Annotated, Any
+from uuid import UUID
 
-from sqlalchemy import String, ForeignKey, DateTime, func, Enum as SQLEnum
+from pydantic import Field, field_validator
+from pydantic_core import PydanticUndefined
+from sqlalchemy import String, ForeignKey, DateTime, func, Enum as SQLEnum, UUID as SQLUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
-from .base import RealInfoBase
-from .help_classes import Life
+from core.models.real_info.base import RealInfoBase
+from core.models.real_info.help_classes import Life
 
 
 class FileType(str, Enum):
@@ -18,8 +22,8 @@ class FileType(str, Enum):
 
 
 class File(RealInfoBase, Life):
-    uuid: Mapped[str] = mapped_column(
-        String,
+    uuid: Mapped[UUID] = mapped_column(
+        SQLUUID,
         primary_key=True,
     )
 
@@ -89,3 +93,17 @@ class File(RealInfoBase, Life):
         unique=False
     )
 
+    class FileSchema(RealInfoBase.BaseSchema):
+        uuid: Annotated[UUID, Field(...)]
+        user_name: Annotated[str, Field(...)]
+        type: Annotated[FileType, Field(...)]
+        identical_str: Annotated[str, Field()]
+
+        @field_validator("identical_str", mode="before")
+        @classmethod
+        def ignore_none(cls, value: Any) -> Any:
+            if value is None:
+                return PydanticUndefined
+            return value
+
+    as_dict_model = FileSchema

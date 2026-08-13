@@ -1,8 +1,11 @@
+from typing import Annotated
+
 from sqlalchemy import String, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 
-from .base import RealInfoBase
-from .help_classes import Life, Stage
+from pydantic import Field
+from core.models.real_info.base import RealInfoBase
+from core.models.real_info.help_classes import Life, Stage
 
 
 class ZN_mtm_Post(RealInfoBase, Life, Stage):
@@ -27,3 +30,7 @@ class ZN_mtm_Post(RealInfoBase, Life, Stage):
     @staticmethod
     def for_value() -> list[str]:
         return ["post_uuid",]
+
+    class ZNmtmPostSchema(RealInfoBase.BaseSchema):
+        zn_number: Annotated[str, Field(..., serialization_alias="znNumber")]
+        post_uuid: Annotated[str, Field(..., serialization_alias="postUUID")]

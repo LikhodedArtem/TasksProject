@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from enum import Enum
-from datetime import datetime
+from typing import Annotated
 
-from sqlalchemy import String, ForeignKey, DateTime, func, Enum as SQLEnum, Integer
+from pydantic import Field
+from sqlalchemy import String, ForeignKey, Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column
 
-from .base import RealInfoBase
-from ..common import PostZNStatusEnum
+from core.models.real_info.base import RealInfoBase
+from core.models.common import PostZNStatusEnum
 
 
 class PostZNStatus(RealInfoBase):
@@ -37,3 +37,9 @@ class PostZNStatus(RealInfoBase):
         nullable=False,
         unique=False,
     )
+
+    class StatusSchema(RealInfoBase.BaseSchema):
+        post: Annotated[str, Field(...)]
+        zn_number: Annotated[str, Field(..., serialization_alias="znNumber")]
+        mechanic: Annotated[str, Field(...)]
+        status: Annotated[str, Field(...)]

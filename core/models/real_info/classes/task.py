@@ -1,10 +1,12 @@
 from datetime import datetime
+from typing import Annotated
 from uuid import UUID
 
+from pydantic import Field
 from sqlalchemy import UUID as SQLUUID, ForeignKey, DateTime, func, String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from .base import RealInfoBase
+from core.models.real_info.base import RealInfoBase
 
 class Task(RealInfoBase):
     uuid: Mapped[UUID] = mapped_column(
@@ -75,3 +77,14 @@ class Task(RealInfoBase):
             "vin",
             "created_at",
         ]
+
+    class TaskSchema(RealInfoBase.BaseSchema):
+        uuid: Annotated[UUID, Field(...)]
+        value: Annotated[str, Field(...)]
+        post: Annotated[str, Field(...)]
+        mechanic: Annotated[str, Field(...)]
+        zn_number: Annotated[str, Field(..., serialization_alias="znNumber")]
+        vin: Annotated[str, Field(...)]
+        created_at: Annotated[datetime, Field(..., serialization_alias="createdAt")]
+
+    as_dict_model = TaskSchema
