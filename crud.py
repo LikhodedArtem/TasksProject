@@ -1,3 +1,4 @@
+import asyncio
 from typing import Any
 from uuid import UUID
 
@@ -7,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from changes import CreateChange
 from core import Names
+from core.models import db_helper
 from core.models.changes import *
 from core.models.real_info import *
 from help_functions import as_dict
@@ -1002,8 +1004,11 @@ async def get_checklist(
     )
 
     main_stmt = (
-        select(ZN.car_vin, ZN.date)
+        select(ZN)
         .where(ZN.number == zn_number)
+        .options(
+            joinedload(ZN.car),
+        )
         .limit(1)
     )
 
@@ -1011,26 +1016,30 @@ async def get_checklist(
         await session.connection(execution_options={"isolation_level": "SERIALIZABLE"})
 
         last_change = await session.execute(last_change_stmt)
-        zn_info = (await session.execute(main_stmt)).first()
+        zn_info = (await session.execute(main_stmt)).first()[0]
 
-    print(last_change, zn_info)
+    return {
+        "change_uuid": None,
+        "data": {
+            "date": zn_info.date,
+            "car_reg": zn_info.car.reg,
+        }
+    }
 
 
 
-# async def main():
-#     async with db_helper.session_factory() as session:
-#         result = await get_zn_parts_changes(
-#             session,
-#             "АМКДС20770",
-#             "019fe15fe99e79f397d2683dfd49307c",
-#             "019fd336368e7c79bddc3707f1817885",
-#         )
-#
-#         print(result)
-#
-#
-# if __name__ == "__main__":
-#     asyncio.run(main())
+async def main():
+    async with db_helper.session_factory() as session:
+        result = await get_checklist(
+            session,
+            "АМКДС20770",
+        )
+
+        print(result)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
 
 
 __all__ = [

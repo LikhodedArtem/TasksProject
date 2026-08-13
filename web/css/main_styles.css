@@ -282,7 +282,6 @@ body {
 
 .suggests-panel.too-little::before,
 .suggests-panel.zero::before {
-    padding: var(--space-3) var(--space-1);
     color: color-mix(in oklch, var(--color-border), var(--color-text-contrast));
 }
 

@@ -562,6 +562,7 @@ class SmartContainer {
 
         outerLoop:
         for (const row of this._data) {
+            console.log(row)
             for (const [key, value] of Object.entries(forFind)) {
                     if (row[key] !== value) {
                         continue outerLoop
@@ -687,6 +688,7 @@ class SmartSSESource {
 
 			setTimeout(() => {
 				this._recoverData()
+                this.requests._runRecover()
 			}, 5000)
 
             this.stopped = false
@@ -789,7 +791,7 @@ class SmartSSESource {
     }
 
     _handleRecover(data) {
-		console.log("Recover event handle with data:", data)
+		// console.log("Recover event handle with data:", data)
 		
         for (const [key, value] of Object.entries(data)) {
             if (this._recoverFuncs[key] !== undefined && value !== null && (!value.data || value.data.length !== 0)) {
@@ -807,7 +809,7 @@ class SmartSSESource {
     }
 
     _handleEvent({ event, data, id, retry }) {
-        console.log("SSE event handle with:", id, event, data, retry)
+        // console.log("SSE event handle with:", id, event, data, retry)
         // console.log(this._sseEvents[event])
 
         if (this._sseEvents[event] !== undefined) {
@@ -987,8 +989,8 @@ class RequestContainer {
 
         this.SSE = null
 
-        this.recoverRunsDelay = 3
-        this._currentRecoverRunsDelay = 0
+        this.recoverDelay = 10
+        this._recoverTimeout = null
     }
 
     run() {
@@ -1095,11 +1097,26 @@ class RequestContainer {
         this.SSE._lastIDs[key] = value
     }
 
+    async _runRecover() {
+        this._recoverTimeout = setTimeout(() => {
+            if (!this.CONNECTED) return
+
+            if (this.CONNECTED
+                && this.SSE
+                && !this.SSE.stopped
+                && !this.SSE.reconnecting
+            ) {
+                this.SSE._recoverData()
+            }
+
+            this._runRecover()
+        }, this.recoverDelay * 1000)
+    }
+
     async _runQueue() {
         // console.log(`New Queue run with CONNECTED: ${this.CONNECTED}`)
         // console.log(`Queue has functions: ${this._requestQueue.length}`)
         if (this.STOPPED) return
-        this._currentRecoverRunsDelay = (this._currentRecoverRunsDelay + 1) % this.recoverRunsDelay
 
         try {
             if (!this.CONNECTED) {
@@ -1112,15 +1129,6 @@ class RequestContainer {
             }
 
             // console.log("Queue start")
-
-            if (this.CONNECTED
-                && this.SSE
-                && !this.SSE.stopped
-                && !this.SSE.reconnecting
-                && this._currentRecoverRunsDelay === 0
-            ) {
-                this.SSE._recoverData()
-            }
 
             const remaining = []
 
@@ -1188,6 +1196,7 @@ class RequestContainer {
     
     _setConFalse() {
         this.CONNECTED = false
+        if (this._recoverTimeout) clearTimeout(this._recoverTimeout)
         disconnectSet()
     }
 

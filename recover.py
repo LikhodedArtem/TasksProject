@@ -1,6 +1,8 @@
 from typing import Any
 from uuid import UUID
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from core import Names
 from core.models import db_helper
 from crud import (
@@ -18,6 +20,7 @@ class Recover:
     @classmethod
     async def first(
             cls,
+            session: AsyncSession,
             last_uuids: dict[str, UUID | None],
             client_id: UUID,
             add_data: dict[str, Any],
@@ -32,19 +35,17 @@ class Recover:
         if posts is None: posts = Names.MIN_UUID7
         if mechanics is None: mechanics = Names.MIN_UUID7
 
-        async with db_helper.session_factory() as session:
-            answer["posts"] = await get_posts_changes(
-                session=session,
-                last_uuid=posts,
-                client_id=client_id,
-            )
+        answer["posts"] = await get_posts_changes(
+            session=session,
+            last_uuid=posts,
+            client_id=client_id,
+        )
 
-        async with db_helper.session_factory() as session:
-            answer["mechanics"] = await get_mechanics_changes(
-                session=session,
-                last_uuid=mechanics,
-                client_id=client_id,
-            )
+        answer["mechanics"] = await get_mechanics_changes(
+            session=session,
+            last_uuid=mechanics,
+            client_id=client_id,
+        )
 
         return answer
 
@@ -53,6 +54,7 @@ class Recover:
     @classmethod
     async def second(
             cls,
+            session: AsyncSession,
             last_uuids: dict[str, UUID | None],
             client_id: UUID,
             add_data: dict[str, Any],
@@ -64,13 +66,12 @@ class Recover:
 
         if zns is None: zns = Names.MIN_UUID7
 
-        async with db_helper.session_factory() as session:
-            answer["zns"] = await get_zns_changes_by_post(
-                session=session,
-                post=post,
-                last_uuid=zns,
-                client_id=client_id,
-            )
+        answer["zns"] = await get_zns_changes_by_post(
+            session=session,
+            post=post,
+            last_uuid=zns,
+            client_id=client_id,
+        )
 
         return answer
 
@@ -78,6 +79,7 @@ class Recover:
     @classmethod
     async def third(
             cls,
+            session: AsyncSession,
             last_uuids: dict[str, UUID | None],
             client_id: UUID,
             add_data: dict[str, Any],
@@ -99,37 +101,33 @@ class Recover:
         if parts is None: parts = Names.MIN_UUID7
         if status is None: status = Names.MIN_UUID7
 
-        async with db_helper.session_factory() as session:
-            answer["zn"] = await get_zn_changes(
-                session=session,
-                zn_number=zn_number,
-                last_uuid=zn,
-                client_id=client_id,
-            )
+        answer["zn"] = await get_zn_changes(
+            session=session,
+            zn_number=zn_number,
+            last_uuid=zn,
+            client_id=client_id,
+        )
 
-        async with db_helper.session_factory() as session:
-            answer["jobs"] = await get_zn_jobs_changes(
-                session=session,
-                zn_number=zn_number,
-                last_uuid=jobs,
-                client_id=client_id,
-            )
+        answer["jobs"] = await get_zn_jobs_changes(
+            session=session,
+            zn_number=zn_number,
+            last_uuid=jobs,
+            client_id=client_id,
+        )
 
-        async with db_helper.session_factory() as session:
-            answer["parts"] = await get_zn_parts_changes(
-                session=session,
-                zn_number=zn_number,
-                last_uuid=parts,
-                client_id=client_id,
-            )
+        answer["parts"] = await get_zn_parts_changes(
+            session=session,
+            zn_number=zn_number,
+            last_uuid=parts,
+            client_id=client_id,
+        )
 
-        async with db_helper.session_factory() as session:
-            answer["status"] = await get_zn_status_changes(
-                session=session,
-                zn_number=zn_number,
-                post=post,
-                last_uuid=status,
-                client_id=client_id,
-            )
+        answer["status"] = await get_zn_status_changes(
+            session=session,
+            zn_number=zn_number,
+            post=post,
+            last_uuid=status,
+            client_id=client_id,
+        )
 
         return answer

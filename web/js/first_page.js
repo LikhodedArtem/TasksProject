@@ -460,26 +460,32 @@ async function initSSE() {
     sseSource.reconnectAddInfo = {}
 
     function handleUpdate(mechanics, info) {
+        console.log(mechanics, info)
 
         const smartData = mechanics ? mechanicsData : postsData
         const primaryKey = mechanics ? "key" : "name"
 
         for (const row of info) {
             const { type, data } = row
+
+            const primary = data[primaryKey]
+            delete data[primaryKey]
+
             if (type === "create") {
+                if (smartData.select({
+                    [primaryKey]: primary
+                }).length !== 0) continue
+
                 smartData.create(data)
             } else if (type === "update") {
-                const primary = data[primaryKey]
-                delete data[primaryKey]
-
                 smartData.update(
                     data,
-                    { primaryKey: primary },
+                    { [primaryKey]: primary },
                     1,
                 )
             } else {
                 smartData.delete(
-                    { primaryKey: data[primaryKey] },
+                    { [primaryKey]: data[primaryKey] },
                     1
                 )
             }

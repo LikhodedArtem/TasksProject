@@ -5,11 +5,26 @@ let znNumber
 let post
 let mechanic
 
-let carReg = "ИМИТАЦИЯ ДАННЫХ"
-let znDate = "ИМИТАЦИЯ ДАННЫХ"
+let carReg = null
+let znDate = null
+
+
+startRequestsCount = 1
 
 
 const rows = document.querySelector(".rows")
+
+const counterRed = document.querySelector(".checklist-cell-counter.red span")
+const counterYellow = document.querySelector(".checklist-cell-counter.yellow span")
+const counterGreen = document.querySelector(".checklist-cell-counter.green span")
+const counterGrey = document.querySelector(".checklist-cell-counter.gray span")
+
+const counters = {
+    red: counterRed,
+    yellow: counterYellow,
+    green: counterGreen,
+    gray: counterGrey,
+}
 
 
 async function start() {
@@ -17,7 +32,7 @@ async function start() {
     post = Cookie.get("post")
     mechanic = Cookie.get("mechanic")
 
-    initInfo()
+    initCounters()
     initRows()
 
     if (!znNumber || !post || !mechanic) {
@@ -29,16 +44,25 @@ async function start() {
     await init()
 }
 
+async function init() {
+    await initSSE()
+
+    await getZnInfo()
+}
+
 function initInfo() {
     document.querySelector("#znNumber span").textContent = znNumber
     document.querySelector("#date span").textContent = znDate
-    document.querySelector("#reg span").textContent = carReg
     document.querySelector("#post span").textContent = post
+
+    const reg = document.querySelector("#reg span")
+    reg.parentNode.replaceChildren(document.querySelector("#reg label"), beautyReg(carReg))
 }
 
 
 function initRows() {
     for (let i = 1; i <= 10; i++) {
+        counters.gray.add()
         rows.append(constructRow(`Тест текста строки номер ${i}`))
     }
 }
@@ -62,6 +86,7 @@ function constructRow(value) {
 function constructTripleButton() {
     const tripleButton = document.createElement("button")
     tripleButton.className = "triple-button"
+    tripleButton.isActive = false
 
     const tripleButtonPointRed = document.createElement("div")
     tripleButtonPointRed.className = "triple-button-point red"
@@ -97,13 +122,29 @@ function constructTripleButton() {
 
         if (!closest.classList.contains("active")) {
             points.forEach((point) => {
-                point.classList.remove("active")
-                point !== closest
-                    ? point.classList.add("inactive")
-                    : point.classList.remove("inactive")
+                const active = point.classList.contains("active")
+                const clicked = point === closest
+
+                if (active || clicked) {
+                    const funcName = active ? "sub" : "add"
+                    console.log(Array.from(point.classList)[1])
+
+                    counters[Array.from(point.classList)[1]][funcName]()
+                }
+
+                if (clicked) {
+                    point.classList.add("active")
+                    point.classList.remove("inactive")
+                } else {
+                    point.classList.remove("active")
+                    point.classList.add("inactive")
+                }
             })
 
-            closest.classList.add("active")
+            if (!tripleButton.isActive) {
+                tripleButton.isActive = true
+                counters.gray.sub()
+            }
         }
     })
 
@@ -113,10 +154,12 @@ function constructTripleButton() {
 }
 
 
-async function init() {
-    await initSSE()
-
-    await getZnInfo()
+function initCounters() {
+    Object.values(counters).forEach(counter => {
+        counter.add = () => { counter.textContent = Number(counter.textContent) + 1 }
+        counter.sub = () => { counter.textContent = Number(counter.textContent) - 1 }
+        counter.set = (newNum) => { counter.textContent = newNum }
+    })
 }
 
 async function initEnd() {
@@ -125,12 +168,38 @@ async function initEnd() {
 
 
 async function getZnInfo() {
-
+    await requestManager.send(
+        "/info/checklist/get",
+        "POST",
+        {
+            data: {
+                zn_number: znNumber,
+            },
+            okFunc: (data) => {
+                doneStartRequest("changelist", data, (data) => {
+                    znDate = createReadableDate(data.date)
+                    carReg = data.car_reg
+                    initInfo()
+                })
+            }
+        }
+    )
 }
 
 
 async function initSSE() {
+    sseSource = new SmartSSESource("third_page", MY_UUID)
+    sseSource.reconnectAddInfo = {
+        zn_number: znNumber,
+        post: post,
+    }
 
+    await sseSource.subServerEvents({"zn": znNumber})
+
+    sseSource.requests = requestManager
+    sseSource.start()
+
+    requestManager.SSE = sseSource
 }
 
 

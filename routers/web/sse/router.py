@@ -4,9 +4,9 @@ from enum import Enum
 from typing import Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, Request, HTTPException, Depends, Body
+from fastapi import APIRouter, Request, HTTPException, Body
 
-from dependencies import GetClientID
+from dependencies import GetClientID, GetSession
 from sse import *
 from sse.manager import SSEManager
 
@@ -62,6 +62,7 @@ def get_recover(uuid: UUID) -> Any:
 @sse_router.post("/recover")
 async def recover(
         client_id: GetClientID,
+        session: GetSession,
 
         request: Request,
         add_data: Annotated[dict[str, Any] | None, Body(embed=True)] = None,
@@ -71,7 +72,7 @@ async def recover(
     last_event_id = request.headers.get("Last-Event-IDs")
     last_change_uuids = json.loads(last_event_id) if last_event_id != "null" and last_event_id is not None else None
 
-    return await recover(last_change_uuids, client_id, add_data)
+    return await recover(session, last_change_uuids, client_id, add_data)
 
 
 @sse_router.post("/connect")

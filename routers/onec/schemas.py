@@ -1,9 +1,7 @@
-from uuid6 import UUID
+from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 
 
 class OnecResponse(BaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
     last_change_uuid: UUID
