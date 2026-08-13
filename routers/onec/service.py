@@ -3,11 +3,9 @@ from core.services.base_service import BaseService
 
 import xml.etree.ElementTree as ET
 from datetime import datetime
-from pprint import pprint
-from typing import Annotated, Any, Optional
+from typing import Any, Optional
 from copy import deepcopy
 
-from enum import Enum, auto
 from crud import *
 from core.models import db_helper
 from core.models.real_info import *
@@ -49,8 +47,7 @@ class OnecService(BaseService):
         for object in data:
             primary_kwargs = {key: getattr(object, key) for key in primary_keys}
 
-            async with db_helper.session_factory() as session:
-                old_object = await find_objects(session, model, **primary_kwargs)
+            old_object = await find_objects(self.session, model, **primary_kwargs)
 
             if isinstance(old_object, list):
                 raise ValueError("Expected one old_object, got two or more")
@@ -60,11 +57,10 @@ class OnecService(BaseService):
                     change = object.create_change("create")
                     change_list.append(change)
 
-                async with db_helper.session_factory() as session:
-                    await add_objects(
-                        session,
-                        [object, change] if changes else [object],
-                    )
+                await add_objects(
+                    self.session,
+                    [object, change] if changes else [object],
+                )
             else:
                 change = None
 
@@ -89,35 +85,32 @@ class OnecService(BaseService):
 
                 for_update["stage"] = new_stage
 
-                async with db_helper.session_factory() as session:
-                    await update_objects(
-                        session=session,
-                        model=model,
-                        for_find=primary_kwargs,
-                        for_update=for_update,
-                        for_add=[change] if change is not None else None,
-                    )
+                await update_objects(
+                    session=self.session,
+                    model=model,
+                    for_find=primary_kwargs,
+                    for_update=for_update,
+                    for_add=[change] if change is not None else None,
+                )
 
         if delete_old:
-            async with db_helper.session_factory() as session:
-                delete_lst = await kill_old_in_model(
-                    session=session,
-                    model=model,
-                    alive_stage=new_stage,
-                    area_value=area_value,
-                )
+            delete_lst = await kill_old_in_model(
+                session=self.session,
+                model=model,
+                alive_stage=new_stage,
+                area_value=area_value,
+            )
 
             for delete in delete_lst:
                 if changes: change = delete.create_change("delete")
                 if changes: change_list.append(change)
-                async with db_helper.session_factory() as session:
-                    await update_objects(
-                        session=session,
-                        model=model,
-                        for_find={key: getattr(delete, key) for key in primary_keys},
-                        for_update={"is_alive": False, "death_time": datetime.now()},
-                        for_add=[change] if changes else None,
-                    )
+                await update_objects(
+                    session=self.session,
+                    model=model,
+                    for_find={key: getattr(delete, key) for key in primary_keys},
+                    for_update={"is_alive": False, "death_time": datetime.now()},
+                    for_add=[change] if changes else None,
+                )
 
         if changes:
             return format_change_type_rows(change_list, primary_keys)
@@ -129,8 +122,7 @@ class OnecService(BaseService):
 
         zn_number = zn.find("zn_number").text
 
-        async with db_helper.session_factory() as session:
-            new_stage = await get_current_zn_stage(session, zn_number) + 1
+        new_stage = await get_current_zn_stage(self.session, zn_number) + 1
 
         zn_lst = [
             ZN(
@@ -255,19 +247,18 @@ class OnecService(BaseService):
             if not change_name.startswith("__"):
                 data[change_name] = response
 
-        async with db_helper.session_factory() as session:
-            for relation in relation_lst:
-                old_relation = await find_objects(
-                    session,
-                    ZN_mtm_Post,
-                    zn_number=relation.zn_number,
-                    post_uuid=relation.post_uuid,
-                )
+        for relation in relation_lst:
+            old_relation = await find_objects(
+                self.session,
+                ZN_mtm_Post,
+                zn_number=relation.zn_number,
+                post_uuid=relation.post_uuid,
+            )
 
-                if old_relation is None:
-                    session.add(relation)
+            if old_relation is None:
+                self.session.add(relation)
 
-            await session.commit()
+            await self.session.commit()
 
         return data, zn_number
 
@@ -276,8 +267,7 @@ class OnecService(BaseService):
 
         mechanics = root.find('mechanics')
 
-        async with db_helper.session_factory() as session:
-            new_stage = await get_current_mechanics_stage(session) + 1
+        new_stage = await get_current_mechanics_stage(self.session) + 1
 
         mechanic_lst = []
         for mechanic in mechanics.findall('mechanic'):
@@ -299,8 +289,7 @@ class OnecService(BaseService):
     async def parse_posts(self, xml_string: bytes):
         root = ET.fromstring(xml_string)
 
-        async with db_helper.session_factory() as session:
-            new_stage = await get_current_main_posts_stage(session) + 1
+        new_stage = await get_current_main_posts_stage(self.session) + 1
 
         post_lst = []
         for post in root.findall('post'):

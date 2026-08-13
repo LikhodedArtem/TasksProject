@@ -48,17 +48,6 @@ async def zn(
     ).model_dump_json()
 
 
-async def broadcast_posts_mechanics(type: str, last_change_uuid, data):
-    await first_page_manager.broadcast(
-        data=data,
-        event=type,
-        broadcast_event=None,
-        add_info=None,
-        id_=last_change_uuid,
-        broadcast_all=True,
-    )
-
-
 @onec_router.post("/mechanics", response_model=OnecResponse)
 async def mechanics(
         xml_string: GetXMLString,
@@ -71,7 +60,15 @@ async def mechanics(
 
     last_change_uuid, data = await service.parse_mechanics(xml_string)
 
-    background_tasks.add_task(broadcast_posts_mechanics, "mechanics", last_change_uuid, data)
+    background_tasks.add_task(
+        first_page_manager.broadcast,
+        data=data,
+        event="mechanics",
+        broadcast_event=None,
+        add_info=None,
+        id_=last_change_uuid,
+        broadcast_all=True,
+    )
 
     return OnecResponse(
         last_change_uuid=last_change_uuid,
@@ -89,7 +86,15 @@ async def posts(
 
     last_change_uuid, data = await service.parse_mechanics(xml_string)
 
-    background_tasks.add_task(broadcast_posts_mechanics, "posts", last_change_uuid, data)
+    background_tasks.add_task(
+        first_page_manager.broadcast,
+        data=data,
+        event="posts",
+        broadcast_event=None,
+        add_info=None,
+        id_=last_change_uuid,
+        broadcast_all=True,
+    )
 
     return OnecResponse(
         last_change_uuid=last_change_uuid,

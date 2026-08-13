@@ -25,12 +25,4 @@ def as_dict(obj) -> dict[str, Any]:
     return {key: getattr(obj, key) for key in keys}
 
 
-def get_client_id(x_client_id: UUID | None = Header(default=None)) -> UUID | None:
-    return x_client_id
-
-
-def get_change_uuid(x_change_uuid: UUID | None = Header(default=None)) -> UUID | None:
-    return x_change_uuid
-
-
-__all__ = ["as_dict", "get_client_id", "get_change_uuid"]
+__all__ = ["as_dict"]
