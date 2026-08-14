@@ -12,6 +12,6 @@ __all__ = [
     "PostZNStatus",
     "Post",
     "ZN",
-    "ZN_mtm_Post",
+    "ZNmtmPost",
     "Task",
 ]

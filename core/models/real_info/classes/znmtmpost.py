@@ -1,6 +1,7 @@
 from typing import Annotated
+from uuid import UUID
 
-from sqlalchemy import String, ForeignKey
+from sqlalchemy import String, ForeignKey, UUID as SQLUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from pydantic import Field
@@ -8,7 +9,7 @@ from core.models.real_info.base import RealInfoBase
 from core.models.real_info.help_classes import Life, Stage
 
 
-class ZN_mtm_Post(RealInfoBase, Life, Stage):
+class ZNmtmPost(RealInfoBase, Life, Stage):
     __tablename__ = 'zn_mtm_post'
 
     zn_number: Mapped[str] = mapped_column(
@@ -17,8 +18,8 @@ class ZN_mtm_Post(RealInfoBase, Life, Stage):
         primary_key=True
     )
 
-    post_uuid: Mapped[str] = mapped_column(
-        String,
+    post_uuid: Mapped[UUID] = mapped_column(
+        SQLUUID,
         ForeignKey('posts.uuid'),
         primary_key=True
     )

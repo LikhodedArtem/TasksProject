@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Annotated
 from uuid import UUID
 
 from pydantic import Field
-from sqlalchemy import String, ForeignKey
+from sqlalchemy import String, ForeignKey, UUID as SQLUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from core.models.real_info.base import RealInfoBase
@@ -19,8 +19,8 @@ class Post(RealInfoBase, Life, Stage, CanCreateChange):
     change_func = "post"
 
 
-    uuid: Mapped[str] = mapped_column(
-        String,
+    uuid: Mapped[UUID] = mapped_column(
+        SQLUUID,
         primary_key=True
     )
 

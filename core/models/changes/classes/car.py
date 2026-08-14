@@ -1,8 +1,11 @@
+from typing import Annotated, Optional
+
+from pydantic import Field
 from sqlalchemy import String, ForeignKey, Integer
 from sqlalchemy.orm import Mapped, mapped_column
 
-from .base import ChangeBase
-from .help_classes import ChangeType
+from core.models.changes.base import ChangeBase
+from core.models.changes.help_classes import ChangeType
 
 
 class CarChange(ChangeBase, ChangeType):
@@ -35,3 +38,12 @@ class CarChange(ChangeBase, ChangeType):
         nullable=True,
         unique=False
     )
+
+    class CarChangeSchema(ChangeBase.BaseSchema, ChangeType.BaseSchema):
+        vin: Annotated[str, Field(...)]
+        reg: Annotated[Optional[str], Field(default=None)]
+        model: Annotated[Optional[str], Field(default=None)]
+        year: Annotated[Optional[int], Field(default=None)]
+        millage: Annotated[Optional[int], Field(default=None)]
+
+    as_dict_model = CarChangeSchema

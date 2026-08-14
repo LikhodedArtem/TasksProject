@@ -1,5 +1,7 @@
 from enum import Enum
+from typing import Annotated
 
+from pydantic import BaseModel, Field
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -14,6 +16,9 @@ class ChangeTypeEnum(str, Enum):
 
 
 class ChangeType:
+    class BaseSchema(BaseModel):
+        type: Annotated[ChangeTypeEnum, Field(...)]
+
     type: Mapped[str] = mapped_column(
         SQLEnum(ChangeTypeEnum, name="type"),
         nullable=False,

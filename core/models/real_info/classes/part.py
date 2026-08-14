@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Annotated
 from uuid import UUID
 
 from pydantic import Field
-from sqlalchemy import String, ForeignKey, Boolean, func, Float
+from sqlalchemy import String, ForeignKey, Boolean, func, Float, UUID as SQLUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from core.models.real_info.base import RealInfoBase
@@ -19,8 +19,8 @@ class Part(RealInfoBase, Life, Stage, CanDone, CanCreateChange):
     change_func = "part"
 
 
-    uuid: Mapped[str] = mapped_column(
-        String,
+    uuid: Mapped[UUID] = mapped_column(
+        SQLUUID,
         primary_key=True,
     )
 
@@ -87,7 +87,7 @@ class Part(RealInfoBase, Life, Stage, CanDone, CanCreateChange):
             "units"
         ]
 
-    class PartSchema(RealInfoBase.BaseSchema):
+    class PartSchema(RealInfoBase.BaseSchema, CanDone.BaseSchema):
         uuid: Annotated[UUID, Field(...)]
         zn_number: Annotated[str, Field(..., serialization_alias="znNumber")]
         name: Annotated[str, Field(...)]

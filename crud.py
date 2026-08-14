@@ -268,8 +268,8 @@ async def get_zns_by_post(
             car_last_uuid_stmt,
             posts_last_uuid_stmt
         )
-        .join(ZN_mtm_Post, ZN_mtm_Post.zn_number == ZN.number)
-        .join(Post, ZN_mtm_Post.post_uuid == Post.uuid)
+        .join(ZNmtmPost, ZNmtmPost.zn_number == ZN.number)
+        .join(Post, ZNmtmPost.post_uuid == Post.uuid)
         .join(MainPost, MainPost.name == Post.main_post_name)
         .where(MainPost.name == post)
         .options(joinedload(ZN.car))
@@ -335,8 +335,8 @@ async def get_zns_changes_by_post(
     car_changes_stmt = (
         select(CarChange)
         .join(ZN, ZN.car_vin == CarChange.vin)
-        .join(ZN_mtm_Post, ZN_mtm_Post.zn_number == ZN.number)
-        .join(Post, ZN_mtm_Post.post_uuid == Post.uuid)
+        .join(ZNmtmPost, ZNmtmPost.zn_number == ZN.number)
+        .join(Post, ZNmtmPost.post_uuid == Post.uuid)
         .join(MainPost, MainPost.name == Post.main_post_name)
         .where(
             MainPost.name == post,
@@ -348,8 +348,8 @@ async def get_zns_changes_by_post(
     zn_changes_stmt = (
         select(ZNChange, Post.uuid.label("post_uuid"))
         .join(ZN, ZN.number == ZNChange.number)
-        .join(ZN_mtm_Post, ZN_mtm_Post.zn_number == ZN.number)
-        .join(Post, ZN_mtm_Post.post_uuid == Post.uuid)
+        .join(ZNmtmPost, ZNmtmPost.zn_number == ZN.number)
+        .join(Post, ZNmtmPost.post_uuid == Post.uuid)
         .join(MainPost, MainPost.name == Post.main_post_name)
         .where(
             MainPost.name == post,
@@ -904,8 +904,8 @@ async def kill_old_in_model(
 
     if model == Job or model == Part:
         conditions.append(model.zn_number == area_value)
-    elif model == ZN_mtm_Post:
-        conditions.append(ZN_mtm_Post.zn_number == area_value)
+    elif model == ZNmtmPost:
+        conditions.append(ZNmtmPost.zn_number == area_value)
 
     stmt = (
         select(model)

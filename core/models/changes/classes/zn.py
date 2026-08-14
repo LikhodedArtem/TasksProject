@@ -1,8 +1,11 @@
+from typing import Annotated, Optional
+
+from pydantic import Field
 from sqlalchemy import String, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 
-from .base import ChangeBase
-from .help_classes import ChangeType
+from core.models.changes.base import ChangeBase
+from core.models.changes.help_classes import ChangeType
 
 
 class ZNChange(ChangeBase, ChangeType):
@@ -48,3 +51,14 @@ class ZNChange(ChangeBase, ChangeType):
         nullable=True,
         unique=False,
     )
+
+    class ZNChangeSchema(ChangeBase.BaseSchema, ChangeType.BaseSchema):
+        number: Annotated[str, Field(...)]
+        car_vin: Annotated[str, Field(default=None, serialization_alias="carVin")]
+        date: Annotated[str, Field(default=None)]
+        reason: Annotated[str, Field(default=None)]
+        recommendation: Annotated[str, Field(default=None)]
+        assistant: Annotated[str, Field(default=None)]
+        manager: Annotated[str, Field(default=None)]
+
+    as_dict_model = ZNChangeSchema

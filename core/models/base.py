@@ -16,7 +16,7 @@ class Base(DeclarativeBase):
         return type(self).as_dict_model.model_validate(self, by_alias=True)
 
     def as_dict(self) -> dict:
-        return self.as_pydantic_model().model_dump(by_alias=True)
+        return self.as_pydantic_model().model_dump(by_alias=True, exclude_unset=True)
 
     def as_json(self) -> str:
-        return self.as_pydantic_model().model_dump_json(by_alias=True)
+        return self.as_pydantic_model().model_dump_json(by_alias=True, exclude_unset=True)

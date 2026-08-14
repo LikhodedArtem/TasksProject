@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Annotated
 from uuid import UUID
 
 from pydantic import Field
-from sqlalchemy import String, ForeignKey, Boolean, func, Float
+from sqlalchemy import String, ForeignKey, Float, UUID as SQLUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from core.models.real_info.base import RealInfoBase
@@ -19,8 +19,8 @@ class Job(RealInfoBase, Life, Stage, CanDone, CanCreateChange):
     change_func = "job"
 
 
-    uuid: Mapped[str] = mapped_column(
-        String,
+    uuid: Mapped[UUID] = mapped_column(
+        SQLUUID,
         primary_key=True,
     )
 
@@ -49,13 +49,6 @@ class Job(RealInfoBase, Life, Stage, CanDone, CanCreateChange):
         unique=False
     )
 
-    done: Mapped[bool] = mapped_column(
-        Boolean,
-        nullable=False,
-        server_default=func.false(),
-        default=False
-    )
-
     zn: Mapped[ZN] = relationship(
         "ZN",
         back_populates="jobs"
@@ -70,13 +63,11 @@ class Job(RealInfoBase, Life, Stage, CanDone, CanCreateChange):
         return ["number", "name", "normal_time"]
 
 
-    class JobSchema(RealInfoBase.BaseSchema):
+    class JobSchema(RealInfoBase.BaseSchema, CanDone.BaseSchema):
         uuid: Annotated[UUID, Field(...)]
         zn_number: Annotated[str, Field(..., serialization_alias="znNumber")]
         number: Annotated[float, Field(...)]
         name: Annotated[str, Field(...)]
         normal_time: Annotated[float, Field(..., serialization_alias="normalTime")]
-        done: Annotated[bool, Field(...)]
-
 
     as_dict_model = JobSchema

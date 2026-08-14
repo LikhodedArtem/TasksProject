@@ -163,7 +163,7 @@ class OnecService(BaseService):
                 stage=new_stage
             )
 
-            relation_obj = ZN_mtm_Post(
+            relation_obj = ZNmtmPost(
                 post_uuid=post_uuid,
                 zn_number=zn_number,
                 stage=new_stage,
@@ -232,7 +232,7 @@ class OnecService(BaseService):
             ),
             "__zn_mtm_post": (
                 relation_lst,
-                ZN_mtm_Post,
+                ZNmtmPost,
                 True,
                 zn_number,
                 False
@@ -250,7 +250,7 @@ class OnecService(BaseService):
         for relation in relation_lst:
             old_relation = await find_objects(
                 self.session,
-                ZN_mtm_Post,
+                ZNmtmPost,
                 zn_number=relation.zn_number,
                 post_uuid=relation.post_uuid,
             )

@@ -1,7 +1,10 @@
+from typing import Annotated, Optional
+
+from pydantic import Field
 from sqlalchemy import String, Boolean, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 
-from .base import ChangeBase
+from core.models.changes.base import ChangeBase
 
 
 class DoneChange(ChangeBase):
@@ -30,3 +33,9 @@ class DoneChange(ChangeBase):
         nullable=False,
         unique=False,
     )
+
+    class DoneChangeSchema(ChangeBase.BaseSchema):
+        identical_str: Annotated[str, Field(..., serialization_alias="identicalStr")]
+        value: Annotated[bool, Field(...)]
+
+    as_dict_model = DoneChangeSchema

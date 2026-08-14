@@ -1,8 +1,11 @@
+from typing import Annotated
+
+from pydantic import Field
 from sqlalchemy import String, ForeignKey, Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column
 
-from .base import ChangeBase
-from ..common import PostZNStatusEnum
+from core.models.changes.base import ChangeBase
+from core.models.common import PostZNStatusEnum
 
 
 class StatusChange(ChangeBase):
@@ -30,3 +33,10 @@ class StatusChange(ChangeBase):
         nullable=False,
         unique=False,
     )
+
+    class StatusChangeSchema(ChangeBase.BaseSchema):
+        # zn_number: Annotated[str, Field(..., serialization_alias="znNumber")]
+        # post: Annotated[str, Field(...)]
+        status: Annotated[PostZNStatusEnum, Field(...)]
+
+    as_dict_model = StatusChangeSchema
