@@ -22,10 +22,10 @@ def get_change_uuid(x_change_uuid: UUID = Header(default=None)) -> UUID | None:
 
 GetSession = Annotated[AsyncSession, Depends(get_session)]
 GetClientID = Annotated[UUID, Depends(get_client_id)]
-GetChangeUUID = Annotated[UUID, Depends(get_client_id)]
+GetChangeUUID = Annotated[UUID, Depends(get_change_uuid)]
 
 
-5
+
 __all__ = [
     "GetSession",
     "GetClientID",

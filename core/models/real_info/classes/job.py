@@ -19,8 +19,8 @@ class Job(RealInfoBase, Life, Stage, CanDone, CanCreateChange):
     change_func = "job"
 
 
-    uuid: Mapped[UUID] = mapped_column(
-        SQLUUID,
+    uuid: Mapped[str] = mapped_column(
+        String,
         primary_key=True,
     )
 

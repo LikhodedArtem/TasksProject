@@ -2,7 +2,11 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload, joinedload
-from sqlalchemy import select
+from sqlalchemy import select, update, exists, Row
+
+from core import Names
+from core.models.changes.help_classes.change_type import ChangeTypeEnum
+from core.models.real_info import File, ZNmtmPost, Part, Job, ZN
 
 
 def build_conditions(
@@ -83,6 +87,49 @@ async def find_objects(
     return answer
 
 
+async def update_objects(
+        session: AsyncSession,
+        model,
+        for_find: dict,
+        for_update: dict,
+        for_add: list | None = None,
+        returning_lst: list | None = None,
+) -> Any | None:
+    find_conditions = build_conditions(model, for_find)
+
+    if not for_update or not find_conditions: return
+
+    stmt = update(model).where(*find_conditions).values(**for_update)
+
+    if returning_lst:
+        stmt = stmt.returning(*returning_lst)
+
+        result = await session.execute(stmt)
+        await session.commit()
+
+        return result.unique().all()
+
+    if for_add is not None:
+        async with session.begin():
+            for el in for_add:
+                session.add(el)
+
+            await session.execute(stmt)
+        return
+
+    await session.execute(stmt)
+    await session.commit()
+
+
+FORBIDDEN_KEYS = {
+    "change_uuid",
+    "sse_uuid",
+    "post",
+    "mechanic",
+    "type",
+}
+
+
 def format_change_type_rows(
         rows,
         primary_key: str | list,
@@ -140,3 +187,64 @@ def format_change_type_rows(
             data[primary] = (str(type_), {primary_key: primary})
 
     return last_change_uuid, [{"type": item[0], "data": item[1]} for item in data.values()]
+
+
+async def has_files(
+        session: AsyncSession,
+        **kwargs,
+) -> bool:
+    conditions = build_conditions(File, kwargs)
+
+    stmt = select(
+        exists(File)
+        .where(
+            File.is_alive.is_(True),
+            *conditions
+        )
+    )
+
+    result = await session.execute(stmt)
+    answer = result.scalar()
+
+    return answer
+
+
+async def kill_old_in_model(
+        session: AsyncSession,
+        model,
+        alive_stage: int ,
+        area_value: str | None = None,
+):
+    if model == ZN:
+        return []
+
+    conditions = [
+        model.stage < alive_stage,
+        model.is_alive == True,
+    ]
+
+    if model == Job or model == Part:
+        conditions.append(model.zn_number == area_value)
+    elif model == ZNmtmPost:
+        conditions.append(ZNmtmPost.zn_number == area_value)
+
+    stmt = (
+        select(model)
+        .where(*conditions)
+    )
+
+    result = await session.execute(stmt)
+    answer = result.all()
+
+    return answer
+
+
+__all__ = [
+    "build_conditions",
+    "add_objects",
+    "find_objects",
+    "update_objects",
+    "kill_old_in_model",
+    "has_files",
+    "format_change_type_rows",
+]

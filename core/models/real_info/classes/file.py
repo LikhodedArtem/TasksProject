@@ -22,8 +22,8 @@ class FileType(str, Enum):
 
 
 class File(RealInfoBase, Life):
-    uuid: Mapped[UUID] = mapped_column(
-        SQLUUID,
+    uuid: Mapped[str] = mapped_column(
+        String,
         primary_key=True,
     )
 

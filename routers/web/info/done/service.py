@@ -2,7 +2,7 @@ import asyncio
 from uuid import UUID
 
 from core.services import BaseService
-from crud import change_done
+from crud.real_info import change_done
 from sse import third_page_manager
 
 from .utils import uuid7_generator

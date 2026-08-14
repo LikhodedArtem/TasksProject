@@ -3,7 +3,8 @@ from uuid import UUID
 from changes import CreateChange
 from core.services import BaseService
 from core.models.real_info import *
-from crud import find_objects, get_zn_status, update_objects
+from crud import find_objects, update_objects
+from crud.real_info import get_zn_status
 from sse import third_page_manager
 
 

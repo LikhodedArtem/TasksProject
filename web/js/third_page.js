@@ -348,7 +348,7 @@ function renderWorksRow(row, indx) {
         constructCell(indx, "number"),
         constructCell(row.name, "work-content"),
         constructCell(row.number, "work-count"),
-        constructCell(row.normal_time, "n-ch"),
+        constructCell(row.normalTime, "n-ch"),
         constructPinFiles()
     ]
 }
@@ -357,7 +357,7 @@ function renderDetailsRow(row, indx) {
     return [
         constructCell(indx, "number"),
         constructCell(row.name, "detail-name"),
-        constructCell(row.manufacturer_code, "prod-code"),
+        constructCell(row.manufacturerCode, "prod-code"),
         constructCell(row.manufacturer, "prod"),
         constructCell(row.quantity, "count"),
         constructCell(row.units, "unit"),

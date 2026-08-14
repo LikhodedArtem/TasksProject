@@ -2,7 +2,8 @@ from uuid import UUID, uuid4
 
 from core.models.real_info import Task
 from core.services import BaseService
-from crud import get_tasks, add_objects
+from crud import add_objects
+from crud.real_info import get_tasks
 
 
 class TasksService(BaseService):

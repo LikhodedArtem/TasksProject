@@ -561,18 +561,21 @@ class SmartContainer {
         let count = 0
 
         outerLoop:
-        for (const row of this._data) {
-            console.log(row)
+        for (let i = 0; i < this._data.length; i++) {
+            const obj = this._data[i]
+
             for (const [key, value] of Object.entries(forFind)) {
-                    if (row[key] !== value) {
-                        continue outerLoop
-                    }
+                if (obj[key] !== value) {
+                    continue outerLoop
                 }
+            }
+
+            this._data.splice(i, 1)
+            i--
 
             count++
 
-            if (limit && limit === count)
-                break
+            if (limit !== null && count >= limit) break
         }
 
         return count
@@ -785,7 +788,29 @@ class SmartSSESource {
             if (!recoverResponse.ok) {
                 console.error("Recover data error")
             } else {
-                this._handleRecover(await recoverResponse.json())
+                const info = await recoverResponse.json()
+
+                const string = JSON.stringify(info)
+
+                function deepFreeze(value) {
+                    if (value === null || typeof value !== 'object') {
+                        return value
+                    }
+
+                    Object.freeze(value)
+
+                    for (const [key, child] of Object.entries(value)) {
+                        if (key === "last_change_uuid") continue
+                        deepFreeze(child)
+                    }
+
+                    return value
+                }
+
+                const newObj = deepFreeze(JSON.parse(string))
+
+                this._handleRecover(newObj)
+
                 console.log("Data recovered")
             }
     }
@@ -796,7 +821,7 @@ class SmartSSESource {
         for (const [key, value] of Object.entries(data)) {
             if (this._recoverFuncs[key] !== undefined && value !== null && (!value.data || value.data.length !== 0)) {
                 if (value["last_change_uuid"] !== "skip") this._lastIDs[key] = value["last_change_uuid"]
-                delete value["last_change_uuid"]
+                // delete value["last_change_uuid"]
 
                 try {
                     // console.log(`Event ${key}:`, value)
@@ -1020,7 +1045,9 @@ class RequestContainer {
         }
 
         if (changeUUID) {
-            headers['X-Change-UUID'] = generateUUIDv7()
+            const uuid = generateUUIDv7()
+            console.log(uuid)
+            headers['X-Change-UUID'] = uuid
         }
 
         async function fetchInvoker() {

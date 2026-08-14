@@ -4,7 +4,8 @@ from core.models.real_info import *
 from core.services import BaseService
 
 from changes import CreateChange
-from crud import *
+from crud import update_objects
+from crud.real_info import get_zns_by_post, get_zn, get_zn_jobs, get_zn_parts, get_posts, get_mechanics
 from sse import third_page_manager
 
 

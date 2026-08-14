@@ -1,5 +1,5 @@
 from core.services import BaseService
-from crud import get_checklist
+from crud.real_info import get_checklist
 
 
 class ChecklistService(BaseService):

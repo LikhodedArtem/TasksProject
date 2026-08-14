@@ -136,8 +136,7 @@ function updatePostsData(newData) {
 
 
 function updateMechanics() {
-    nameInput.changeData(mechanicsData.select(null, ["name"]))
-    nameInput.updateOptions()
+    nameSuggestPanel.changeData(mechanicsData.select(null, ["name"]))
 }
 
 
@@ -460,8 +459,7 @@ async function initSSE() {
     sseSource.reconnectAddInfo = {}
 
     function handleUpdate(mechanics, info) {
-        console.log(mechanics, info)
-
+        console.log(info)
         const smartData = mechanics ? mechanicsData : postsData
         const primaryKey = mechanics ? "key" : "name"
 

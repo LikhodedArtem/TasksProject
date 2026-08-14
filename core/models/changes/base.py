@@ -17,8 +17,9 @@ class ChangeBase(Base):
         return f"{cls.__name__.lower().replace("change", "")}_changes"
 
     class BaseSchema(Base.BaseSchema):
-        change_uuid: Annotated[UUID, Field(..., serialization_alias="changeUUID")]
-        sse_uuid: Annotated[UUID, Field(..., serialization_alias="sseUUID")]
+        pass
+        # change_uuid: Annotated[UUID, Field(..., serialization_alias="changeUUID")]
+        # sse_uuid: Annotated[UUID, Field(..., serialization_alias="sseUUID")]
 
     change_uuid: Mapped[UUID] = mapped_column(
         SQLUUID,

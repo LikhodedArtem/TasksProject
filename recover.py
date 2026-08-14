@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core import Names
 from core.models import db_helper
-from crud import (
+from crud.real_info import (
     get_zn_jobs_changes,
     get_zn_parts_changes,
     get_zn_changes,

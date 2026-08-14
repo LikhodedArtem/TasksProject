@@ -14,7 +14,7 @@ onec_router = APIRouter(prefix="/onec", tags=["onec"])
 
 __all__ = ["onec_router"]
 
-@onec_router.post("/zn", response_model=OnecResponse)
+@onec_router.post("/zn")
 async def zn(
         xml_string: GetXMLString,
         session: GetSession,
@@ -47,7 +47,7 @@ async def zn(
     ).model_dump_json()
 
 
-@onec_router.post("/mechanics", response_model=OnecResponse)
+@onec_router.post("/mechanics")
 async def mechanics(
         xml_string: GetXMLString,
         session: GetSession,
@@ -74,7 +74,7 @@ async def mechanics(
     )
 
 
-@onec_router.post("/posts", response_model=OnecResponse)
+@onec_router.post("/posts")
 async def posts(
         xml_string: GetXMLString,
         session: GetSession,
