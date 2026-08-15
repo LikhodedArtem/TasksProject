@@ -195,7 +195,7 @@ async def _get_zn_items(
     items = []
     for row in rows:
         obj = row[0].as_dict()
-        obj["has_files"] = row.has_files
+        obj["hasFiles"] = row.has_files
 
         items.append(obj)
 

@@ -63,7 +63,6 @@ const detailsTableValue = detailsTable.querySelector(".table-content")
 const tookButton = document.querySelector("#took")
 
 const headerPinFiles = document.querySelector("#headerPinFiles")
-let znHasFiles = false
 const recPinFiles = document.querySelector("#recPinFiles")
 
 const recApply = document.querySelector("#recApply")
@@ -78,6 +77,9 @@ const parts = document.querySelector("#parts")
 
 const jobsData = new SmartContainer()
 const partsData = new SmartContainer()
+
+
+let znHasOwnFiles = false
 
 
 const EXTENSIONS = {
@@ -165,25 +167,18 @@ function hasNotFiles(pinFiles) {
     }
 }
 
+function checkHasFiles(pinFiles) {
+    return pinFiles.classList.contains("has-files")
+}
+
 function updateHeaderPinFiles() {
-    if (znHasFiles) {
-        headerPinFiles.add("has-files")
-        return
-    }
-
-    const pinsFiles = document.querySelectorAll(".pin-files")
-
-    let hasFiles = false
-
-    for (const pinFiles of Array.from(pinsFiles)) {
-        if (pinFiles !== headerPinFiles && pinFiles.classList.contains("has-files")) {
-            hasFiles = true
-            return
-        }
-    }
-
-    if (!hasFiles) {
-        headerPinFiles.classList.remove("has-files")
+    if (
+        !znHasOwnFiles
+        && !checkHasFiles(recPinFiles)
+        && jobsData.select({ hasFiles: true }, null, 1).length === 0
+        && partsData.select({ hasFiles: true }, null, 1).length === 0
+    ) {
+        hasNotFiles(headerPinFiles)
     }
 }
 
@@ -227,9 +222,9 @@ function updateCarInfo({ vin, reg, model, year, millage }) {
 }
 
 async function updateAllZnInfo(data) {
-    if (data.zn_has_files) {
+    if (data.zn_has_own_files) {
         hasFiles(headerPinFiles)
-        znHasFiles = true
+        znHasOwnFiles = true
     }
 
 
@@ -303,12 +298,9 @@ function renderData(smartData, tableValue, renderRow, removeChanges) {
             renderRow(row, count),
             row.done,
             row.uuid,
-            row.has_files,
+            row.hasFiles,
             row.change,
         )
-
-        console.log(row.change && !row.checked)
-		// body.append(`${row.change}, ${row.checked}, ${row.change && !row.checked} |||`)
 
         if (row.change && !row.checked) {
             observer.observe(Array.from(rowObj.children)[0])
@@ -801,20 +793,25 @@ function constructPinFilesCell(addClass, type, rowContent) {
         realInput.type = "file"
         realInput.style.display = "none"
         realInput.multiple = true
-        realInput._storedFiles = new DataTransfer().files
-        realInput._storedUUIDS = []
-        realInput._storedTypes = null
+
+        // uuid, userName
+        const filesData = new SmartContainer()
+        const localFiles = {}
 
         let isGetFiles = false
+
+        let downloadLevel = 0
 
         getFiles(type)
 
         function startDownload() {
-            pinFilesDownloading.classList.add("active")
+            downloadLevel++
+            if (downloadLevel > 0) pinFilesDownloading.classList.add("active")
         }
 
         function endDownload() {
-            pinFilesDownloading.classList.remove("active")
+            downloadLevel--
+            if (downloadLevel <= 0) pinFilesDownloading.classList.remove("active")
         }
 
         async function getFiles(type) {
@@ -835,14 +832,14 @@ function constructPinFilesCell(addClass, type, rowContent) {
 
         async function getFilesFromBase() {
             try {
-                const data = {
+                const info = {
                     zn_number: znNumber,
                 }
 
                 if (type !== "zn") {
-                    data.type = type
+                    info.type = type
                     if (type !== "rec") {
-                        data.identical_str = rowContent.dataset.uuid
+                        info.identical_str = rowContent.dataset.uuid
                     }
                 }
 
@@ -851,72 +848,29 @@ function constructPinFilesCell(addClass, type, rowContent) {
                     headers: {
                         "Content-Type": "application/json"
                     },
-                    credentials: "include",
-                    body: JSON.stringify(data)
+                    body: JSON.stringify(info)
                 })
 
                 if (!response.ok) {
-                    updateCounter(0)
+                    updateCounter()
                     return false
                 }
 
-                const archiveBlob = await response.blob()
+                const {last_change_uuid, data} = await response.json()
 
-                if (archiveBlob.size < 4) {
-                    updateCounter(0)
-                    return true
+                for (const file of data) {
+                    filesData.create(file)
                 }
 
-                const zip = await JSZip.loadAsync(archiveBlob)
-
-                const fileEntries = Object.entries(zip.files).filter(([pathInZip, zipEntry]) => {
-                    return pathInZip !== "types.json" && pathInZip !== "uuids.json" && !zipEntry.dir
-                })
-
-                if (fileEntries.length === 0) {
-                    updateCounter(0)
-                    return true
-                }
-
-                const uuidsFile = zip.file("uuids.json")
-
-                if (!uuidsFile) {
-                    updateCounter(0)
-                    return true
-                }
-
-                const typesFile = zip.file("types.json")
-                if (typesFile) {
-                    realInput._storedTypes = JSON.parse(await typesFile.async("text")).types
-                }
-
-                const uuids = JSON.parse(await uuidsFile.async("text"))
-                const dataTransfer = new DataTransfer()
-
-                for (const [pathInZip, zipEntry] of fileEntries) {
-                    const blob = await zipEntry.async("blob")
-                    const name = pathInZip.split("/").at(-1)
-
-                    dataTransfer.items.add(
-                        new File([blob], name, {
-                            type: blob.type || "application/octet-stream",
-                            lastModified: Date.now()
-                        })
-                    )
-                }
-
-                addFilesToInput(dataTransfer.files)
-                realInput._storedUUIDS = [
-                    ...(uuids.uuids || []),
-                    ...realInput._storedUUIDS
-                ]
+                renderFiles()
 
                 renderFiles()
 
                 return true
-            } catch (e) {
-                updateCounter(0)
-                console.error(e)
+            } catch (error) {
+                updateCounter()
+                console.error(`Get files error: ${error}`)
+                createNotification("error", "Не удалось загрузить файлы")
                 return false
             }
         }
@@ -950,52 +904,30 @@ function constructPinFilesCell(addClass, type, rowContent) {
                 return
             }
 
-            await fullUploadFiles(realInput.files, realInput._storedFiles)
+            await fullUploadFiles(realInput.files)
         })
 
         let isUploadFiles = false
 
-        function updateTypes(length) {
-            if (type === "zn") {
-                if (!realInput._storedTypes) {
-                    realInput._storedTypes = []
-                }
-
-                const newTypes = []
-
-                for (let i = 0; i < length; i++) {
-                    newTypes.push("zn")
-                }
-
-                realInput._storedTypes = [...newTypes, ...realInput._storedTypes]
-            }
-        }
-
-        async function fullUploadFiles(forUUIDS, forAdd) {
+        async function fullUploadFiles(forUUIDS) {
             if (isUploadFiles) return
             isUploadFiles = true
 
             startDownload()
 			
 			try {
-				if (forUUIDS) {
-                    updateTypes(forUUIDS.length)
-
+				if (forUUIDS && forUUIDS.length) {
 					const result = await updateUUIDS(forUUIDS)
 					if (!result) {
 						createNotification("error", "Ошибка отправки данных")
 					}
+
+                    renderFiles()
 				}
-				if (forAdd && forAdd.length) {
-					addFilesToInput(forAdd)
-				}
-				renderFiles()
 			} finally {
 				endDownload()
 				isUploadFiles = false
 			}
-
-            
         }
 
         closeButton.addEventListener("click", () => {
@@ -1015,7 +947,7 @@ function constructPinFilesCell(addClass, type, rowContent) {
 
             startDownload()
 
-            const response = await removeFilesFromInput(findClicked())
+            const response = await removeFilesFromInput(findClicked(true))
 
             if (!response) {
                 createNotification("error", "Ошибка отправки данных")
@@ -1034,16 +966,25 @@ function constructPinFilesCell(addClass, type, rowContent) {
                 return
             }
 
-            downloadFiles(findClicked())
+            startDownload()
+
+            try {
+                downloadFiles(findClicked(true))
+            } finally {
+                endDownload()
+            }
+
             unclickAll()
         })
 
-        function findClicked() {
+        function findClicked(uuids = false) {
             const indexes = []
 
             for (const file of Array.from(filePanel.children)) {
                 if (file.classList.contains("clicked")) {
-                    indexes.push(Number(file.dataset.index))
+                    uuids
+                        ? indexes.push(file.dataset.uuid)
+                        : indexes.push(Number(file.dataset.index))
                 }
             }
 
@@ -1080,77 +1021,98 @@ function constructPinFilesCell(addClass, type, rowContent) {
             const uuids = await uploadFiles(files, type, objectData)
             if (!uuids) return false
 
-            realInput._storedUUIDS = [...uuids, ...realInput._storedUUIDS]
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i]
+                const uuid = uuids[i]
+
+                const fileData = {
+                    uuid: uuid,
+                    userName: file.name,
+                }
+
+                if (type === "zn") {
+                    fileData.type = type
+                    if (file.identicalStr) {
+                        fileData.identicalStr = file.identicalStr
+                    }
+                }
+
+                filesData.create(fileData)
+
+                localFiles[uuid] = file
+            }
+
             return true
         }
 
-        function addFilesToInput(files) {
-            const dt = new DataTransfer()
-
-            for (const file of realInput.files) { dt.items.add(file) }
-            for (const file of files) { dt.items.add(file) }
-
-            realInput.files = dt.files
-            realInput._storedFiles = dt.files
-        }
-
         function renderFiles() {
-            console.log(realInput._storedTypes)
             filePanel.innerHTML = ""
 
-            let hasZN = false
+            const currentData = filesData.data()
 
-            for (let index = 0; index < realInput.files.length; index++) {
-                const file = realInput.files[index]
-                const type = realInput._storedTypes !== null ? realInput._storedTypes[index] : null
-
-                if (type === "zn") {
-                    hasZN = true
-                }
+            for (let index = 0; index < currentData.length; index++) {
+                const file = currentData[index]
 
                 filePanel.append(
                     constructFile(
                         index,
                         file,
-                        type,
                     )
                 )
             }
 
-            if (realInput._storedTypes !== null) {
-                znHasFiles = hasZN
-            }
-
-            updateCounter(realInput.files.length)
+            updateCounter()
             resetClickedCounter()
         }
 
-        function updatePinFiles(el, count) {
-            count === 0 ? hasNotFiles(el) : hasFiles(el)
-        }
+        function updateCounter() {
+            const count = filePanel.children.length
+            const func = count === 0 ? hasNotFiles : hasFiles
+            let pinFiles
 
-        function updateCounter(count) {
             if (type === "zn") {
-                updatePinFiles(headerPinFiles, count)
-            } else if (type === "rec") {
-                updatePinFiles(recPinFiles, count)
+                pinFiles = headerPinFiles
+                filesData.select({ type: "zn" }, null, 1).length === 0
+                    ? znHasOwnFiles = false
+                    : znHasOwnFiles = true
+            } else if (type === "rec")  {
+                pinFiles = recPinFiles
             } else {
-                updatePinFiles(rowContent.querySelector(".pin-files"), count)
+                pinFiles = rowContent.querySelector(".pin-files")
+
+                const smartData = type === "jobs" ? jobsData : partsData
+
+                smartData.update(
+                    { hasFiles: count !== 0 },
+                    { uuid: rowContent.dataset.uuid },
+                    1
+                )
             }
+
+            func(pinFiles)
 
             pinFilesCellCounter.textContent = count
         }
 
-        playButton.addEventListener("click", () => {
-            const clickedList = findClicked()
+        playButton.addEventListener("click", async () => {
+            const clickedList = findClicked(true)
 
             if (clickedList.length !== 1) {
                 createNotification("error", "Ошибка выбранных файлов")
                 return
             }
 
-            const file = realInput.files[clickedList[0]]
-            const extension = getFileExtension(file).toLowerCase()
+            await recoverFiles(clickedList)
+
+            const uuid = clickedList[0]
+            const file = localFiles[uuid]
+            const fileInfo = filesData.select(
+                { uuid: uuid },
+                null,
+                1
+            )[0]
+
+            const extension = getFileExtension(fileInfo).toLowerCase()
 
             let type
 
@@ -1163,7 +1125,7 @@ function constructPinFilesCell(addClass, type, rowContent) {
                 return
             }
 
-            createRecordPanel(type, false, file)
+            createRecordPanel(type, false, file, fileInfo)
         })
 
         function showPlayButton() {
@@ -1232,65 +1194,155 @@ function constructPinFilesCell(addClass, type, rowContent) {
             pinFilesCellName.classList.remove("hide")
         }
 
-        async function removeFilesFromInput(indexes) {
-            if (!indexes) return false
+        async function removeFilesFromInput(uuids) {
+            if (!uuids) return false
 
-            const dt = new DataTransfer()
-            const saveUUIDS = []
-            const saveTypes = []
-            const deleteUUIDS = []
+            try {
+                const response = await fetch(
+                    `${API_PATH}/files/delete`,
+                    {
+                        method: "POST",
+                        body: JSON.stringify({
+                            uuids: uuids,
+                            mechanic: mechanic,
+                            post: post,
+                        }),
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Client-ID': MY_UUID,
+                            'X-Change-UUID': generateUUIDv7(),
+                        },
+                    }
+                )
 
-            for (let indx = 0; indx < realInput.files.length; indx++) {
-                if (indexes.indexOf(indx) === -1) {
-                    dt.items.add(realInput.files[indx])
-                    saveUUIDS.push(realInput._storedUUIDS[indx])
-                    saveTypes.push(realInput._storedTypes[indx])
-                } else {
-                    deleteUUIDS.push(realInput._storedUUIDS[indx])
+                if (!response) return false
+
+                for (const uuid of uuids) {
+                    if (type === "zn") {
+                        filesData.delete(
+                            { uuid: uuid },
+                            1,
+                            (value) => {
+                                if (value.type === "zn") return
+
+                                if (filesData.select(
+                                    { type: value.type, identicalStr: value.identicalStr },
+                                    ["uuid"],
+                                    1,
+                                ).length === 0) {
+                                    if (value.type === "jobs" || value.type === "parts") {
+                                        const smartData = value.type === "jobs"
+                                            ? jobsData
+                                            : partsData
+                                        const updator = value.type === "jobs"
+                                            ? updateJobsTable
+                                            : updatePartsTable
+
+                                        smartData.update(
+                                            { hasFiles: false },
+                                            { uuid: value.identicalStr },
+                                            1
+                                        )
+
+                                        updator()
+                                    } else {
+                                        hasNotFiles(recPinFiles)
+                                    }
+                                }
+                            }
+                        )
+                    } else {
+                        filesData.delete(
+                            { uuid: uuid },
+                            1,
+                        )
+                    }
+
+                    delete localFiles[uuid]
                 }
+
+                renderFiles()
+
+                return true
+            } catch (error) {
+                console.error("Remove Files Error:", error)
+                return false
             }
-
-            const response = await smartSendRequest(
-                "files/delete",
-                "POST",
-                {
-                    uuids: deleteUUIDS,
-                    mechanic: mechanic,
-                    post: post,
-                }
-            )
-
-            if (!response) return false
-
-            realInput.files = dt.files
-            realInput._storedFiles = dt.files
-            realInput._storedUUIDS = saveUUIDS
-            realInput._storedTypes = saveTypes
-
-            return true
         }
 
-        async function downloadFiles(indexes) {
-            if (!indexes) return
+        async function recoverFiles(uuids) {
+            if (!uuids) return
 
-            let currentIndex = 0
+            const forDownload = []
+            const currentUUIDS = Object.keys(localFiles)
 
-            for (const file of realInput.files) {
-                if (indexes.indexOf(currentIndex) !== -1) {
+            for (const uuid of uuids) {
+                if (currentUUIDS.indexOf(uuid) !== -1) continue
+
+                forDownload.push(uuid)
+            }
+
+            if (forDownload.length) {
+                const response = await fetch(`${API_PATH}/files/download`, {
+                    method: "POST",
+                    body: JSON.stringify({
+                        uuids: forDownload,
+                    }),
+                    headers: {
+                        "Content-Type": "application/json"
+                    }
+                })
+
+                const archiveBlob = await response.blob()
+
+                const zip = await JSZip.loadAsync(archiveBlob)
+
+                const fileEntries = Object.entries(zip.files)
+
+                for (let i = 0; i < forDownload.length; i++) {
+                    const uuid = forDownload[i]
+                    const [pathInZip, zipEntry] = fileEntries[i]
+
+                    const blob = await zipEntry.async("blob")
+
+                    localFiles[uuid] = new File([blob], name, {
+                        type: blob.type || "application/octet-stream",
+                        lastModified: Date.now()
+                    })
+                }
+            }
+        }
+
+        async function downloadFiles(uuids) {
+            try {
+                if (!uuids) return
+
+                await recoverFiles(uuids)
+
+                for (const uuid of uuids) {
+                    const file = localFiles[uuid]
+                    const fileInfo = filesData.select(
+                        { uuid: uuid },
+                        null,
+                        1
+                    )[0]
+
                     const link = document.createElement("a")
                     const url = URL.createObjectURL(file)
 
                     link.href = url
-                    link.download = file.name
+                    link.download = fileInfo.userName
 
                     filePanel.appendChild(link)
                     link.click()
                     filePanel.removeChild(link)
 
                     URL.revokeObjectURL(url)
-                    await new Promise((resolve) => setTimeout(resolve, 300));
+                    await new Promise((resolve) => setTimeout(resolve, 300))
                 }
-                currentIndex++
+            } catch (error) {
+                console.error("Download files Error:", error)
+                createNotification("error", "Ошибка загрузки")
             }
         }
 
@@ -1320,7 +1372,7 @@ function constructPinFilesCell(addClass, type, rowContent) {
     }
 }
 
-function createRecordPanel(addClass, addButtons, appendFile) {
+function createRecordPanel(addClass, addButtons, appendFile, fileInfo) {
     const isAudio = addClass === "audio"
 
     const pinFilesCell = document.createElement("div")
@@ -1363,9 +1415,15 @@ function createRecordPanel(addClass, addButtons, appendFile) {
     const recordDisplay = document.createElement("div")
     recordDisplay.className = "record-display"
 
+    const recordFileName = document.createElement("span")
+    recordFileName.className = "record-file-name"
+    recordFileName.textContent = getFileName(fileInfo)
+
     const pinFilesCellEscape = document.createElement("button")
     pinFilesCellEscape.className = "pin-files-panel-escape"
     pinFilesCellEscape.innerHTML = SVG.x
+
+    recordDisplay.append(recordFileName)
 
     pinFilesCellHeader.append(pinFilesCellEscape)
 
@@ -1767,10 +1825,12 @@ function createRecordPanel(addClass, addButtons, appendFile) {
     body.append(pinFilesCellWrapper)
 }
 
-function constructFile(index, realFile, type) {
+function constructFile(index, realFile) {
     const file = document.createElement("div")
     file.className = "file"
     file.dataset.index = index
+    file.dataset.uuid = realFile.uuid
+    file.dataset.identicalStr = realFile.identicalStr
 
     const fileIcon = constructFileIcon(realFile)
 
@@ -1790,18 +1850,18 @@ function constructFile(index, realFile, type) {
     fileExtension.className = "file-extension"
     fileExtension.textContent = extension
 
-    const fileWeight = document.createElement("span")
-    fileWeight.className = "file-weight"
-    fileWeight.innerHTML = constructFileSize(realFile)
+    // const fileWeight = document.createElement("span")
+    // fileWeight.className = "file-weight"
+    // fileWeight.innerHTML = constructFileSize(realFile)
 
-    fileAddInfo.append(fileExtension, fileWeight)
+    fileAddInfo.append(fileExtension) // fileWeight
     fileInfo.append(fileName, fileAddInfo)
 
     file.append(fileIcon)
 
-    if (type) {
+    if (realFile.type) {
         file.style.gridTemplateColumns = "min-content min-content 1fr"
-        file.append(constructFileTypeIcon(type))
+        file.append(constructFileTypeIcon(realFile.type))
     }
 
     file.append(fileInfo)
@@ -1834,11 +1894,15 @@ async function uploadFiles(files, type, objectData) {
             formData.append("files", file, file.name)
         }
 
-        // const response = await fetch(`${API_PATH}/files/create`, {
-        //     method: "POST",
-        //     credentials: "include",
-        //     body: formData,
-        // })
+        const response = await fetch(`${API_PATH}/files/create`, {
+            method: "POST",
+            credentials: "include",
+            body: formData,
+            headers: {
+                'X-Client-ID': MY_UUID,
+                'X-Change-UUID': generateUUIDv7(),
+            },
+        })
 
         if (!response.ok) {
             console.error(response.status, await response.json())
@@ -1854,15 +1918,15 @@ async function uploadFiles(files, type, objectData) {
 }
 
 function getFileName(file) {
-    const dotIndex = file.name.lastIndexOf('.')
-    if (dotIndex <= 0) return file.name
-    return file.name.slice(0, dotIndex)
+    const dotIndex = file.userName.lastIndexOf('.')
+    if (dotIndex <= 0) return file.userName
+    return file.userName.slice(0, dotIndex)
 }
 
 function getFileExtension(file) {
-    const dotIndex = file.name.lastIndexOf('.')
+    const dotIndex = file.userName.lastIndexOf('.')
     if (dotIndex <= 0) return '?'
-    return file.name.slice(dotIndex + 1).toLowerCase()
+    return file.userName.slice(dotIndex + 1).toLowerCase()
 }
 
 function constructFileSize(file) {
@@ -2160,11 +2224,11 @@ async function initSSE() {
         for (const data of doneChanges) {
             if(!smartData.update(
                 {done: data.value},
-                {uuid: data.identical_str},
+                {uuid: data.identicalStr},
                 1
             ).length) {
-                createNotification("error", "Ошибка в полученных")
-                console.error(`Not found: identical_str=${data.identical_str}`)
+                createNotification("error", "Ошибка в полученных данных")
+                console.error(`Not found: identical_str=${data.identicalStr}`)
             }
             any = true
         }
@@ -2262,8 +2326,7 @@ async function initSSE() {
 
     // done_changes: list[dict[str, Any]], main_changes: list[dict[str, Any]]
     sseSource.addRecoverHandler("jobs", ({ done_changes, main_changes }) => {
-		// body.append("jooooooooooooooobs")
-        if (handleZnItems(true, main_changes)
+		if (handleZnItems(true, main_changes)
             || handleDone(true, done_changes))
 
         updateJobsTable()
@@ -2276,7 +2339,6 @@ async function initSSE() {
 
     // done_changes: list[dict[str, Any]], main_changes: list[dict[str, Any]]
     sseSource.addRecoverHandler("parts", ({ done_changes, main_changes }) => {
-		// body.append("paaaaaaaaaaaaaaaaaaaaaaaarts")
         if (handleZnItems(false, main_changes)
             || handleDone(false, done_changes)) updatePartsTable()
     })
@@ -2333,6 +2395,8 @@ async function initSSE() {
 
     // type: str, identical_str: str | None, has_files: bool
     sseSource.addSSEEvent("has_files", ({ type, identical_str, has_files }) => {
+        console.log("has_files")
+
         let pinFiles
 
         if (type === "zn") {

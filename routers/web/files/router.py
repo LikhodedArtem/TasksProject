@@ -29,13 +29,11 @@ async def create(
     files: list[UploadFile] = FastFile(...),
     mechanic: str = Form(...),
     post: str = Form(...),
-
-) -> list[str]:
+):
     """
     Сохранить файлы для элементов заказ наряда.
     Возвращает uuid'ы под которыми были сохранены файлы.
     """
-    print(change_uuid, client_id, session, background_tasks)
     service = FileService(session, background_tasks)
 
     return await service.create(
@@ -69,7 +67,7 @@ async def get(
     )
 
 
-@files_router.post("/downdload")
+@files_router.post("/download")
 async def download(
         session: GetSession,
 
@@ -92,7 +90,7 @@ async def kill(
         session: GetSession,
         background_tasks: BackgroundTasks,
 
-        uuids: Annotated[list[str], Body()],
+        uuids: Annotated[list[UUID], Body()],
         mechanic: Annotated[str, Body()],
         post: Annotated[str, Body()],
 ):

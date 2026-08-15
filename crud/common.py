@@ -29,16 +29,17 @@ async def add_objects(
         objects: Any | list[Any],
 ) -> None:
     try:
-        async with session.begin():
-            if isinstance(objects, list):
-                for obj in objects:
-                    session.add(obj)
-            else:
-                session.add(objects)
+        if isinstance(objects, list):
+            for obj in objects:
+                session.add(obj)
+        else:
+            session.add(objects)
 
         await session.commit()
-    except Exception:
+    except Exception as e:
+        print("add_object error:", e)
         await session.rollback()
+        raise e
 
 
 async def find_objects(
@@ -51,10 +52,11 @@ async def find_objects(
         in_: dict[str, Sequence[Any]] | None = None,
         **kwargs,
 ) -> list[Any] | Any | None:
-    conditions = build_conditions(model, kwargs)
-    if not conditions: return
+    stmt = select(model)
 
-    stmt = select(model).where(*conditions)
+    conditions = build_conditions(model, kwargs)
+    if conditions:
+        stmt = stmt.where(*conditions)
 
     if in_:
         for key, value in in_.items():

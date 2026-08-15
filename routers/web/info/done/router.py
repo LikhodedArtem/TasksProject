@@ -12,7 +12,7 @@ done_router = APIRouter(prefix="/done", tags=["done"])
 __all__ = ["done_router"]
 
 
-@done_router.post("/")
+@done_router.post("")
 async def done(
         session: GetSession,
         client_id: GetClientID,

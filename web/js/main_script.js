@@ -458,9 +458,9 @@ class SmartContainer {
     }
 
     select(
-        forFind=null,
-        forSelect=null,
-        limit=null
+        forFind = null,
+        forSelect = null,
+        limit = null
     ) {
         let count = 0
 
@@ -514,8 +514,8 @@ class SmartContainer {
 
     update(
         forUpdate,
-        forFind=null,
-        limit=null,
+        forFind = null,
+        limit = null,
     ) {
         let count = 0
         let index = -1
@@ -536,7 +536,6 @@ class SmartContainer {
             for (const [key, value] of Object.entries(forUpdate)) {
                 if (value === null) continue
                 if (value === undefined) throw Error("Undefined in update dict")
-                console.log(key, value)
                 row[key] = value
             }
 
@@ -556,7 +555,8 @@ class SmartContainer {
 
     delete(
         forFind,
-        limit=null,
+        limit = null,
+        onDelete = null,
     ) {
         let count = 0
 
@@ -570,7 +570,10 @@ class SmartContainer {
                 }
             }
 
-            this._data.splice(i, 1)
+
+
+            const value = this._data.splice(i, 1)[0]
+            if (onDelete) onDelete(value)
             i--
 
             count++
@@ -816,11 +819,11 @@ class SmartSSESource {
     }
 
     _handleRecover(data) {
-		// console.log("Recover event handle with data:", data)
-		
+        // console.log("Recover event handle with data:", data)
+
         for (const [key, value] of Object.entries(data)) {
             if (this._recoverFuncs[key] !== undefined && value !== null && (!value.data || value.data.length !== 0)) {
-                if (value["change_uuid"] !== "skip") this._lastIDs[key] = value["change_uuid"]
+                if (value["last_change_uuid"] !== "skip") this._lastIDs[key] = value["last_change_uuid"]
                 // delete value["change_uuid"]
 
                 try {
@@ -1034,6 +1037,7 @@ class RequestContainer {
             anywayFunc = null,
             errorsFuncs = null,
             changeUUID = false,
+            rawResponse = false,
        }) {
         let body
         if (typeof data === 'string') {
@@ -1045,9 +1049,7 @@ class RequestContainer {
         }
 
         if (changeUUID) {
-            const uuid = generateUUIDv7()
-            console.log(uuid)
-            headers['X-Change-UUID'] = uuid
+            headers['X-Change-UUID'] = generateUUIDv7()
         }
 
         async function fetchInvoker() {
@@ -1092,10 +1094,15 @@ class RequestContainer {
 
                 if (typeof okFunc === "function") {
                     let data
-                    try {
-                        data = await response.json()
-                    } catch (e) {
-                        data = response.body
+
+                    if (rawResponse) {
+                        data = response
+                    } else {
+                        try {
+                            data = await response.json()
+                        } catch (e) {
+                            data = response.body
+                        }
                     }
 
                     okFunc(data)
@@ -1270,7 +1277,7 @@ function doneStartRequest(changeName, info, func) {
     if (info.data !== undefined) {
         try {
             data = info["data"]
-            const changeUUID = info["change_uuid"]
+            const changeUUID = info["last_change_uuid"]
 
             requestManager.setLastID(changeName, changeUUID)
         } catch (e) {

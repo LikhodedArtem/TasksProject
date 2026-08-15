@@ -28,7 +28,7 @@ class FileService(BaseService):
     async def _create_file(
             self,
             zn_number: str,
-            type: str,
+            type_: str,
             identical_str: str | None,
             post: str,
             mechanic: str,
@@ -51,7 +51,7 @@ class FileService(BaseService):
             uuid=file_uuid,
             path=str(destination),
             user_name=file.filename,
-            type=type,
+            type=type_,
             zn_number=zn_number,
             identical_str=identical_str,
             mechanic=mechanic,
@@ -59,12 +59,15 @@ class FileService(BaseService):
         )
 
         file_change = FileChange(
+            uuid=file_uuid,
+            identical_str=identical_str,
+            user_name=file.filename,
+            file_type=type_,
+            mechanic=mechanic,
+            post=post,
             change_uuid=change_uuid,
             sse_uuid=client_id,
             type="create",
-            uuid=file_uuid,
-            mechanic=mechanic,
-            post=post,
         )
 
         await add_objects(self.session, [file_obj, file_change])
@@ -91,25 +94,22 @@ class FileService(BaseService):
 
         change_uuid_gen = uuid7_generator(change_uuid)
 
-        try:
-            for file in files:
-                file_uuid, file_change = await self._create_file(
-                    zn_number=zn_number,
-                    type=type,
-                    identical_str=identical_str,
-                    post=post,
-                    mechanic=mechanic,
-                    file=file,
-                    destination=destination,
-                    change_uuid=next(change_uuid_gen),
-                    client_id=client_id,
-                )
+        for file in files:
+            file_uuid, file_change = await self._create_file(
+                zn_number=zn_number,
+                type_=type,
+                identical_str=identical_str,
+                post=post,
+                mechanic=mechanic,
+                file=file,
+                destination=destination,
+                change_uuid=next(change_uuid_gen),
+                client_id=client_id,
+            )
 
-                data.append(file_uuid)
-                changes.append(file_change.as_dict())
-                last_change_uuid = file_change.change_uuid
-        except Exception:
-            traceback.print_exc()
+            data.append(file_uuid)
+            changes.append(file_change.as_dict())
+            last_change_uuid = file_change.change_uuid
 
         self.background_tasks.add_task(
             third_page_manager.broadcast,
@@ -234,31 +234,38 @@ class FileService(BaseService):
 
         return StreamingResponse(
             archive_buffer,
-            media_type="application/zip",
-            headers={
-                "Content-Disposition": 'attachment; filename="files.zip"',
-            },
+            media_type="application/x-zip-compressed",
+            headers={"Content-Disposition": "attachment; filename=files.zip"}
         )
 
     async def kill(
             self,
             post: str,
             mechanic: str,
-            uuids: list[str],
+            uuids: list[UUID],
             client_id: UUID,
             change_uuid: UUID,
     ):
+        change_uuid_gen = uuid7_generator(change_uuid)
+
         for uuid in uuids:
+            file_change = FileChange(
+                uuid=uuid,
+                mechanic=mechanic,
+                post=post,
+                change_uuid=next(change_uuid_gen),
+                sse_uuid=client_id,
+                type="delete",
+            )
+
             await update_objects(
                 session=self.session,
                 model=File,
                 for_find={"uuid": uuid},
                 for_update={
                     "is_alive": False,
-                    "death_time": datetime.now(),
-                    "delete_mechanic": mechanic,
-                    "delete_post": post,
-                }
+                },
+                for_add=[file_change],
             )
 
         identical_file = await find_objects(

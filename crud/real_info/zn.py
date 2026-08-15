@@ -169,11 +169,11 @@ async def get_zn(
         session: AsyncSession,
         zn_number: str,
 ):
-    zn_has_files = exists().where(
+    zn_has_own_files = exists().where(
         File.is_alive.is_(True),
         File.zn_number == zn_number,
         File.type == "zn",
-    ).label("zn_has_files")
+    ).label("zn_has_own_files")
 
     rec_has_files = exists().where(
         File.is_alive.is_(True),
@@ -204,7 +204,7 @@ async def get_zn(
     stmt = (
         select(
             ZN,
-            zn_has_files,
+            zn_has_own_files,
             rec_has_files,
             last_change_uuid_stmt
         )
@@ -219,11 +219,11 @@ async def get_zn(
     if data is None or data.ZN.is_alive is False:
         return None
 
-    zn, zn_has_files, rec_has_files, last_change_uuid = data
+    zn, zn_has_own_files, rec_has_files, last_change_uuid = data
 
     dict_zn = zn.as_dict()
     dict_zn["car"] = zn.car.as_dict()
-    dict_zn["zn_has_files"] = zn_has_files
+    dict_zn["zn_has_own_files"] = zn_has_own_files
     dict_zn["rec_has_files"] = rec_has_files
 
     return {"data": dict_zn, "last_change_uuid": last_change_uuid}

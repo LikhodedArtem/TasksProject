@@ -13,7 +13,7 @@ from core.models.common import FileType
 
 class FileChange(ChangeBase, ChangeType):
     uuid: Mapped[UUID] = mapped_column(
-        String,
+        SQLUUID,
         ForeignKey('files.uuid'),
         primary_key=True,
     )
@@ -24,7 +24,7 @@ class FileChange(ChangeBase, ChangeType):
         unique=False
     )
 
-    type: Mapped[str] = mapped_column(
+    file_type: Mapped[str] = mapped_column(
         SQLEnum(FileType, name="type"),
         nullable=True,
         unique=False
@@ -37,7 +37,7 @@ class FileChange(ChangeBase, ChangeType):
     )
 
     mechanic: Mapped[str] = mapped_column(
-        SQLUUID,
+        String,
         ForeignKey('mechanics.name'),
         nullable=False,
         unique=False,
@@ -52,16 +52,16 @@ class FileChange(ChangeBase, ChangeType):
 
     class FileChangeSchema(ChangeBase.BaseSchema, ChangeType.BaseSchema):
         uuid: Annotated[UUID, Field(...)]
-        user_name: Annotated[str, Field(...)]
-        type: Annotated[FileType, Field(...)]
-        identical_str: Annotated[Optional[str], Field(default=None)]
+        user_name: Annotated[str, Field(..., serialization_alias="userName")]
+        # type: Annotated[FileType, Field(...)]
+        # identical_str: Annotated[Optional[str], Field(default=None)]
 
-        @field_validator("identical_str", mode="before")
-        @classmethod
-        def ignore_none(cls, value: Any) -> Any:
-            if value is None:
-                return PydanticUndefined
-            return value
+        # @field_validator("identical_str", mode="before")
+        # @classmethod
+        # def identical_str(cls, value: Any) -> Any:
+        #     if value is None:
+        #         return PydanticUndefined
+        #     return value
 
 
     as_dict_model = FileChangeSchema

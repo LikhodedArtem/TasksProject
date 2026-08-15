@@ -897,6 +897,7 @@
 
             .play-button {
                 background-color: color-mix(in oklch, var(--color-bg-contrast), var(--color-primary-gradient));
+                transition: 90ms !important;
 
                 svg {
                     color: var(--color-primary-gradient);
@@ -1051,10 +1052,10 @@
             color: var(--color-text-contrast);
             font-size: 0.8rem;
 
-            .file-extension::after {
-                content: "•";
-                margin-inline: 0.2rem;
-            }
+            /*.file-extension::after {*/
+            /*    content: "•";*/
+            /*    margin-inline: 0.2rem;*/
+            /*}*/
         }
     }
 }
@@ -1149,6 +1150,15 @@
     border: 1px solid var(--color-border);
 
     overflow: hidden;
+
+    .record-file-name {
+        position: absolute;
+        bottom: var(--space-3);
+        left: var(--space-6);
+        font-size: 0.9rem;
+        font-weight: 400;
+        user-select: none;
+    }
 
     .record-value {
         z-index: 10;

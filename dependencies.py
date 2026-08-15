@@ -12,11 +12,11 @@ async def get_session() -> AsyncSession:
         yield session
 
 
-def get_client_id(x_client_id: UUID = Header(default=None)) -> UUID | None:
+def get_client_id(x_client_id: UUID = Header()) -> UUID:
     return x_client_id
 
 
-def get_change_uuid(x_change_uuid: UUID = Header(default=None)) -> UUID | None:
+def get_change_uuid(x_change_uuid: UUID = Header()) -> UUID:
     return x_change_uuid
 
 

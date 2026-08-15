@@ -72,31 +72,17 @@ class File(RealInfoBase, Life):
         server_default=func.now()
     )
 
-    delete_mechanic: Mapped[str] = mapped_column(
-        String,
-        ForeignKey('mechanics.name'),
-        nullable=True,
-        unique=False
-    )
-
-    delete_post: Mapped[str] = mapped_column(
-        String,
-        ForeignKey('mainposts.name'),
-        nullable=True,
-        unique=False
-    )
-
     class FileSchema(RealInfoBase.BaseSchema):
         uuid: Annotated[UUID, Field(...)]
-        user_name: Annotated[str, Field(...)]
+        user_name: Annotated[str, Field(..., serialization_alias="userName")]
         type: Annotated[FileType, Field(...)]
-        identical_str: Annotated[Optional[str], Field(default=None)]
+        identical_str: Annotated[Optional[str], Field(default=None, serialization_alias="identicalStr")]
 
-        @field_validator("identical_str", mode="before")
-        @classmethod
-        def ignore_none(cls, value: Any) -> Any:
-            if value is None:
-                return PydanticUndefined
-            return value
+        # @field_validator("identical_str", mode="before")
+        # @classmethod
+        # def ignore_none(cls, value: Any) -> Any:
+        #     if value is None:
+        #         return PydanticUndefined
+        #     return value
 
     as_dict_model = FileSchema

@@ -5,8 +5,6 @@ import uuid6
 from pydantic_core.core_schema import uuid_schema
 
 from core.models.changes import *
-from core.models.changes.help_classes import ChangeType
-
 
 class CreateChange:
     @staticmethod
@@ -21,7 +19,7 @@ class CreateChange:
             cls,
             change_uuid: UUID,
             sse_uuid: UUID,
-            type: ChangeType,
+            type: str,
             number: str,
             car_vin: str,
             date: Optional[str] = None,
@@ -68,7 +66,7 @@ class CreateChange:
             change_uuid: UUID,
             sse_uuid: UUID,
             vin: str,
-            type: ChangeType,
+            type: str,
             reg: Optional[str] = None,
             model: Optional[str] = None,
             year: Optional[int] = None,
@@ -91,7 +89,7 @@ class CreateChange:
             cls,
             change_uuid: UUID,
             sse_uuid: UUID,
-            type: ChangeType,
+            type: str,
             uuid: str,
             mechanic: str,
             post: str,
@@ -111,7 +109,7 @@ class CreateChange:
             cls,
             change_uuid: UUID,
             sse_uuid: UUID,
-            type: ChangeType,
+            type: str,
             uuid: str,
             zn_number: str,
             number: Optional[str] = None,
@@ -135,7 +133,7 @@ class CreateChange:
             cls,
             change_uuid: UUID,
             sse_uuid: UUID,
-            type: ChangeType,
+            type: str,
             uuid: str,
             zn_number: str,
             name: Optional[str] = None,
@@ -163,7 +161,7 @@ class CreateChange:
             cls,
             change_uuid: UUID,
             sse_uuid: UUID,
-            type: ChangeType,
+            type: str,
             name: str,
             territory: Optional[str] = None,
     ):
@@ -181,7 +179,7 @@ class CreateChange:
             cls,
             change_uuid: UUID,
             sse_uuid: UUID,
-            type: ChangeType,
+            type: str,
             uuid: str,
             main_post_name: str,
             date1: Optional[str] = None,
@@ -203,7 +201,7 @@ class CreateChange:
             cls,
             change_uuid: UUID,
             sse_uuid: UUID,
-            type: ChangeType,
+            type: str,
             key: str,
             name: Optional[str] = None,
     ):

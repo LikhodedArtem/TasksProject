@@ -37,9 +37,11 @@ async def get_files(
         last_change_uuid = (await session.execute(last_change_uuid_stmt)).scalar()
         files = (await session.execute(files_stmt)).scalars().all()
 
+    data = [file.as_dict() for file in files]
+
     return {
         "last_change_uuid": last_change_uuid,
-        "data": files,
+        "data": data,
     }
 
 
