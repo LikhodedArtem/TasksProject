@@ -12,7 +12,7 @@ async def get_zn_status(
         zn_number: str,
         post: str,
 ):
-    last_uuid = (
+    last_change_uuid_stmt = (
         select(func.max(StatusChange.change_uuid))
         .where(
             StatusChange.zn_number == zn_number,
@@ -24,7 +24,7 @@ async def get_zn_status(
     stmt = (
         select(
             PostZNStatus,
-            last_uuid
+            last_change_uuid_stmt,
         )
         .where(
             PostZNStatus.zn_number == zn_number,
@@ -37,9 +37,9 @@ async def get_zn_status(
     data = result.first()
 
     if data is None:
-        return {"data": "never", "change_uuid": None}
+        return {"data": "never", "last_change_uuid": None}
 
-    return {"data": data[0].status, "change_uuid": data[1]}
+    return {"data": data[0].status, "last_change_uuid": data[1]}
 
 
 async def get_zn_status_changes(

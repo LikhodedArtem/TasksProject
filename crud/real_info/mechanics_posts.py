@@ -52,12 +52,12 @@ async def _get_first_page_items(
 
     data = {
         "data": [],
-        "change_uuid": Names.MIN_UUID7
+        "last_change_uuid": Names.MIN_UUID7
     }
 
     for row in info:
         data["data"].append(row[0].as_dict())
-        data["change_uuid"] = max(row[1], data["change_uuid"])
+        data["last_change_uuid"] = max(row[1], data["last_change_uuid"])
 
     return data
 

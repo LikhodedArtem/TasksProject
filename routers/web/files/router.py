@@ -35,6 +35,7 @@ async def create(
     Сохранить файлы для элементов заказ наряда.
     Возвращает uuid'ы под которыми были сохранены файлы.
     """
+    print(change_uuid, client_id, session, background_tasks)
     service = FileService(session, background_tasks)
 
     return await service.create(
@@ -66,6 +67,23 @@ async def get(
         type=type,
         identical_str=identical_str,
     )
+
+
+@files_router.post("/downdload")
+async def download(
+        session: GetSession,
+
+        uuids: Annotated[list[UUID], Body(embed=True)],
+):
+    """
+    Скачать любые файлы по их uuid'ам
+    """
+    service = FileService(session)
+
+    return await service.download(
+        uuids=uuids
+    )
+
 
 @files_router.post("/delete")
 async def kill(

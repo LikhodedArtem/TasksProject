@@ -151,7 +151,7 @@ async def get_zns_changes_by_post(
     suggest_uuid2, zn_changes = format_change_type_rows(zn_changes_raw, "number")
     suggest_uuid3, posts_changes = format_change_type_rows(posts_changes_raw, "uuid")
 
-    last_change_uuid = max(last_uuid, suggest_uuid1, suggest_uuid2, suggest_uuid3)
+    change_uuid = max(last_uuid, suggest_uuid1, suggest_uuid2, suggest_uuid3)
 
     result = {
         "data": {
@@ -159,7 +159,7 @@ async def get_zns_changes_by_post(
             "zn_changes": zn_changes,
             "posts_changes": posts_changes
         },
-        "last_change_uuid": last_change_uuid,
+        "change_uuid": change_uuid,
     }
 
     return result
@@ -194,19 +194,19 @@ async def get_zn(
         .scalar_subquery()
     )
 
-    last_change_uuid = case(
+    last_change_uuid_stmt = case(
         (car_last_change_uuid.is_(None), zn_last_change_uuid),
         (zn_last_change_uuid.is_(None), car_last_change_uuid),
         (zn_last_change_uuid >= car_last_change_uuid, zn_last_change_uuid),
         else_=car_last_change_uuid,
-    ).label("last_change_uuid")
+    ).label("change_uuid")
 
     stmt = (
         select(
             ZN,
             zn_has_files,
             rec_has_files,
-            last_change_uuid
+            last_change_uuid_stmt
         )
         .where(ZN.number == zn_number)
         .options(joinedload(ZN.car))
@@ -219,14 +219,14 @@ async def get_zn(
     if data is None or data.ZN.is_alive is False:
         return None
 
-    zn, zn_has_files, rec_has_files, change_uuid = data
+    zn, zn_has_files, rec_has_files, last_change_uuid = data
 
     dict_zn = zn.as_dict()
     dict_zn["car"] = zn.car.as_dict()
     dict_zn["zn_has_files"] = zn_has_files
     dict_zn["rec_has_files"] = rec_has_files
 
-    return {"data": dict_zn, "change_uuid": change_uuid}
+    return {"data": dict_zn, "last_change_uuid": last_change_uuid}
 
 
 async def get_zn_changes(

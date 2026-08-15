@@ -278,13 +278,13 @@ class OnecService(BaseService):
             )
             mechanic_lst.append(mechanic_obj)
 
-        last_change_uuid, data = await self.refresh_objects(
+        change_uuid, data = await self.refresh_objects(
             mechanic_lst,
             Mechanic,
             True
         )
 
-        return last_change_uuid, data
+        return change_uuid, data
 
     async def parse_posts(self, xml_string: bytes):
         root = ET.fromstring(xml_string)
@@ -301,10 +301,10 @@ class OnecService(BaseService):
 
             post_lst.append(post_obj)
 
-        last_change_uuid, data = await self.refresh_objects(
+        change_uuid, data = await self.refresh_objects(
             data=post_lst,
             model=MainPost,
             delete_old=True,
         )
 
-        return last_change_uuid, data
+        return change_uuid, data

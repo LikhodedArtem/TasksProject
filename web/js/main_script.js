@@ -800,7 +800,7 @@ class SmartSSESource {
                     Object.freeze(value)
 
                     for (const [key, child] of Object.entries(value)) {
-                        if (key === "last_change_uuid") continue
+                        if (key === "change_uuid") continue
                         deepFreeze(child)
                     }
 
@@ -820,8 +820,8 @@ class SmartSSESource {
 		
         for (const [key, value] of Object.entries(data)) {
             if (this._recoverFuncs[key] !== undefined && value !== null && (!value.data || value.data.length !== 0)) {
-                if (value["last_change_uuid"] !== "skip") this._lastIDs[key] = value["last_change_uuid"]
-                // delete value["last_change_uuid"]
+                if (value["change_uuid"] !== "skip") this._lastIDs[key] = value["change_uuid"]
+                // delete value["change_uuid"]
 
                 try {
                     // console.log(`Event ${key}:`, value)

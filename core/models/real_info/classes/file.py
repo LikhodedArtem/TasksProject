@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from enum import Enum
 from datetime import datetime
-from typing import Annotated, Any
+from typing import Annotated, Any, Optional
 from uuid import UUID
 
 from pydantic import Field, field_validator
@@ -12,18 +11,12 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from core.models.real_info.base import RealInfoBase
 from core.models.real_info.help_classes import Life
-
-
-class FileType(str, Enum):
-    ZN = "zn"
-    REC = "rec"
-    JOBS = "jobs"
-    PARTS = "parts"
+from core.models.common import FileType
 
 
 class File(RealInfoBase, Life):
-    uuid: Mapped[str] = mapped_column(
-        String,
+    uuid: Mapped[UUID] = mapped_column(
+        SQLUUID,
         primary_key=True,
     )
 
@@ -97,7 +90,7 @@ class File(RealInfoBase, Life):
         uuid: Annotated[UUID, Field(...)]
         user_name: Annotated[str, Field(...)]
         type: Annotated[FileType, Field(...)]
-        identical_str: Annotated[str, Field()]
+        identical_str: Annotated[Optional[str], Field(default=None)]
 
         @field_validator("identical_str", mode="before")
         @classmethod

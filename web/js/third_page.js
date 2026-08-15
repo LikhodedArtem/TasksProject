@@ -1834,11 +1834,11 @@ async function uploadFiles(files, type, objectData) {
             formData.append("files", file, file.name)
         }
 
-        const response = await fetch(`${API_PATH}/files/create`, {
-            method: "POST",
-            credentials: "include",
-            body: formData,
-        })
+        // const response = await fetch(`${API_PATH}/files/create`, {
+        //     method: "POST",
+        //     credentials: "include",
+        //     body: formData,
+        // })
 
         if (!response.ok) {
             console.error(response.status, await response.json())

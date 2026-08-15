@@ -27,11 +27,11 @@ async def get_checklist(
     async with session.begin():
         await session.connection(execution_options={"isolation_level": "SERIALIZABLE"})
 
-        last_change = await session.execute(last_change_stmt)
+        last_change_uuid = await session.execute(last_change_stmt)
         zn_info = (await session.execute(main_stmt)).first()[0]
 
     return {
-        "change_uuid": None,
+        "last_change_uuid": None,
         "data": {
             "date": zn_info.date,
             "car_reg": zn_info.car.reg,

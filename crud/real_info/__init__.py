@@ -5,3 +5,4 @@ from .status import *
 from .tasks import *
 from .zn import *
 from .zn_items import *
+from .files import *

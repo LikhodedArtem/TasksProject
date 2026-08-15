@@ -70,9 +70,9 @@ async def recover(
     recover = get_recover(client_id)
 
     last_event_id = request.headers.get("Last-Event-IDs")
-    last_change_uuids = json.loads(last_event_id) if last_event_id != "null" and last_event_id is not None else None
+    change_uuids = json.loads(last_event_id) if last_event_id != "null" and last_event_id is not None else None
 
-    return await recover(session, last_change_uuids, client_id, add_data)
+    return await recover(session, change_uuids, client_id, add_data)
 
 
 @sse_router.post("/connect")

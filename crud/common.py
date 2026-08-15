@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Sequence
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload, joinedload
@@ -48,12 +48,20 @@ async def find_objects(
         limit: int | None = None,
         selectinload_lst: list | None = None,
         joinedload_lst: list | None = None,
+        in_: dict[str, Sequence[Any]] | None = None,
         **kwargs,
 ) -> list[Any] | Any | None:
     conditions = build_conditions(model, kwargs)
     if not conditions: return
 
     stmt = select(model).where(*conditions)
+
+    if in_:
+        for key, value in in_.items():
+            if value:
+                stmt = stmt.where(getattr(model, key).in_(value))
+            else:
+                return None
 
     if selectinload_lst or joinedload_lst:
         options = []

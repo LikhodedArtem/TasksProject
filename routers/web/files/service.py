@@ -9,13 +9,16 @@ from zipfile import ZIP_DEFLATED, ZipFile
 from fastapi import UploadFile
 from fastapi.responses import StreamingResponse
 
+from core import Names
+from core.models.changes import FileChange
 from core.services import BaseService
 from uuid import uuid4, UUID
 
 from core.models.real_info import *
 from crud import *
+from crud.real_info import get_files
 from sse import *
-
+from utils import uuid7_generator
 
 UPLOAD_DIR = Path("files")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
@@ -30,11 +33,13 @@ class FileService(BaseService):
             post: str,
             mechanic: str,
             destination: Path,
-            file: UploadFile
-    ) -> str:
-        file_id = str(uuid4())
+            file: UploadFile,
+            change_uuid: UUID,
+            client_id: UUID,
+    ):
+        file_uuid = uuid4()
 
-        destination = destination / file_id
+        destination = destination / str(file_uuid)
         destination.parent.mkdir(parents=True, exist_ok=True)
 
         with destination.open("wb") as buffer:
@@ -43,7 +48,7 @@ class FileService(BaseService):
         await file.close()
 
         file_obj = File(
-            uuid=file_id,
+            uuid=file_uuid,
             path=str(destination),
             user_name=file.filename,
             type=type,
@@ -53,9 +58,18 @@ class FileService(BaseService):
             post=post,
         )
 
-        await add_objects(self.session, file_obj)
+        file_change = FileChange(
+            change_uuid=change_uuid,
+            sse_uuid=client_id,
+            type="create",
+            uuid=file_uuid,
+            mechanic=mechanic,
+            post=post,
+        )
 
-        return file_id
+        await add_objects(self.session, [file_obj, file_change])
+
+        return file_uuid, file_change
 
 
     async def _create_all_zn(
@@ -66,13 +80,20 @@ class FileService(BaseService):
             post: str,
             mechanic: str,
             destination: Path,
-            identical_str: str | None = None,
+            identical_str: str | None,
+            change_uuid: UUID,
+            client_id: UUID,
     ):
         data = []
 
+        last_change_uuid = Names.MIN_UUID7
+        changes = []
+
+        change_uuid_gen = uuid7_generator(change_uuid)
+
         try:
             for file in files:
-                file_id = await self._create_file(
+                file_uuid, file_change = await self._create_file(
                     zn_number=zn_number,
                     type=type,
                     identical_str=identical_str,
@@ -80,11 +101,25 @@ class FileService(BaseService):
                     mechanic=mechanic,
                     file=file,
                     destination=destination,
+                    change_uuid=next(change_uuid_gen),
+                    client_id=client_id,
                 )
 
-                data.append(file_id)
+                data.append(file_uuid)
+                changes.append(file_change.as_dict())
+                last_change_uuid = file_change.change_uuid
         except Exception:
             traceback.print_exc()
+
+        self.background_tasks.add_task(
+            third_page_manager.broadcast,
+            data={"changes": changes},
+            event="file",
+            broadcast_event="file",
+            add_info=f"{type}/{identical_str if identical_str is not None else 'None'}",
+            id_=last_change_uuid,
+            author=client_id,
+        )
 
         return data
 
@@ -133,6 +168,8 @@ class FileService(BaseService):
             mechanic=mechanic,
             identical_str=identical_str,
             destination=destination,
+            change_uuid=change_uuid,
+            client_id=client_id,
         )
 
         if send_sse:
@@ -155,21 +192,22 @@ class FileService(BaseService):
             type: str | None = None,
             identical_str: str | None = None,
     ):
-        kwargs = {
-            "is_alive": True,
-            "zn_number": zn_number,
-        }
+        return await get_files(
+            session=self.session,
+            zn_number=zn_number,
+            type=type,
+            identical_str=identical_str,
+        )
 
-        if identical_str is not None:
-            kwargs["identical_str"] = identical_str
 
-        if type is not None:
-            kwargs["type"] = type
-
+    async def download(
+            self,
+            uuids: list[UUID],
+    ):
         files = await find_objects(
             session=self.session,
             model=File,
-            **kwargs
+            in_={"uuid": uuids}
         )
 
         if files is None:
@@ -179,10 +217,6 @@ class FileService(BaseService):
 
         archive_buffer = BytesIO()
 
-        uuids = []
-        if type is None:
-            types = []
-
         with ZipFile(
                 archive_buffer,
                 mode="w",
@@ -191,25 +225,10 @@ class FileService(BaseService):
             for file in files:
                 path = Path(file.path)
 
-                if type is None:
-                    types.append(file.type)
-
                 if not path.is_file():
                     continue
 
                 archive.write(path, arcname=file.user_name)
-                uuids.append(file.uuid)
-
-            archive.writestr(
-                "uuids.json",
-                json.dumps({"uuids": uuids}, ensure_ascii=False)
-            )
-
-            if type is None:
-                archive.writestr(
-                    "types.json",
-                    json.dumps({"types": types}, ensure_ascii=False)
-                )
 
         archive_buffer.seek(0)
 

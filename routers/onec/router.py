@@ -43,7 +43,7 @@ async def zn(
     background_tasks.add_task(broadcast_zn)
 
     return OnecResponse(
-        last_change_uuid=max(*{last_change_uuid for last_change_uuid, _ in response.values()}),
+        change_uuid=max(*{change_uuid for change_uuid, _ in response.values()}),
     ).model_dump_json()
 
 
@@ -57,7 +57,7 @@ async def mechanics(
     """Обработка списка всех механиков"""
     service = OnecService(session)
 
-    last_change_uuid, data = await service.parse_mechanics(xml_string)
+    change_uuid, data = await service.parse_mechanics(xml_string)
 
     background_tasks.add_task(
         first_page_manager.broadcast,
@@ -65,12 +65,12 @@ async def mechanics(
         event="mechanics",
         broadcast_event=None,
         add_info=None,
-        id_=last_change_uuid,
+        id_=change_uuid,
         broadcast_all=True,
     )
 
     return OnecResponse(
-        last_change_uuid=last_change_uuid,
+        change_uuid=change_uuid,
     )
 
 
@@ -83,7 +83,7 @@ async def posts(
     """Обработка списка всех названий постов"""
     service = OnecService(session)
 
-    last_change_uuid, data = await service.parse_mechanics(xml_string)
+    change_uuid, data = await service.parse_mechanics(xml_string)
 
     background_tasks.add_task(
         first_page_manager.broadcast,
@@ -91,10 +91,10 @@ async def posts(
         event="posts",
         broadcast_event=None,
         add_info=None,
-        id_=last_change_uuid,
+        id_=change_uuid,
         broadcast_all=True,
     )
 
     return OnecResponse(
-        last_change_uuid=last_change_uuid,
+        change_uuid=change_uuid,
     ).model_dump_json()

@@ -5,7 +5,7 @@ from core.services import BaseService
 from crud.real_info import change_done
 from sse import third_page_manager
 
-from .utils import uuid7_generator
+from utils import uuid7_generator
 
 
 class DoneService(BaseService):

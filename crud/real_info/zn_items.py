@@ -204,7 +204,7 @@ async def _get_zn_items(
         default=None,
     )
 
-    return {"data": items, "change_uuid": overall_last_change_uuid}
+    return {"data": items, "last_change_uuid": overall_last_change_uuid}
 
 
 __all__ = [
