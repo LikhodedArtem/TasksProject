@@ -11,10 +11,11 @@ from core.models.real_info.help_classes import Life, Stage, CanCreateChange
 
 
 if TYPE_CHECKING:
-    from car import Car
-    from post import Post
-    from job import Job
-    from part import Part
+    from .car import Car
+    from .post import Post
+    from .job import Job
+    from .part import Part
+    from .checklist import Checklist
 
 
 class ZN(RealInfoBase, Life, Stage, CanCreateChange):
@@ -83,6 +84,12 @@ class ZN(RealInfoBase, Life, Stage, CanCreateChange):
         back_populates="zn",
         cascade="all, delete-orphan",
         passive_deletes=True,
+    )
+
+    checklist: Mapped[Checklist] = relationship(
+        "Checklist",
+        cascade="all, delete-orphan",
+        back_populates="zn",
     )
 
     @staticmethod

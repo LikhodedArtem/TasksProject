@@ -9,6 +9,13 @@ from .zn import ZN
 from .post import Post
 from .znmtmpost import ZNmtmPost
 from .task import Task
+from .checklist import (
+    Checklist,
+    ChecklistRow,
+    ChecklistRowValue,
+    ChecklistField,
+    ChecklistFieldValue,
+)
 
 
 __all__ = [
@@ -23,4 +30,10 @@ __all__ = [
     "ZN",
     "ZNmtmPost",
     "Task",
+
+    "Checklist",
+    "ChecklistRow",
+    "ChecklistField",
+    "ChecklistRowValue",
+    "ChecklistFieldValue",
 ]

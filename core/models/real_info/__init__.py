@@ -14,4 +14,10 @@ __all__ = [
     "ZN",
     "ZNmtmPost",
     "Task",
+
+    "Checklist",
+    "ChecklistRow",
+    "ChecklistField",
+    "ChecklistRowValue",
+    "ChecklistFieldValue",
 ]

@@ -20,7 +20,10 @@ class ChangeType:
         type: Annotated[ChangeTypeEnum, Field(...)]
 
     type: Mapped[str] = mapped_column(
-        SQLEnum(ChangeTypeEnum, name="type"),
+        SQLEnum(
+            ChangeTypeEnum,
+            name="change_type"
+        ),
         nullable=False,
         unique=False
     )

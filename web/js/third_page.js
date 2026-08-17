@@ -1415,15 +1415,17 @@ function createRecordPanel(addClass, addButtons, appendFile, fileInfo) {
     const recordDisplay = document.createElement("div")
     recordDisplay.className = "record-display"
 
-    const recordFileName = document.createElement("span")
-    recordFileName.className = "record-file-name"
-    recordFileName.textContent = getFileName(fileInfo)
+    if (!addButtons) {
+        const recordFileName = document.createElement("span")
+        recordFileName.className = "record-file-name"
+        recordFileName.textContent = getFileName(fileInfo)
+
+        recordDisplay.append(recordFileName)
+    }
 
     const pinFilesCellEscape = document.createElement("button")
     pinFilesCellEscape.className = "pin-files-panel-escape"
     pinFilesCellEscape.innerHTML = SVG.x
-
-    recordDisplay.append(recordFileName)
 
     pinFilesCellHeader.append(pinFilesCellEscape)
 

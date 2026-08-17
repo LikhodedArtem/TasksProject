@@ -1,5 +1,3 @@
-from pydantic import BaseModel, ConfigDict
-
 from sqlalchemy.orm import declared_attr
 
 from ..base import Base
