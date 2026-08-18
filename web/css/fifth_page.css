@@ -332,14 +332,26 @@
 
                 svg {
                     position: relative;
-                    top: -1px;
-                    right: -1px;
-                    height: 80%;
+                    height: 75%;
                     aspect-ratio: 1 / 1;
 
                     color: var(--color-bg);
                 }
             }
+        }
+    }
+
+    .num-input-panel.float .num-input-panel-body {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: var(--space-3);
+
+        .num-input-dot::after {
+            content: ",";
+            font-weight: 600;
+            font-size: 1.5rem;
+            color: color-mix(in oklch, var(--color-border), var(--color-text));
         }
     }
 }
@@ -363,6 +375,10 @@
         position: relative;
         color: var(--color-bg);
     }
+}
+
+.num-arrow.bad-click {
+    animation: numArrowBadClick var(--transition-fast);
 }
 
 .num-arrow:hover {
@@ -431,5 +447,14 @@
     .num-field-value {
         font-weight: 500;
         color: var(--color-text);
+    }
+}
+
+@keyframes numArrowBadClick {
+    50% {
+        scale: 1.1;
+    }
+    100% {
+        scale: 1;
     }
 }

@@ -65,8 +65,8 @@ const SVG = {
     x: '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="5" x2="19" y2="19" /><line x1="5" y1="19" x2="19" y2="5" /></svg>',
 
     zn: '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5H6a2 2 0 0 0-2 2v13h16V7a2 2 0 0 0-2-2h-2"/><rect x="8" y="3" width="8" height="4" rx="1.5"/><path d="M8 11h8M8 15h8"/></svg>',
-    job: '<svg viewBox="1 1 23 23" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6.12 20.75C5.36 20.75 4.64 20.45 4.09 19.91C2.97 18.79 2.97 16.98 4.09 15.86L9.6 10.35C9.1 8.40997 9.64 6.31997 11.06 4.89997C12.49 3.46997 14.59 2.90997 16.54 3.43997C16.8 3.50997 17 3.70997 17.07 3.96997C17.14 4.22997 17.07 4.49997 16.88 4.68997L14.43 7.13997L14.95 9.04997L16.86 9.56997L19.31 7.11997C19.5 6.92997 19.78 6.85997 20.03 6.92997C20.29 6.99997 20.49 7.19997 20.56 7.45997C21.09 9.40997 20.54 11.51 19.1 12.94C17.68 14.36 15.59 14.9 13.65 14.4L8.14 19.91C7.6 20.45 6.88 20.75 6.12 20.75ZM14.68 4.76997C13.72 4.84997 12.81 5.26997 12.11 5.96997C10.97 7.10997 10.6 8.77997 11.15 10.32C11.25 10.59 11.18 10.9 10.97 11.1L5.14 16.93C4.61 17.46 4.61 18.33 5.14 18.86C5.4 19.12 5.74 19.26 6.11 19.26C6.47 19.26 6.82 19.12 7.07 18.86L12.9 13.03C13.11 12.82 13.41 12.76 13.68 12.85C15.22 13.39 16.89 13.03 18.03 11.89C18.73 11.19 19.14 10.28 19.23 9.31997L17.6 10.95C17.41 11.14 17.13 11.21 16.87 11.14L14.13 10.39C13.87 10.32 13.67 10.12 13.6 9.85997L12.85 7.11997C12.78 6.85997 12.85 6.57997 13.04 6.38997L14.67 4.75997L14.68 4.76997Z" fill="currentColor"/></svg>',
-    part: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://w3.org"><circle cx="12" cy="12" r="4" /><path d="M10.5 2h3l.5 2.5c.6.2 1.1.5 1.6.9l2.4-1 2.1 2.1-1 2.4c.4.5.7 1 1 1.6l2.5.5v3l-2.5.5c-.2.6-.5 1.1-.9 1.6l1 2.4-2.1 2.1-2.4-1c-.5.4-1 .7-1.6 1l-.5 2.5h-3l-.5-2.5c-.6-.2-1.1-.5-1.6-.9l-2.4 1-2.1-2.1 1-2.4c-.4-.5-.7-1-1-1.6l-2.5-.5v-3l2.5-.5c.2-.6.5-1.1.9-1.6l-1-2.4 2.1-2.1 2.4 1c.5-.4 1-.7 1.6-1z" /></svg>',
+    job: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 5.5a5.5 5.5 0 0 1-6.7 5.4L7.2 19.3a2.5 2.5 0 0 1-3.5-3.5l8.2-8.2a5.5 5.5 0 0 1 7.3-6.4l-4 4 .5 2.2 2.2.5 4-4c.1.5.1 1.1.1 1.6Z"/><path d="M5.5 17.5h.01"/></svg>',
+    part: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.2 3.2h3.6c.5 0 .9.3 1 .8l.3 1.5c.6.2 1.1.5 1.6.9l1.5-.5c.5-.2 1 0 1.2.5l1.8 3.1c.3.4.2 1-.2 1.3l-1.2 1.1v1.8l1.2 1.1c.4.3.5.9.2 1.3l-1.8 3.1c-.2.5-.7.7-1.2.5l-1.5-.5c-.5.4-1 .7-1.6.9l-.3 1.5c-.1.5-.5.8-1 .8h-3.6c-.5 0-.9-.3-1-.8l-.3-1.5c-.6-.2-1.1-.5-1.6-.9l-1.5.5c-.5.2-1 0-1.2-.5l-1.8-3.1c-.3-.4-.2-1 .2-1.3l1.2-1.1v-1.8L3 10.8c-.4-.3-.5-.9-.2-1.3l1.8-3.1c.2-.5.7-.7 1.2-.5l1.5.5c.5-.4 1-.7 1.6-.9L9.2 4c.1-.5.5-.8 1-.8Z"/><circle cx="12" cy="12.8" r="3"/></svg>',
     rec: '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-8l-4 4v-4H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><path d="m8 11 2.5 2.5L16 8"/></svg>',
 }
 
@@ -1367,4 +1367,1338 @@ function initEscapeButton(href) {
     escapeButton.addEventListener("click", () => {
         window.location.href = href
     })
+}
+
+
+function createPinFilesPanel(type, rowContent) {
+    const pinFilesPanelWrapper = document.createElement("div")
+    pinFilesPanelWrapper.classList.add("background-blur", "fast")
+    pinFilesPanelWrapper.style.zIndex = 101
+
+    const pinFilesPanel = document.createElement("div")
+    pinFilesPanel.className = "pin-files-panel"
+
+    const pinFilesPanelHeader = document.createElement("div")
+    pinFilesPanelHeader.className = "pin-files-panel-header"
+
+    const pinFilesPanelName = document.createElement("span")
+    pinFilesPanelName.className = "pin-files-panel-name"
+    pinFilesPanelName.textContent = "Вложения и записи"
+
+    const pinFilesPanelEscape = document.createElement("button")
+    pinFilesPanelEscape.className = "pin-files-panel-escape"
+    pinFilesPanelEscape.innerHTML = SVG.x
+
+    const pinFilesPanelFooter = document.createElement("div")
+    pinFilesPanelFooter.className = "pin-files-panel-footer"
+
+    const pinFilesCellUpdate = document.createElement("div")
+    pinFilesCellUpdate.className = "pin-files-cell-update active-button"
+    pinFilesCellUpdate.textContent = "Обновить"
+
+    const pinFilesCellUpdateIcon = document.createElement("div")
+    pinFilesCellUpdateIcon.className = "pin-files-cell-update-icon"
+    pinFilesCellUpdateIcon.innerHTML = SVG.again
+
+    const pinFilesCellFiles = constructPinFilesCell("files", type, rowContent)
+
+    const pinFilesCellAudio = constructPinFilesCell("audio" )
+
+    const pinFilesCellVideo = constructPinFilesCell("video")
+
+    pinFilesCellUpdate.append(pinFilesCellUpdateIcon)
+
+    pinFilesPanelHeader.append(pinFilesPanelName, pinFilesCellUpdate, pinFilesPanelEscape)
+    pinFilesPanelFooter.append(pinFilesCellFiles, pinFilesCellAudio, pinFilesCellVideo)
+
+    pinFilesPanel.append(pinFilesPanelHeader, pinFilesPanelFooter)
+    pinFilesPanelWrapper.append(pinFilesPanel)
+
+    body.style.overflow = "hidden"
+    body.append(pinFilesPanelWrapper)
+
+    pinFilesPanelEscape.addEventListener("click", () => {
+        body.style.overflow = "auto"
+        body.removeChild(pinFilesPanelWrapper)
+    })
+
+    pinFilesCellUpdate.addEventListener("click", () => {
+        if (pinFilesCellUpdate.classList.contains("clicked")) return
+
+        pinFilesCellUpdate.classList.add("clicked")
+        pinFilesCellUpdate.addEventListener("animationend", () => {
+            pinFilesCellUpdate.classList.remove("clicked")
+        }, { once: true })
+
+        pinFilesCellFiles.update()
+    })
+}
+
+function constructPinFilesCell(addClass, type, rowContent) {
+    if (addClass === "files") {
+        const pinFilesCell = document.createElement("div")
+        pinFilesCell.classList.add("pin-files-cell", addClass)
+
+        const pinFilesCellHeader = document.createElement("div")
+        pinFilesCellHeader.className = "pin-files-cell-header"
+
+        const pinFilesCellName = document.createElement("span")
+        pinFilesCellName.className = "pin-files-cell-name"
+        pinFilesCellName.textContent = "Файловый менеджер"
+
+        const pinFilesCellFooter = document.createElement("div")
+        pinFilesCellFooter.className = "pin-files-cell-footer"
+
+        pinFilesCellHeader.append(pinFilesCellName)
+        pinFilesCell.append(pinFilesCellHeader, pinFilesCellFooter)
+
+        const pinFilesCellCounter = document.createElement("span")
+        pinFilesCellCounter.className = "pin-files-cell-counter"
+        pinFilesCellCounter.textContent = 0
+
+        const editPanel = document.createElement("div")
+        editPanel.className = "edit-panel"
+
+        const closeButton = document.createElement("button")
+        closeButton.className = "close-button"
+        closeButton.innerHTML = SVG.x
+
+        const deleteButton = document.createElement("button")
+        deleteButton.className = "delete-button"
+        deleteButton.innerHTML = SVG.delete
+
+        const downloadButton = document.createElement("button")
+        downloadButton.className = "download-button"
+        downloadButton.innerHTML = SVG.download
+
+        const playButton = document.createElement("button")
+        playButton.className = "play-button hide"
+        playButton.innerHTML = SVG.play
+
+        const clickedCounter = document.createElement("span")
+        clickedCounter.className = "clicked-counter"
+        clickedCounter.textContent = 1
+
+        const pinFilesDownloading = document.createElement("div")
+        pinFilesDownloading.className = "pin-files-downloading"
+
+        const pinFilesDownloadingLine = document.createElement("span")
+        pinFilesDownloadingLine.className = "pin-files-downloading-line"
+
+        pinFilesDownloading.append(pinFilesDownloadingLine)
+
+        editPanel.append(closeButton, deleteButton, downloadButton, playButton, clickedCounter)
+        pinFilesCellHeader.append(editPanel, pinFilesDownloading, pinFilesCellCounter)
+
+        const realInput = document.createElement("input")
+        realInput.type = "file"
+        realInput.style.display = "none"
+        realInput.multiple = true
+
+        // uuid, userName
+        const filesData = new SmartContainer()
+        const localFiles = {}
+
+        let isGetFiles = false
+
+        let downloadLevel = 0
+
+        pinFilesCell.update = () => {
+            getFiles(true)
+        }
+        getFiles(type)
+
+        function startDownload() {
+            downloadLevel++
+            if (downloadLevel > 0) pinFilesDownloading.classList.add("active")
+        }
+
+        function endDownload() {
+            downloadLevel--
+            if (downloadLevel <= 0) pinFilesDownloading.classList.remove("active")
+        }
+
+        async function getFiles(clear) {
+            if (isGetFiles) return
+            isGetFiles = true
+
+            startDownload()
+
+            const result = await getFilesFromBase(clear)
+
+            if (!result) {
+                createNotification("error", "Файлы не были загружены")
+            }
+
+            endDownload()
+            isGetFiles = false
+        }
+
+        async function getFilesFromBase(clear) {
+            try {
+                const info = {
+                    zn_number: znNumber,
+                }
+
+                if (type !== "zn") {
+                    info.type = type
+                    if (type !== "rec") {
+                        info.identical_str = rowContent.dataset.uuid
+                    }
+                }
+
+                const response = await fetch(`${API_PATH}/files/get`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(info)
+                })
+
+                if (!response.ok) {
+                    updateCounter()
+                    return false
+                }
+
+                const {last_change_uuid, data} = await response.json()
+
+                if (clear) {
+                    filesData.replace([])
+                }
+
+                for (const file of data) {
+                    filesData.create(file)
+                }
+
+                renderFiles()
+
+                renderFiles()
+
+                return true
+            } catch (error) {
+                updateCounter()
+                console.error(`Get files error: ${error}`)
+                createNotification("error", "Не удалось загрузить файлы")
+                return false
+            }
+        }
+
+        const filePanelWrapper = document.createElement("div")
+        filePanelWrapper.className = "files-panel-wrapper"
+
+        const filePanel = document.createElement("div")
+        filePanel.className = "files-panel"
+
+        const pinFilesButton = document.createElement("button")
+        pinFilesButton.className = "pin-files-button"
+        pinFilesButton.innerHTML = SVG.load
+
+        pinFilesButton.addEventListener("click", () => {
+            if (!canChange) {
+                cantChange()
+                return
+            }
+            realInput.click()
+        })
+
+        pinFilesCellFooter.append(pinFilesButton)
+
+        filePanelWrapper.append(filePanel)
+        pinFilesCellFooter.append(realInput, filePanelWrapper)
+
+        realInput.addEventListener("change", async () => {
+            if (!canChange) {
+                cantChange()
+                return
+            }
+
+            await fullUploadFiles(realInput.files)
+        })
+
+        let isUploadFiles = false
+
+        async function fullUploadFiles(forUUIDS) {
+            if (isUploadFiles) return
+            isUploadFiles = true
+
+            startDownload()
+
+			try {
+				if (forUUIDS && forUUIDS.length) {
+					const result = await updateUUIDS(forUUIDS)
+					if (!result) {
+						createNotification("error", "Ошибка отправки данных")
+					}
+
+                    renderFiles()
+				}
+			} finally {
+				endDownload()
+				isUploadFiles = false
+			}
+        }
+
+        closeButton.addEventListener("click", () => {
+            unclickAll()
+        })
+
+        let isRemoveFiles = false
+
+        deleteButton.addEventListener("click", async () => {
+            if (!canChange) {
+                cantChange()
+                return
+            }
+
+            if (isRemoveFiles) return true
+            isRemoveFiles = true
+
+            startDownload()
+
+            const response = await removeFilesFromInput(findClicked(true))
+
+            if (!response) {
+                createNotification("error", "Ошибка отправки данных")
+            }
+
+            renderFiles()
+
+            endDownload()
+
+            isRemoveFiles = false
+        })
+
+        downloadButton.addEventListener(("click"), () => {
+            if (!canChange) {
+                cantChange()
+                return
+            }
+
+            startDownload()
+
+            try {
+                downloadFiles(findClicked(true))
+            } finally {
+                endDownload()
+            }
+
+            unclickAll()
+        })
+
+        function findClicked(uuids = false) {
+            const indexes = []
+
+            for (const file of Array.from(filePanel.children)) {
+                if (file.classList.contains("clicked")) {
+                    uuids
+                        ? indexes.push(file.dataset.uuid)
+                        : indexes.push(Number(file.dataset.index))
+                }
+            }
+
+            return indexes
+        }
+
+        filePanel.addEventListener("click", (event) => {
+            if (!canChange) {
+                cantChange()
+                return
+            }
+
+            const file = event.target.closest(".file")
+            if (!file) return
+
+            if (file.classList.contains("clicked")) {
+                file.classList.remove("clicked")
+                clickedCounterSub()
+            } else {
+                file.classList.add("clicked")
+                clickedCounterAdd()
+            }
+        })
+
+        async function updateUUIDS(files) {
+            if (!files || !files.length) return true
+
+            let objectData = null
+
+            if (rowContent) {
+                objectData = {uuid: rowContent.dataset.uuid}
+            }
+
+            const uuids = await uploadFiles(files, type, objectData)
+            if (!uuids) return false
+
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i]
+                const uuid = uuids[i]
+
+                const fileData = {
+                    uuid: uuid,
+                    userName: file.name,
+                }
+
+                if (type === "zn") {
+                    fileData.type = type
+                    if (file.identicalStr) {
+                        fileData.identicalStr = file.identicalStr
+                    }
+                }
+
+                filesData.create(fileData)
+
+                localFiles[uuid] = file
+            }
+
+            return true
+        }
+
+        function renderFiles() {
+            filePanel.innerHTML = ""
+
+            const currentData = filesData.data()
+
+            for (let index = 0; index < currentData.length; index++) {
+                const file = currentData[index]
+
+                filePanel.append(
+                    constructFile(
+                        index,
+                        file,
+                    )
+                )
+            }
+
+            updateCounter()
+            resetClickedCounter()
+        }
+
+        function updateCounter() {
+            const count = filePanel.children.length
+            const func = count === 0 ? hasNotFiles : hasFiles
+            let pinFiles
+
+            if (type === "zn") {
+                pinFiles = headerPinFiles
+                znHasOwnFiles = filesData.select({ type: "zn" }, null, 1).length !== 0
+            } else if (type === "rec")  {
+                pinFiles = recPinFiles
+            } else {
+                pinFiles = rowContent.querySelector(".pin-files")
+
+                const smartData = type === "jobs" ? jobsData : partsData
+
+                smartData.update(
+                    { hasFiles: count !== 0 },
+                    { uuid: rowContent.dataset.uuid },
+                    1
+                )
+            }
+
+            func(pinFiles)
+
+            pinFilesCellCounter.textContent = count
+        }
+
+        playButton.addEventListener("click", async () => {
+            const clickedList = findClicked(true)
+
+            if (clickedList.length !== 1) {
+                createNotification("error", "Ошибка выбранных файлов")
+                return
+            }
+
+            await recoverFiles(clickedList)
+
+            const uuid = clickedList[0]
+            const file = localFiles[uuid]
+            const fileInfo = filesData.select(
+                { uuid: uuid },
+                null,
+                1
+            )[0]
+
+            const extension = getFileExtension(fileInfo).toLowerCase()
+
+            let type
+
+            if (EXTENSIONS.audio.includes(extension)) {
+                type = "audio"
+            } else if (EXTENSIONS.video.includes(extension)) {
+                type = "video"
+            } else {
+                createNotification("error", "Ошибка выбранных файлов")
+                return
+            }
+
+            createRecordPanel(type, false, file, fileInfo)
+        })
+
+        function showPlayButton() {
+            playButton.classList.remove("hide")
+        }
+
+        function hidePlayButton() {
+            playButton.classList.add("hide")
+        }
+
+        function checkPlayButton() {
+            const clickedList = findClicked()
+
+            if (clickedList.length !== 1) {
+                hidePlayButton()
+                return
+            }
+
+            const clicked = Array.from(filePanel.children)[clickedList[0]]
+
+            if (clicked.dataset.playable === "false") {
+                hidePlayButton()
+                return
+            } else {
+                showPlayButton()
+            }
+        }
+
+        let firstFlag = true
+
+        function clickedCounterAdd() {
+            if (firstFlag) {
+                editPanel.classList.add("show")
+                pinFilesCellName.classList.add("hide")
+                checkPlayButton(1)
+                firstFlag = false
+            } else if (!firstFlag) {
+                checkPlayButton()
+                clickedCounter.textContent = Number(clickedCounter.textContent) + 1
+            }
+        }
+
+        function clickedCounterSub() {
+            if (clickedCounter.textContent === "1") {
+                editPanel.classList.remove("show")
+                pinFilesCellName.classList.remove("hide")
+                firstFlag = true
+            }
+            if (!firstFlag) {
+                checkPlayButton()
+                clickedCounter.textContent = Number(clickedCounter.textContent) - 1
+            }
+        }
+
+        function unclickAll() {
+            for (const file of Array.from(filePanel.children)) {
+                file.classList.remove("clicked")
+                resetClickedCounter()
+            }
+        }
+
+        function resetClickedCounter() {
+            firstFlag = true
+            clickedCounter.textContent = "1"
+            editPanel.classList.remove("show")
+            pinFilesCellName.classList.remove("hide")
+        }
+
+        async function removeFilesFromInput(uuids) {
+            if (!uuids) return false
+
+            try {
+                const response = await fetch(
+                    `${API_PATH}/files/delete`,
+                    {
+                        method: "POST",
+                        body: JSON.stringify({
+                            uuids: uuids,
+                            mechanic: mechanic,
+                            post: post,
+                        }),
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Client-ID': MY_UUID,
+                            'X-Change-UUID': generateUUIDv7(),
+                        },
+                    }
+                )
+
+                if (!response) return false
+
+                for (const uuid of uuids) {
+                    if (type === "zn") {
+                        filesData.delete(
+                            { uuid: uuid },
+                            1,
+                            (value) => {
+                                if (value.type === "zn") return
+
+                                if (filesData.select(
+                                    { type: value.type, identicalStr: value.identicalStr },
+                                    ["uuid"],
+                                    1,
+                                ).length === 0) {
+                                    if (value.type === "jobs" || value.type === "parts") {
+                                        const smartData = value.type === "jobs"
+                                            ? jobsData
+                                            : partsData
+                                        const updator = value.type === "jobs"
+                                            ? updateJobsTable
+                                            : updatePartsTable
+
+                                        smartData.update(
+                                            { hasFiles: false },
+                                            { uuid: value.identicalStr },
+                                            1
+                                        )
+
+                                        updator()
+                                    } else {
+                                        hasNotFiles(recPinFiles)
+                                    }
+                                }
+                            }
+                        )
+                    } else {
+                        filesData.delete(
+                            { uuid: uuid },
+                            1,
+                        )
+                    }
+
+                    delete localFiles[uuid]
+                }
+
+                renderFiles()
+
+                return true
+            } catch (error) {
+                console.error("Remove Files Error:", error)
+                return false
+            }
+        }
+
+        async function recoverFiles(uuids) {
+            if (!uuids) return
+
+            const forDownload = []
+            const currentUUIDS = Object.keys(localFiles)
+
+            for (const uuid of uuids) {
+                if (currentUUIDS.indexOf(uuid) !== -1) continue
+
+                forDownload.push(uuid)
+            }
+
+            if (forDownload.length) {
+                const response = await fetch(`${API_PATH}/files/download`, {
+                    method: "POST",
+                    body: JSON.stringify({
+                        uuids: forDownload,
+                    }),
+                    headers: {
+                        "Content-Type": "application/json"
+                    }
+                })
+
+                const archiveBlob = await response.blob()
+
+                const zip = await JSZip.loadAsync(archiveBlob)
+
+                const fileEntries = Object.entries(zip.files)
+
+                for (let i = 0; i < forDownload.length; i++) {
+                    const uuid = forDownload[i]
+                    const [pathInZip, zipEntry] = fileEntries[i]
+
+                    const blob = await zipEntry.async("blob")
+
+                    localFiles[uuid] = new File([blob], name, {
+                        type: blob.type || "application/octet-stream",
+                        lastModified: Date.now()
+                    })
+                }
+            }
+        }
+
+        async function downloadFiles(uuids) {
+            try {
+                if (!uuids) return
+
+                await recoverFiles(uuids)
+
+                for (const uuid of uuids) {
+                    const file = localFiles[uuid]
+                    const fileInfo = filesData.select(
+                        { uuid: uuid },
+                        null,
+                        1
+                    )[0]
+
+                    const link = document.createElement("a")
+                    const url = URL.createObjectURL(file)
+
+                    link.href = url
+                    link.download = fileInfo.userName
+
+                    filePanel.appendChild(link)
+                    link.click()
+                    filePanel.removeChild(link)
+
+                    URL.revokeObjectURL(url)
+                    await new Promise((resolve) => setTimeout(resolve, 300))
+                }
+            } catch (error) {
+                console.error("Download files Error:", error)
+                createNotification("error", "Ошибка загрузки")
+            }
+        }
+
+        fileSaveAdd = fullUploadFiles
+        fileSaveRender = renderFiles
+
+        return pinFilesCell
+    }
+
+    if (addClass === "audio" || addClass === "video") {
+        const isAudio = addClass === "audio"
+
+        const recordIconWrapper = document.createElement("div")
+        recordIconWrapper.className = "record-icon-wrapper"
+
+        const recordIcon = document.createElement("button")
+        recordIcon.className = "record-icon"
+        recordIcon.innerHTML = isAudio ? SVG.audio : SVG.video
+
+        recordIconWrapper.append(recordIcon)
+
+        recordIcon.addEventListener("click", () => {
+            createRecordPanel(addClass, true, null)
+        })
+
+        return recordIconWrapper
+    }
+}
+
+function createRecordPanel(addClass, addButtons, appendFile, fileInfo) {
+    const isAudio = addClass === "audio"
+
+    const pinFilesCell = document.createElement("div")
+    pinFilesCell.classList.add("pin-files-cell", addClass)
+
+    const pinFilesCellHeader = document.createElement("div")
+    pinFilesCellHeader.className = "pin-files-cell-header"
+
+    const pinFilesCellName = document.createElement("span")
+    pinFilesCellName.className = "pin-files-cell-name"
+
+    if (addButtons) {
+        pinFilesCellName.textContent = isAudio ? "Запись аудио" : "Запись видео"
+    } else {
+        pinFilesCellName.textContent = isAudio ? "Прослушивание аудио" : "Просмотр видео"
+    }
+
+    const pinFilesCellFooter = document.createElement("div")
+    pinFilesCellFooter.className = "pin-files-cell-footer"
+
+    pinFilesCellHeader.append(pinFilesCellName)
+    pinFilesCell.append(pinFilesCellHeader, pinFilesCellFooter)
+
+
+    let mediaRecorder = null
+    let stream = null
+    let chunks = []
+
+    let actionAfterStop = null
+    let lastRecordedBlob = null
+    let lastRecordedUrl = null
+
+    const pinFilesCellWrapper = document.createElement("div")
+    pinFilesCellWrapper.className = "background-blur fast"
+    pinFilesCellWrapper.style.zIndex = 101
+
+    const recordHeader = document.createElement("div")
+    recordHeader.className = "record-header"
+
+    const recordDisplay = document.createElement("div")
+    recordDisplay.className = "record-display"
+
+    if (!addButtons) {
+        const recordFileName = document.createElement("span")
+        recordFileName.className = "record-file-name"
+        recordFileName.textContent = getFileName(fileInfo)
+
+        recordDisplay.append(recordFileName)
+    }
+
+    const pinFilesCellEscape = document.createElement("button")
+    pinFilesCellEscape.className = "pin-files-panel-escape"
+    pinFilesCellEscape.innerHTML = SVG.x
+
+    pinFilesCellHeader.append(pinFilesCellEscape)
+
+    pinFilesCellFooter.append(recordHeader, recordDisplay)
+
+    const isRecordActive = document.createElement("span")
+    isRecordActive.className = "is-record-active"
+    isRecordActive.textContent = isAudio ? "Микрофон" : "Камера"
+
+    if (addButtons) {
+        const timer = new RecurringTimer(addTimeCounter, 1000)
+
+        const timeCounter = document.createElement("div")
+        timeCounter.className = "time-counter"
+
+        const timeCounterMinutes = document.createElement("div")
+        timeCounterMinutes.className = "time-counter-minutes"
+        timeCounterMinutes.textContent = "00"
+
+        const timeCounterSeconds = document.createElement("div")
+        timeCounterSeconds.className = "time-counter-seconds"
+        timeCounterSeconds.textContent = "00"
+
+        const recordFooter = document.createElement("div")
+        recordFooter.className = "record-footer"
+
+        const againButton = document.createElement("button")
+        againButton.className = "again-button"
+        againButton.innerHTML = SVG.again
+
+        const recordButton = document.createElement("button")
+
+        if (isAudio) {
+            recordButton.classList.add("record-button-audio", "play")
+        } else {
+            recordButton.classList.add("record-button-video", "play")
+            recordButton.innerHTML = SVG.play
+        }
+
+        const addButton = document.createElement("button")
+        addButton.className = "add-button"
+        addButton.innerHTML = SVG.load
+
+        timeCounter.append(timeCounterMinutes, timeCounterSeconds)
+        recordHeader.append(isRecordActive, timeCounter)
+
+        recordFooter.append(againButton, recordButton, addButton)
+
+        pinFilesCellFooter.append(recordFooter)
+
+        async function startRecord() {
+            if (!(await startRecording())) return
+            timer.resume()
+            recordButton.classList.remove("play")
+        }
+
+        function stopRecord() {
+            timer.pause()
+            recordButton.classList.add("play")
+
+            clearCurrentRecordData()
+            stopRecorder()
+        }
+
+        async function startRecording() {
+            try {
+                actionAfterStop = null
+
+                await createRecorder()
+
+                if (!isAudio) {
+                    clearPreview()
+
+                    const preview = document.createElement("video");
+                    preview.autoplay = true;
+                    preview.muted = true;
+                    preview.playsInline = true;
+                    preview.srcObject = stream;
+                    preview.className = "record-preview"
+
+                    recordDisplay.classList.add("play")
+                    recordDisplay.append(preview)
+                }
+
+                mediaRecorder.addEventListener("dataavailable", (event) => {
+                    if (event.data && event.data.size > 0) {
+                        chunks.push(event.data)
+                    }
+                })
+
+                mediaRecorder.addEventListener("stop", handleRecordStop, {once: true})
+
+                isRecordActive.classList.add("active")
+                return true
+            } catch (e) {
+                console.error(`Start Recording error: ${e}`)
+                console.error(`Error code: ${e.code}`)
+                resetRecordPanel()
+                deleteRecorder()
+                return false
+            }
+        }
+
+        function handleRecordStop() {
+            const mimeType = mediaRecorder?.mimeType || getFallbackMimeType(addClass)
+            const hasData = chunks.length > 0
+
+            if (hasData && actionAfterStop !== "reset") {
+                const blob = new Blob(chunks, {type: mimeType})
+                saveLastBlob(blob)
+                addRecordPreview(blob, mimeType)
+                addButton.disabled = false
+            }
+
+            if (actionAfterStop === "reset") {
+                clearCurrentRecordData()
+            }
+
+            resetRecordPanel()
+            deleteRecorder()
+            actionAfterStop = null
+        }
+
+        function getSupportedMimeType() {
+            const types = isAudio
+                ? [
+                    "audio/weba;codecs=opus",
+                    "audio/weba",
+                    "audio/ogg;codecs=opus",
+                    "audio/ogg"
+                ]
+                : [
+                    "video/webm;codecs=vp9,opus",
+                    "video/webm;codecs=vp8,opus",
+                    "video/webm"
+                ];
+
+            return types.find((type) => MediaRecorder.isTypeSupported(type)) || "";
+        }
+
+        function getFallbackMimeType(kind) {
+            return kind === "video" ? "video/webm" : "audio/weba"
+        }
+
+        function deleteRecorder() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop())
+            }
+            stream = null
+            mediaRecorder = null
+        }
+
+        function removeRecordPreview() {
+            recordDisplay.classList.remove("play")
+            lastRecordedBlob = null
+            lastRecordedUrl = null
+        }
+
+        recordDisplay.addEventListener("animationend", () => {
+            recordDisplay.classList.remove("updated")
+        })
+
+        function saveLastBlob(blob) {
+            if (lastRecordedUrl) {
+                URL.revokeObjectURL(lastRecordedUrl)
+            }
+
+            lastRecordedBlob = blob
+            lastRecordedUrl = URL.createObjectURL(blob)
+        }
+
+        async function createRecorder() {
+            stream = await navigator.mediaDevices.getUserMedia(
+                isAudio
+                    ? {audio: true}
+                    : {video: {facingMode: "environment"}, audio: true}
+            )
+
+            const mimeType = getSupportedMimeType()
+            const options = mimeType ? {mimeType} : {}
+
+            mediaRecorder = new MediaRecorder(stream, options)
+
+            mediaRecorder.start()
+        }
+
+        function clearCurrentRecordData() {
+            chunks = []
+        }
+
+        function getExtensionFromBlob(blob) {
+            const mimeType = blob.type.split(";")[0]
+
+            const mimeToExt = {
+                "audio/weba": "weba",
+                "video/webm": "webm",
+                "audio/ogg": "ogg",
+                "video/ogg": "ogv",
+                "audio/mpeg": "mp3",
+                "video/mp4": "mp4",
+                "audio/mp4": "m4a",
+                "audio/wav": "wav"
+            }
+
+            return mimeToExt[mimeType] || "bin"
+        }
+
+        recordButton.addEventListener("click", () => {
+            if (!canChange) {
+                cantChange()
+                return
+            }
+
+            if (recordButton.classList.contains("play")) {
+                startRecord()
+            } else {
+                stopRecord()
+            }
+        })
+
+        againButton.addEventListener("click", () => {
+            if (againButton.classList.contains("rotate")) return
+
+            againButton.classList.add("rotate")
+
+            actionAfterStop = "reset"
+
+            removeRecordPreview()
+            stopRecorder()
+            resetRecordPanel()
+            clearPreview()
+            clearCurrentRecordData()
+        })
+
+        againButton.addEventListener("animationend", () => {
+            againButton.classList.remove("rotate")
+        })
+
+        addButton.addEventListener("click", async () => {
+            if (!canChange) {
+                cantChange()
+                return
+            }
+
+            if (addButton.classList.contains("bad-clicked") || addButton.classList.contains("clicked")) return
+
+            if (lastRecordedBlob === null || !recordButton.classList.contains("play")) {
+                addButton.classList.add("bad-clicked")
+            } else {
+                addButton.classList.add("clicked")
+
+                const time = new Date()
+
+                const year = time.getFullYear()
+                const month = time.getMonth()
+                const date = time.getDate()
+                const hour = time.getHours()
+                const minutes = time.getMinutes()
+
+                const name = `${mechanic} ${addZero(hour)}:${addZero(minutes)} ${addZero(date)}.${addZero(month)}.${year.toString().slice(2)}`
+                const extension = getExtensionFromBlob(lastRecordedBlob)
+                const fileName = `${name}.${extension}`
+
+                const file = new File(
+                    [lastRecordedBlob],
+                    `${fileName}`,
+                    {type: lastRecordedBlob.type || "application/octet-stream"}
+                )
+
+                await fileSaveAdd([file], [file])
+                fileSaveRender()
+
+                removeRecordPreview()
+                stopRecorder()
+                resetRecordPanel()
+                clearPreview()
+                clearCurrentRecordData()
+
+                body.removeChild(pinFilesCellWrapper)
+            }
+        })
+
+        addButton.addEventListener("animationend", () => {
+            addButton.classList.remove("bad-clicked")
+            addButton.classList.remove("clicked")
+        })
+
+        function resetRecordPanel() {
+            timer.stop()
+            resetTimeCounter()
+
+            recordButton.classList.add("play")
+        }
+
+        function addTimeCounter() {
+            if (timeCounterSeconds.textContent === "59") {
+                timeCounterSeconds.textContent = "00"
+                timeCounterMinutes.textContent = addZero(Number(timeCounterMinutes.textContent) + 1)
+            } else {
+                timeCounterSeconds.textContent = addZero(Number(timeCounterSeconds.textContent) + 1)
+            }
+        }
+
+        function resetTimeCounter() {
+            timeCounterMinutes.textContent = "00"
+            timeCounterSeconds.textContent = "00"
+        }
+
+        function addZero(num) {
+            const string = num.toString()
+            if (string.length === 1) return "0" + string
+            return string
+        }
+    } else {
+        pinFilesCellFooter.classList.add("no-buttons")
+        addRecordPreview(appendFile)
+    }
+
+    function clearPreview() {
+            const currentMedia = recordDisplay.querySelector(addClass)
+
+            if (currentMedia) {
+                recordDisplay.removeChild(currentMedia)
+            }
+
+            if (currentMedia?.dataset.objectUrl) {
+                URL.revokeObjectURL(currentMedia.dataset.objectUrl)
+            }
+        }
+
+    function addRecordPreview(blob) {
+        if (recordDisplay.classList.contains("play")) {
+            const oldElement = recordDisplay.querySelector(addClass)
+
+            if (oldElement) {
+                recordDisplay.removeChild(oldElement)
+
+                const oldUrl = oldElement?.dataset.objectUrl
+                if (oldUrl) {
+                    URL.revokeObjectURL(oldUrl)
+                }
+            }
+
+            const mediaUrl = URL.createObjectURL(blob)
+
+            recordDisplay.classList.remove("updated")
+            recordDisplay.classList.add("updated")
+
+            const mediaElement = document.createElement(addClass)
+
+            if (mediaElement) {
+                mediaElement.src = mediaUrl
+                mediaElement.dataset.objectUrl = mediaUrl
+                mediaElement.controls = true
+                mediaElement.preload = "metadata"
+                mediaElement.load()
+            } else {
+                clearPreview()
+            }
+
+            recordDisplay.append(mediaElement)
+        } else {
+            recordDisplay.classList.add("play")
+
+            const mediaUrl = URL.createObjectURL(blob)
+            let mediaElement
+
+            mediaElement = document.createElement(addClass)
+            mediaElement.controls = true
+            mediaElement.playsInline = true
+
+            mediaElement.src = mediaUrl
+            mediaElement.preload = "metadata"
+            mediaElement.dataset.objectUrl = mediaUrl
+            mediaElement.load()
+
+            clearPreview()
+            recordDisplay.append(mediaElement)
+        }
+    }
+
+    function stopRecorder() {
+            if (mediaRecorder && mediaRecorder.state !== "inactive") {
+                mediaRecorder.stop()
+
+                deleteRecorder()
+
+                isRecordActive.classList.remove("active")
+            }
+        }
+
+    pinFilesCellEscape.addEventListener("click", () => {
+        body.removeChild(pinFilesCellWrapper)
+        stopRecorder()
+        clearCurrentRecordData()
+    })
+
+    pinFilesCellWrapper.append(pinFilesCell)
+    body.append(pinFilesCellWrapper)
+}
+
+function constructFile(index, realFile) {
+    const file = document.createElement("div")
+    file.className = "file"
+    file.dataset.index = index
+    file.dataset.uuid = realFile.uuid
+    file.dataset.identicalStr = realFile.identicalStr
+
+    const fileIcon = constructFileIcon(realFile)
+
+    const fileInfo = document.createElement("div")
+    fileInfo.className = "file-info"
+
+    const fileName = document.createElement("span")
+    fileName.className = "file-name"
+    fileName.textContent = getFileName(realFile)
+
+    const fileAddInfo = document.createElement("div")
+    fileAddInfo.className = "file-add-info"
+
+    const extension = getFileExtension(realFile).toUpperCase()
+
+    const fileExtension = document.createElement("span")
+    fileExtension.className = "file-extension"
+    fileExtension.textContent = extension
+
+    // const fileWeight = document.createElement("span")
+    // fileWeight.className = "file-weight"
+    // fileWeight.innerHTML = constructFileSize(realFile)
+
+    fileAddInfo.append(fileExtension) // fileWeight
+    fileInfo.append(fileName, fileAddInfo)
+
+    file.append(fileIcon)
+
+    if (realFile.type) {
+        file.style.gridTemplateColumns = "min-content min-content 1fr"
+        file.append(constructFileTypeIcon(realFile.type))
+    }
+
+    file.append(fileInfo)
+
+    if (EXTENSIONS.audio.includes(extension.toLowerCase()) || EXTENSIONS.video.includes(extension.toLowerCase())) {
+        file.dataset.playable = true
+    } else {
+        file.dataset.playable = false
+    }
+
+    return file
+}
+
+async function uploadFiles(files, type, objectData) {
+    try {
+        const formData = new FormData()
+
+        formData.append("zn_number", znNumber)
+        formData.append("type", type)
+        formData.append("mechanic", mechanic)
+        formData.append("post", post)
+
+        if (objectData && objectData.uuid) {
+            formData.append("identical_str", objectData.uuid)
+        } else {
+            formData.append("identical_str", null)
+        }
+
+        for (const file of files) {
+            formData.append("files", file, file.name)
+        }
+
+        const response = await fetch(`${API_PATH}/files/create`, {
+            method: "POST",
+            credentials: "include",
+            body: formData,
+            headers: {
+                'X-Client-ID': MY_UUID,
+                'X-Change-UUID': generateUUIDv7(),
+            },
+        })
+
+        if (!response.ok) {
+            console.error(response.status, await response.json())
+            return false
+        }
+
+        return await response.json()
+
+    } catch (e) {
+        console.error(`Upload file Error: ${e}`)
+        createNotification("error", "Ошибка отправки данных")
+    }
+}
+
+function getFileName(file) {
+    const dotIndex = file.userName.lastIndexOf('.')
+    if (dotIndex <= 0) return file.userName
+    return file.userName.slice(0, dotIndex)
+}
+
+function getFileExtension(file) {
+    const dotIndex = file.userName.lastIndexOf('.')
+    if (dotIndex <= 0) return '?'
+    return file.userName.slice(dotIndex + 1).toLowerCase()
+}
+
+function constructFileSize(file) {
+    const bytes = file.size
+
+    if (!Number.isFinite(bytes) || bytes < 0) return "0 Б"
+
+    const units = ["Б", "КБ", "МБ", "ГБ", "ТБ"]
+    let value = bytes
+    let unitIndex = 0
+
+    while (value >= 1024 && unitIndex < units.length - 1) {
+        value /= 1024
+        unitIndex++
+    }
+
+    const formatted = value >= 10
+        ? Math.round(value)
+        : Number(value.toFixed(1))
+
+    return `${formatted} ${units[unitIndex]}`
+}
+
+function constructFileIcon(file) {
+    const icon = document.createElement("div")
+    const extension = getFileExtension(file)
+
+    icon.className = "file-icon"
+
+    if (EXTENSIONS.document.includes(extension)) {
+        icon.innerHTML = SVG.document
+    } else if (EXTENSIONS.picture.includes(extension)) {
+        icon.innerHTML = SVG.picture
+    } else if (EXTENSIONS.video.includes(extension)) {
+        icon.innerHTML = SVG.video
+    } else if (EXTENSIONS.audio.includes(extension)) {
+        icon.innerHTML = SVG.audio
+    } else if (EXTENSIONS.archive.includes(extension)) {
+        icon.innerHTML = SVG.archive
+    } else {
+        icon.innerHTML = SVG.document
+    }
+
+    return icon
+}
+
+function constructFileTypeIcon(type) {
+    const typeIcon = document.createElement("div")
+    typeIcon.className = "file-type-icon"
+
+    switch (type) {
+        case "zn":
+            typeIcon.innerHTML = SVG.zn
+            break
+        case "rec":
+            typeIcon.innerHTML = SVG.rec
+            break
+        case "jobs":
+            typeIcon.innerHTML = SVG.job
+            break
+        case "parts":
+            typeIcon.innerHTML = SVG.part
+            break
+    }
+
+    return typeIcon
 }

@@ -40,7 +40,18 @@ async function start() {
         return
     }
 
-    document.querySelector(".test").append(constructNumInput(null, {tenth: true}))
+    const test = document.querySelector(".test")
+    test.style.display = 'flex'
+    test.style.gap = "var(--space-4)"
+
+    test.append(
+        constructNumInput(null, {
+            type: "float",
+            tenth: [true, true],
+            max: 50,
+            basic: 0.5,
+        } ),
+    )
 
     await init()
 }
@@ -110,22 +121,28 @@ function constructDoubleButton() {
 }
 
 
+function getInt(num) {
+    return Math.floor(num)
+}
+
+function getFloat(num) {
+    return (Math.round(num * 100) - Math.floor(num) * 100) % 100
+}
+
+
 function constructNumInput(
     value = null,
     {
         min = 0,
         max = Infinity,
-        type = "float", // integer, float, range
-        tenth = false,
+        type = "integer", // integer, float
+        tenth = [],
+        basic = null
     }) {
     if (
         !(
             type === "float"
             || type === "integer"
-            || (
-                type.length === 2
-                && type[0] === "float" || type[0] === "integer"
-                && type[1] === "float" || type[1] === "integer")
         )
     ) {
         throw Error("Wrong NumInput type")
@@ -143,6 +160,14 @@ function constructNumInput(
 
     numInputValue.append(numInputValueText)
     numInput.append(numInputValue)
+
+    function getTenth(id) {
+        return tenth[id] === undefined || tenth[id] === null ? false : tenth[id]
+    }
+
+    function getBasic() {
+        return basic === undefined || basic === null ? min : basic
+    }
 
     function constructPanel() {
         const numInputPanel = document.createElement("div")
@@ -162,18 +187,119 @@ function constructNumInput(
         numInputPanelClose.addEventListener("click", closeNumInput)
         numInputPanelApply.addEventListener("click", apply)
 
-        numInputPanelBody.append(
-            numInputPanelClose,
-            constructInteger(
-                tenth,
+        numInputPanelBody.append(numInputPanelClose, numInputPanelApply)
+
+        if (type === "integer") {
+            const numInteger = constructInteger(
+                getTenth(0),
                 numInputValueText.textContent !== "?"
                     ? numInputValueText.textContent
-                    : min,
+                    : getBasic(),
                 min,
                 max
-            ),
-            numInputPanelApply,
-        )
+            )
+
+            numInputPanelBody.append(
+                numInteger
+            )
+
+            numInteger.addEventListener("click", (event) => {
+                const arrow = event.target.closest(".num-arrow")
+                if (!arrow) return
+
+                const value = arrow.classList.contains("tenth") ? 10 : 1
+                const operation = arrow.classList.contains("add")
+                const check = operation
+                    ? numInteger.get() !== max
+                    : numInteger.get() !== min
+
+                if (!check) {
+                    if (!arrow.classList.contains("bad-click")) {
+                        arrow.classList.add("bad-click")
+                        arrow.addEventListener("animationend", () => {
+                            arrow.classList.remove("bad-click")
+                        }, { once: true })
+                    }
+                    return
+                }
+
+                numInteger.set(
+                    operation
+                        ? Math.min(numInteger.get() + value, max)
+                        : Math.max(numInteger.get() - value, min)
+                )
+            })
+
+            numInput.apply = () => {
+                return numInteger.get().toString()
+            }
+
+        } else if (type === "float") {
+            const dot = document.createElement("div")
+            dot.className = 'num-input-dot'
+
+            const currentValue = numInputValueText.textContent !== "?"
+                ? Number(numInputValueText.textContent)
+                : getBasic()
+
+            const intNumInput = constructInteger(
+                getTenth(0),
+                getInt(currentValue)
+            )
+            intNumInput.classList.add("int")
+
+            const floatNumInput = constructInteger(
+                getTenth(1),
+                getFloat(currentValue)
+            )
+            intNumInput.classList.add("float")
+
+            numInputPanelBody.append(
+                intNumInput,
+                dot,
+                floatNumInput,
+            )
+
+            function getCurrent() {
+                return intNumInput.get() + floatNumInput.get() * 0.01
+            }
+
+            numInputPanelBody.addEventListener("click", (event) => {
+                const arrow = event.target.closest(".num-arrow")
+                if (!arrow) return
+
+                const multiplier = arrow.closest(".num-integer").classList.contains("int") ? 1 : 0.01
+                const value = arrow.classList.contains("tenth") ? 10 : 1
+                const operation = arrow.classList.contains("add")
+
+                const currentValue = getCurrent()
+
+                const check = operation
+                    ? currentValue !== max
+                    : currentValue !== min
+
+                if (!check) {
+                    if (!arrow.classList.contains("bad-click")) {
+                        arrow.classList.add("bad-click")
+                        arrow.addEventListener("animationend", () => {
+                            arrow.classList.remove("bad-click")
+                        }, { once: true })
+                    }
+                    return
+                }
+
+                const newValue = operation
+                    ? Math.min(currentValue + value * multiplier, max)
+                    : Math.max(currentValue - value * multiplier, min)
+
+                intNumInput.set(getInt(newValue))
+                floatNumInput.set(getFloat(newValue))
+            })
+
+            numInput.apply = () => {
+                return getCurrent()
+            }
+        }
 
         numInputPanel.append(numInputPanelBody)
 
@@ -224,14 +350,14 @@ function constructNumInput(
     }
 
     function apply() {
-        numInputValueText.textContent = numInput.querySelector(".num-field-value").textContent
+        numInputValueText.textContent = numInput.apply()
         closeNumInput()
     }
 
     return numInput
 }
 
-function constructInteger(tenth, basic, min, max) {
+function constructInteger(tenth, basic) {
     const numInteger= document.createElement("div")
     numInteger.className = "num-integer"
 
@@ -245,31 +371,8 @@ function constructInteger(tenth, basic, min, max) {
     if (tenth) numInteger.append(constructNumArrow(false, true))
     numInteger.append(constructNumArrow(false, false))
 
-    numInteger.addEventListener("click", (event) => {
-        const arrow = event.target.closest(".num-arrow")
-
-        if (!arrow) return
-
-        const value = arrow.classList.contains("tenth") ? 10 : 1
-        const operation = arrow.classList.contains("add")
-        const check = operation
-            ? field.get() + value <= max
-            : field.get() - value >= min
-
-        if (!check) {
-            arrow.classList.add("bad-click")
-            arrow.addEventListener("animationend", () => {
-                arrow.classList.remove("bad-click")
-            }, { once: true })
-            return
-        }
-
-        field.set(
-            operation
-                ? field.get() + value
-                : field.get() - value
-        )
-    })
+    numInteger.get = field.get
+    numInteger.set = field.set
 
     return numInteger
 }
