@@ -106,11 +106,9 @@ async def _get_zn_items_changes(
         )
     )
 
-    async with session.begin():
-        await session.connection(execution_options={"isolation_level": "SERIALIZABLE"})
-
-        done_changes_raw = (await session.execute(done_changes_stmt)).all()
-        main_changes_raw = (await session.execute(main_changes_stmt)).all()
+    done_changes_raw = (await session.execute(done_changes_stmt)).all()
+    main_changes_raw = (await session.execute(main_changes_stmt)).all()
+    await session.commit()
 
     done_changes = []
 

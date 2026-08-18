@@ -49,6 +49,7 @@ async def _get_first_page_items(
 
     result = await session.execute(stmt)
     info = result.all()
+    await session.commit()
 
     data = {
         "data": [],
@@ -106,6 +107,7 @@ async def _get_first_page_items_changes(
 
     result = await session.execute(stmt)
     rows = result.all()
+    await session.commit()
 
     last_change_uuid, data = format_change_type_rows(rows, primary_key)
     return {"data": data, "last_change_uuid": last_change_uuid}
@@ -118,6 +120,7 @@ async def get_current_mechanics_stage(
 
     result = await session.execute(stmt)
     stage = result.scalar_one_or_none()
+    await session.commit()
 
     return stage if stage is not None else 0
 
@@ -129,6 +132,7 @@ async def get_current_main_posts_stage(
 
     result = await session.execute(stmt)
     stage = result.scalar_one_or_none()
+    await session.commit()
 
     return stage if stage is not None else 0
 

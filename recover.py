@@ -13,6 +13,7 @@ from crud.real_info import (
     get_posts_changes,
     get_mechanics_changes,
     get_zns_changes_by_post,
+    get_tasks_changes,
 )
 
 
@@ -131,3 +132,38 @@ class Recover:
         )
 
         return answer
+
+    @staticmethod
+    async def fourth(
+            session: AsyncSession,
+            last_uuids: dict[str, UUID | None],
+            client_id: UUID,
+            add_data: dict[str, Any],
+    ):
+        to_name = add_data["to_name"]
+
+        if last_uuids is None: return {}
+
+        tasks = last_uuids.get("tasks", None)
+
+        answer = {}
+
+        if tasks is None: tasks = Names.MIN_UUID7
+
+        answer["tasks"] = await get_tasks_changes(
+            session=session,
+            to_name=to_name,
+            last_uuid=tasks,
+            client_id=client_id,
+        )
+
+        return answer
+
+    @staticmethod
+    async def fifth(
+            session: AsyncSession,
+            last_uuids: dict[str, UUID | None],
+            client_id: UUID,
+            add_data: dict[str, Any],
+    ):
+        pass

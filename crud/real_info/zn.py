@@ -140,12 +140,10 @@ async def get_zns_changes_by_post(
         )
     )
 
-    async with session.begin():
-        await session.connection(execution_options={"isolation_level": "SERIALIZABLE"})
-
-        car_changes_raw = (await session.execute(car_changes_stmt)).all()
-        zn_changes_raw = (await session.execute(zn_changes_stmt)).all()
-        posts_changes_raw = (await session.execute(posts_changes_stmt)).all()
+    car_changes_raw = (await session.execute(car_changes_stmt)).all()
+    zn_changes_raw = (await session.execute(zn_changes_stmt)).all()
+    posts_changes_raw = (await session.execute(posts_changes_stmt)).all()
+    await session.commit()
 
     suggest_uuid1, car_changes = format_change_type_rows(car_changes_raw, "vin")
     suggest_uuid2, zn_changes = format_change_type_rows(zn_changes_raw, "number")
@@ -215,6 +213,7 @@ async def get_zn(
 
     result = await session.execute(stmt)
     data = result.first()
+    await session.commit()
 
     if data is None or data.ZN.is_alive is False:
         return None
@@ -260,11 +259,10 @@ async def get_zn_changes(
         )
     )
 
-    async with session.begin():
-        await session.connection(execution_options={"isolation_level": "SERIALIZABLE"})
+    car_changes_raw = (await session.execute(car_changes_stmt)).all()
+    zn_changes_raw = (await session.execute(zn_changes_stmt)).all()
 
-        car_changes_raw = (await session.execute(car_changes_stmt)).all()
-        zn_changes_raw = (await session.execute(zn_changes_stmt)).all()
+    await session.commit()
 
     suggest_uuid1, car_changes = format_change_type_rows(car_changes_raw, "vin")
     suggest_uuid2, zn_changes = format_change_type_rows(zn_changes_raw, "number")
@@ -288,6 +286,7 @@ async def get_current_zn_stage(
 
     result = await session.execute(stmt)
     stage = result.scalar_one_or_none()
+    await session.commit()
 
     return stage if stage is not None else 0
 

@@ -68,6 +68,7 @@ async def get_zn_status_changes(
 
     result = await session.execute(stmt)
     data = result.first()
+    await session.commit()
 
     if data is None or data[0] is None:
         return {"status": None, "last_change_uuid": last_uuid}

@@ -85,8 +85,8 @@ async def find_objects(
         stmt = stmt.limit(limit)
 
     result = await session.execute(stmt)
-
     answer = result.scalars().all()
+    await session.commit()
 
     if not answer:
         return None
@@ -215,6 +215,7 @@ async def has_files(
 
     result = await session.execute(stmt)
     answer = result.scalar()
+    await session.commit()
 
     return answer
 
@@ -245,6 +246,7 @@ async def kill_old_in_model(
 
     result = await session.execute(stmt)
     answer = result.all()
+    await session.commit()
 
     return answer
 

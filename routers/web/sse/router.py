@@ -22,11 +22,15 @@ class ManagerType(str, Enum):
     FIRST_PAGE = "first_page"
     SECOND_PAGE = "second_page"
     THIRD_PAGE = "third_page"
+    FOURTH_PAGE = "fourth_page"
+    FIFTH_PAGE = "fifth_page"
 
 data_dict: dict[str, tuple[SSEManager, Any]] = {
     ManagerType.FIRST_PAGE: (first_page_manager, Recover.first),
     ManagerType.SECOND_PAGE: (second_page_manager, Recover.second),
     ManagerType.THIRD_PAGE: (third_page_manager, Recover.third),
+    ManagerType.FOURTH_PAGE: (fourth_page_manager, Recover.fourth),
+    ManagerType.FIFTH_PAGE: (fifth_page_manager, Recover.fifth),
 }
 
 subscriptions: dict[UUID, tuple[SSEManager, Any]] = {}

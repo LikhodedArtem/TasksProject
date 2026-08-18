@@ -90,7 +90,7 @@ const EXTENSIONS = {
     archive: ['zip', 'rar', '7z', 'tar', 'gz', 'bz', 'bz2', 'arc']
 }
 
-const CLOSE_SECONDS = 30
+const CLOSE_SECONDS = 10
 
 let sseSource = null
 
@@ -611,15 +611,17 @@ function initPackagesEvents() {
         })
 
         packageP.addEventListener("click", async (event) => {
-            const autoClose = event.target.closest(".auto-close .checkbox")
+            const pinPackage = event.target.closest(".pin .pin-package")
             const finDoneAll = event.target.closest(".select-all .checkbox")
 
-            if (autoClose !== null) {
-                if (!autoClose.classList.contains("yes")) {
-                    yesCheckbox(autoClose)
-                    createCloseTimer()
+            if (pinPackage !== null) {
+                if (pinPackage.classList.contains("clicked")) {
+                    pinPackage.classList.remove("clicked")
+                    if (packageP.classList.contains("opened")) {
+                        closePackage()
+                    }
                 } else {
-                    noCheckbox(autoClose)
+                    pinPackage.classList.add("clicked")
                     clearTimeout(closeTimer)
                 }
             } else if (finDoneAll !== null) {
@@ -673,7 +675,7 @@ function initPackagesEvents() {
                     }
                 }
             } else {
-                const findAutoClose = packageP.querySelector(".auto-close .checkbox")
+                const findPinPackage = packageP.querySelector(".pin .pin-package")
 
                 if (valueWrapper.classList.contains("opened")) {
                     closePackage()
@@ -681,7 +683,7 @@ function initPackagesEvents() {
                 } else {
                     openPackage()
 
-                    if (findAutoClose !== null && findAutoClose.classList.contains("yes")) {
+                    if (findPinPackage !== null && !findPinPackage.classList.contains("clicked")) {
                         createCloseTimer()
                     }
                 }
@@ -2403,7 +2405,7 @@ async function initSSE() {
 
         if (type === "zn") {
             pinFiles = headerPinFiles
-            znHasFiles = has_files
+            znHasOwnFiles = has_files
         } else if (type === "rec") {
             pinFiles = recPinFiles
         } else {

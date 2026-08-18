@@ -8,6 +8,7 @@ from .part import PartChange
 from .post import PostChange
 from .status import StatusChange
 from .zn import ZNChange
+from .task import TaskChange
 
 
 __all__ = [
@@ -21,4 +22,5 @@ __all__ = [
     "PostChange",
     "StatusChange",
     "ZNChange",
+    "TaskChange",
 ]

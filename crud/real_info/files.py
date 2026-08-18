@@ -31,11 +31,10 @@ async def get_files(
         select(func.max(FileChange.change_uuid))
     )
 
-    async with session.begin():
-        await session.connection(execution_options={"isolation_level": "SERIALIZABLE"})
+    last_change_uuid = (await session.execute(last_change_uuid_stmt)).scalar()
+    files = (await session.execute(files_stmt)).scalars().all()
 
-        last_change_uuid = (await session.execute(last_change_uuid_stmt)).scalar()
-        files = (await session.execute(files_stmt)).scalars().all()
+    await session.commit()
 
     data = [file.as_dict() for file in files]
 

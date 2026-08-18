@@ -89,7 +89,6 @@ $notificationAddTextElement.className = "notification-text-add"
 const $notificationClose = document.createElement("button")
 $notificationClose.className = "notification-close"
 $notificationClose.innerHTML = SVG.x
-// Тест
 $notificationClose.style.display = "none"
 
 $notificationText.append($notificationMainTextElement, $notificationAddTextElement)
@@ -824,7 +823,7 @@ class SmartSSESource {
         for (const [key, value] of Object.entries(data)) {
             if (this._recoverFuncs[key] !== undefined && value !== null && (!value.data || value.data.length !== 0)) {
                 if (value["last_change_uuid"] !== "skip") this._lastIDs[key] = value["last_change_uuid"]
-                // delete value["change_uuid"]
+                // delete value["last_change_uuid"]
 
                 try {
                     // console.log(`Event ${key}:`, value)

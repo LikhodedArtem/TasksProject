@@ -345,12 +345,6 @@
         }
     }
 
-    .right-panel.auto-close::before {
-        content: "Автозакрытие";
-        font-size: 0.7rem;
-        font-weight: 400;
-    }
-
     .right-panel.select-all span {
         content: "Выбрать всё";
         font-size: 0.7rem;
@@ -1452,6 +1446,63 @@
         font-size: 0.8rem !important;
         margin-bottom: 0.5rem;
     }
+}
+
+.pin-package {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    height: 100%;
+    aspect-ratio: 1 / 1;
+    padding: var(--space-1);
+    background: linear-gradient(-45deg, var(--color-primary), var(--color-primary-gradient));
+
+    position: relative;
+    border: none;
+    border-radius: var(--space-3);
+    cursor: pointer;
+
+    box-shadow: .3rem .3rem .5rem color-mix(var(--color-text-contrast) 20%, transparent);
+
+    transition: var(--transition-fast);
+    filter: saturate(0);
+
+    svg {
+        height: 80%;
+        aspect-ratio: 1 / 1;
+        transition: var(--transition-fast);
+        color: var(--color-bg);
+    }
+}
+
+.pin-package::after {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    border-radius: inherit;
+
+    box-shadow:
+        inset .5rem .5rem .4rem color-mix(var(--color-text) 20%, transparent),
+        inset -.3rem -.3rem .4rem color-mix(var(--color-bg) 20%, transparent);
+
+    opacity: 0;
+    transition: opacity 0.1s ease;
+}
+
+
+.pin-package.clicked {
+    transform: translateY(0.1rem);
+    box-shadow: 0 0 0 transparent;
+    filter: saturate(1);
+
+    svg {
+        color: var(--color-bg);
+    }
+}
+
+.pin-package.clicked::after {
+    opacity: 1;
 }
 
 

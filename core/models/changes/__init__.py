@@ -14,4 +14,5 @@ __all__ = [
     "PostChange",
     "StatusChange",
     "ZNChange",
+    "TaskChange",
 ]

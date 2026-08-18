@@ -111,7 +111,7 @@ class SSEManager:
 
     async def broadcast(
             self,
-            data: dict[str, Any],
+            data: dict | list,
             event: str,
             broadcast_event: str,
             add_info: Optional[str] = None,
