@@ -6,3 +6,4 @@ class FileType(str, Enum):
     REC = "rec"
     JOBS = "jobs"
     PARTS = "parts"
+    TASKS = "tasks"

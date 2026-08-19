@@ -1,3 +1,44 @@
+class RecurringTimer {
+    constructor(callback, delay) {
+        this.callback = callback
+        this.delay = delay
+        this.remaining = delay
+        this.timerId = null
+        this.startTime = null
+        this.running = false
+    }
+
+    resume() {
+        if (this.running) return
+
+        this.running = true
+        this.startTime = performance.now();
+
+        this.timerId = setTimeout(() => {
+            this.running = false
+            this.remaining = this.delay
+            this.callback()
+            this.resume()
+        }, this.remaining)
+    }
+
+    pause() {
+        if (!this.running) return
+
+        clearTimeout(this.timerId)
+        this.remaining -= performance.now() - this.startTime
+        this.running = false
+    }
+
+    stop() {
+        clearTimeout(this.timerId)
+        this.timerId = null
+        this.remaining = this.delay
+        this.running = false
+    }
+}
+
+
 const MY_UUID = crypto.randomUUID()
 const generateUUIDv7 = (() => {
     let lastTimestamp = -1;
@@ -68,6 +109,14 @@ const SVG = {
     job: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 5.5a5.5 5.5 0 0 1-6.7 5.4L7.2 19.3a2.5 2.5 0 0 1-3.5-3.5l8.2-8.2a5.5 5.5 0 0 1 7.3-6.4l-4 4 .5 2.2 2.2.5 4-4c.1.5.1 1.1.1 1.6Z"/><path d="M5.5 17.5h.01"/></svg>',
     part: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.2 3.2h3.6c.5 0 .9.3 1 .8l.3 1.5c.6.2 1.1.5 1.6.9l1.5-.5c.5-.2 1 0 1.2.5l1.8 3.1c.3.4.2 1-.2 1.3l-1.2 1.1v1.8l1.2 1.1c.4.3.5.9.2 1.3l-1.8 3.1c-.2.5-.7.7-1.2.5l-1.5-.5c-.5.4-1 .7-1.6.9l-.3 1.5c-.1.5-.5.8-1 .8h-3.6c-.5 0-.9-.3-1-.8l-.3-1.5c-.6-.2-1.1-.5-1.6-.9l-1.5.5c-.5.2-1 0-1.2-.5l-1.8-3.1c-.3-.4-.2-1 .2-1.3l1.2-1.1v-1.8L3 10.8c-.4-.3-.5-.9-.2-1.3l1.8-3.1c.2-.5.7-.7 1.2-.5l1.5.5c.5-.4 1-.7 1.6-.9L9.2 4c.1-.5.5-.8 1-.8Z"/><circle cx="12" cy="12.8" r="3"/></svg>',
     rec: '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-8l-4 4v-4H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><path d="m8 11 2.5 2.5L16 8"/></svg>',
+}
+
+const EXTENSIONS = {
+    document: ['txt', 'doc', 'docx', 'pdf', 'rtf', 'odt'],
+    picture: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'ico', 'tiff'],
+    video: ['mp4', 'webm', 'mov', 'avi', 'mkv', 'ogv'],
+    audio: ['mp3', 'wav', 'ogg', 'aac', 'flac', 'm4a', 'weba'],
+    archive: ['zip', 'rar', '7z', 'tar', 'gz', 'bz', 'bz2', 'arc']
 }
 
 const $notification = document.createElement("div")
@@ -1029,6 +1078,7 @@ class RequestContainer {
         method,
         {
             data = null,
+            files = null,
             headers = {},
             credentials = "omit",
             timeout = 3,
@@ -1039,7 +1089,24 @@ class RequestContainer {
             rawResponse = false,
        }) {
         let body
-        if (typeof data === 'string') {
+
+        const isFormData = Array.isArray(files)
+
+        if (isFormData) {
+            const formData = new FormData()
+
+            if (data != null && typeof data === 'object') {
+                for (const [key, value] of Object.entries(data)) {
+                    formData.append(key, typeof value === 'string' ? value : JSON.stringify(value))
+                }
+            }
+
+            for (const file of files) {
+                formData.append('files', file, file.name)
+            }
+
+            body = formData
+        } else if (typeof data === 'string') {
             body = data
         } else if (data != null) {
             body = JSON.stringify(data)
@@ -1053,15 +1120,20 @@ class RequestContainer {
 
         async function fetchInvoker() {
             try {
+                const requestHeaders = {
+                    'X-Client-Id': MY_UUID,
+                    ...headers
+                }
+
+                if (!isFormData) {
+                    requestHeaders['Content-Type'] = 'application/json'
+                }
+
                 const response = await fetch(
                     `${API_PATH}/${addURL.replace(/^\/+/, "")}`,
                     {
                         method: method,
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-Client-Id': MY_UUID,
-                            ...headers
-                        },
+                        headers: requestHeaders,
                         body: body,
                         credentials: credentials,
                         signal: AbortSignal.timeout(timeout * 1000)
@@ -1370,7 +1442,7 @@ function initEscapeButton(href) {
 }
 
 
-function createPinFilesPanel(type, rowContent) {
+function createPinFilesPanel(type, rowContent, viewOnly = false, sendLaterContainer = null) {
     const pinFilesPanelWrapper = document.createElement("div")
     pinFilesPanelWrapper.classList.add("background-blur", "fast")
     pinFilesPanelWrapper.style.zIndex = 101
@@ -1392,24 +1464,46 @@ function createPinFilesPanel(type, rowContent) {
     const pinFilesPanelFooter = document.createElement("div")
     pinFilesPanelFooter.className = "pin-files-panel-footer"
 
-    const pinFilesCellUpdate = document.createElement("div")
-    pinFilesCellUpdate.className = "pin-files-cell-update active-button"
-    pinFilesCellUpdate.textContent = "Обновить"
+    pinFilesPanelHeader.append(pinFilesPanelName)
 
-    const pinFilesCellUpdateIcon = document.createElement("div")
-    pinFilesCellUpdateIcon.className = "pin-files-cell-update-icon"
-    pinFilesCellUpdateIcon.innerHTML = SVG.again
+    if (!viewOnly && !sendLaterContainer) {
+        const pinFilesCellUpdate = document.createElement("div")
+        pinFilesCellUpdate.className = "pin-files-cell-update active-button"
+        pinFilesCellUpdate.textContent = "Обновить"
 
-    const pinFilesCellFiles = constructPinFilesCell("files", type, rowContent)
+        const pinFilesCellUpdateIcon = document.createElement("div")
+        pinFilesCellUpdateIcon.className = "pin-files-cell-update-icon"
+        pinFilesCellUpdateIcon.innerHTML = SVG.again
 
-    const pinFilesCellAudio = constructPinFilesCell("audio" )
+        pinFilesCellUpdate.append(pinFilesCellUpdateIcon)
 
-    const pinFilesCellVideo = constructPinFilesCell("video")
+        pinFilesPanelHeader.append(pinFilesCellUpdate)
 
-    pinFilesCellUpdate.append(pinFilesCellUpdateIcon)
+        pinFilesCellUpdate.addEventListener("click", () => {
+            if (pinFilesCellUpdate.classList.contains("clicked")) return
 
-    pinFilesPanelHeader.append(pinFilesPanelName, pinFilesCellUpdate, pinFilesPanelEscape)
-    pinFilesPanelFooter.append(pinFilesCellFiles, pinFilesCellAudio, pinFilesCellVideo)
+            pinFilesCellUpdate.classList.add("clicked")
+            pinFilesCellUpdate.addEventListener("animationend", () => {
+                pinFilesCellUpdate.classList.remove("clicked")
+            }, { once: true })
+
+            pinFilesCellFiles.update()
+        })
+    } else {
+        pinFilesPanelEscape.style.marginLeft = "auto"
+    }
+
+    pinFilesPanelHeader.append(pinFilesPanelEscape)
+
+    const pinFilesCellFiles = constructPinFilesCell("files", type, rowContent, viewOnly, sendLaterContainer)
+    pinFilesPanelFooter.append(pinFilesCellFiles)
+
+    if (!viewOnly) {
+        const pinFilesCellAudio = constructPinFilesCell("audio")
+        const pinFilesCellVideo = constructPinFilesCell("video")
+
+        pinFilesPanelFooter.append(pinFilesCellAudio, pinFilesCellVideo)
+    }
 
     pinFilesPanel.append(pinFilesPanelHeader, pinFilesPanelFooter)
     pinFilesPanelWrapper.append(pinFilesPanel)
@@ -1421,20 +1515,9 @@ function createPinFilesPanel(type, rowContent) {
         body.style.overflow = "auto"
         body.removeChild(pinFilesPanelWrapper)
     })
-
-    pinFilesCellUpdate.addEventListener("click", () => {
-        if (pinFilesCellUpdate.classList.contains("clicked")) return
-
-        pinFilesCellUpdate.classList.add("clicked")
-        pinFilesCellUpdate.addEventListener("animationend", () => {
-            pinFilesCellUpdate.classList.remove("clicked")
-        }, { once: true })
-
-        pinFilesCellFiles.update()
-    })
 }
 
-function constructPinFilesCell(addClass, type, rowContent) {
+function constructPinFilesCell(addClass, type, rowContent, viewOnly, sendLaterContainer) {
     if (addClass === "files") {
         const pinFilesCell = document.createElement("div")
         pinFilesCell.classList.add("pin-files-cell", addClass)
@@ -1463,10 +1546,6 @@ function constructPinFilesCell(addClass, type, rowContent) {
         closeButton.className = "close-button"
         closeButton.innerHTML = SVG.x
 
-        const deleteButton = document.createElement("button")
-        deleteButton.className = "delete-button"
-        deleteButton.innerHTML = SVG.delete
-
         const downloadButton = document.createElement("button")
         downloadButton.className = "download-button"
         downloadButton.innerHTML = SVG.download
@@ -1485,9 +1564,69 @@ function constructPinFilesCell(addClass, type, rowContent) {
         const pinFilesDownloadingLine = document.createElement("span")
         pinFilesDownloadingLine.className = "pin-files-downloading-line"
 
+        const filePanelWrapper = document.createElement("div")
+        filePanelWrapper.className = "files-panel-wrapper"
+
+        const filePanel = document.createElement("div")
+        filePanel.className = "files-panel"
+
+        let firstFlag = true
+
         pinFilesDownloading.append(pinFilesDownloadingLine)
 
-        editPanel.append(closeButton, deleteButton, downloadButton, playButton, clickedCounter)
+        editPanel.append(closeButton)
+
+        if (!viewOnly) {
+            const deleteButton = document.createElement("button")
+            deleteButton.className = "delete-button"
+            deleteButton.innerHTML = SVG.delete
+
+            deleteButton.addEventListener("click", async () => {
+                if (!canChange) {
+                    cantChange()
+                    return
+                }
+
+                if (isRemoveFiles) return true
+                isRemoveFiles = true
+
+                startDownload()
+
+                if (!sendLaterContainer) {
+                    const response = await removeFilesFromInput(findClicked(true))
+
+                    if (!response) {
+                        createNotification("error", "Ошибка отправки данных")
+                    }
+                } else {
+                    const uuids = findClicked(true)
+                    const indexes = findClicked(false)
+
+                    for (const uuid of uuids) {
+                        filesData.delete(
+                            { uuid: uuid },
+                            1
+                        )
+
+                        delete localFiles[uuid]
+                    }
+
+                    for (const index of indexes) {
+                        sendLaterContainer.pop(index)
+                    }
+                }
+
+                renderFiles()
+
+                endDownload()
+
+                isRemoveFiles = false
+            })
+
+            editPanel.append(deleteButton)
+        }
+        editPanel.append(downloadButton, playButton, clickedCounter)
+
         pinFilesCellHeader.append(editPanel, pinFilesDownloading, pinFilesCellCounter)
 
         const realInput = document.createElement("input")
@@ -1506,7 +1645,7 @@ function constructPinFilesCell(addClass, type, rowContent) {
         pinFilesCell.update = () => {
             getFiles(true)
         }
-        getFiles(type)
+        getFiles()
 
         function startDownload() {
             downloadLevel++
@@ -1524,10 +1663,25 @@ function constructPinFilesCell(addClass, type, rowContent) {
 
             startDownload()
 
-            const result = await getFilesFromBase(clear)
+            if (!sendLaterContainer) {
+                const result = await getFilesFromBase(clear)
 
-            if (!result) {
-                createNotification("error", "Файлы не были загружены")
+                if (!result) {
+                    createNotification("error", "Файлы не были загружены")
+                }
+            } else {
+                for (const file of sendLaterContainer) {
+                    const uuid = crypto.randomUUID()
+
+                    localFiles[uuid] = file
+                    filesData.create({
+                        uuid: uuid,
+                        userName: file.name,
+                    })
+                }
+
+
+                renderFiles()
             }
 
             endDownload()
@@ -1540,11 +1694,15 @@ function constructPinFilesCell(addClass, type, rowContent) {
                     zn_number: znNumber,
                 }
 
-                if (type !== "zn") {
+                if (type === "rec") {
                     info.type = type
-                    if (type !== "rec") {
-                        info.identical_str = rowContent.dataset.uuid
-                    }
+                } else if (type === "parts" || type === "jobs") {
+                    info.type = type
+                    info.identical_str = rowContent.dataset.uuid
+                } else if (type === "tasks") {
+                    info.type = type
+                    info.identical_str = rowContent.dataset.uuid
+                    delete info.zn_number
                 }
 
                 const response = await fetch(`${API_PATH}/files/get`, {
@@ -1566,11 +1724,11 @@ function constructPinFilesCell(addClass, type, rowContent) {
                     filesData.replace([])
                 }
 
+                console.log(data)
+
                 for (const file of data) {
                     filesData.create(file)
                 }
-
-                renderFiles()
 
                 renderFiles()
 
@@ -1583,25 +1741,21 @@ function constructPinFilesCell(addClass, type, rowContent) {
             }
         }
 
-        const filePanelWrapper = document.createElement("div")
-        filePanelWrapper.className = "files-panel-wrapper"
+        if (!viewOnly) {
+            const pinFilesButton = document.createElement("button")
+            pinFilesButton.className = "pin-files-button"
+            pinFilesButton.innerHTML = SVG.load
 
-        const filePanel = document.createElement("div")
-        filePanel.className = "files-panel"
+            pinFilesButton.addEventListener("click", () => {
+                if (!canChange) {
+                    cantChange()
+                    return
+                }
+                realInput.click()
+            })
 
-        const pinFilesButton = document.createElement("button")
-        pinFilesButton.className = "pin-files-button"
-        pinFilesButton.innerHTML = SVG.load
-
-        pinFilesButton.addEventListener("click", () => {
-            if (!canChange) {
-                cantChange()
-                return
-            }
-            realInput.click()
-        })
-
-        pinFilesCellFooter.append(pinFilesButton)
+            pinFilesCellFooter.append(pinFilesButton)
+        }
 
         filePanelWrapper.append(filePanel)
         pinFilesCellFooter.append(realInput, filePanelWrapper)
@@ -1625,11 +1779,26 @@ function constructPinFilesCell(addClass, type, rowContent) {
 
 			try {
 				if (forUUIDS && forUUIDS.length) {
-					const result = await updateUUIDS(forUUIDS)
-					if (!result) {
-						createNotification("error", "Ошибка отправки данных")
-					}
+                    if (!sendLaterContainer) {
+                        const result = await updateUUIDS(forUUIDS)
+                        if (!result) {
+                            createNotification("error", "Ошибка отправки данных")
+                        }
 
+
+                    } else {
+                        for (const file of forUUIDS) {
+                            const uuid = crypto.randomUUID()
+
+                            localFiles[uuid] = file
+                            filesData.create({
+                                uuid: uuid,
+                                userName: file.name,
+                            })
+
+                            sendLaterContainer.push(file)
+                        }
+                    }
                     renderFiles()
 				}
 			} finally {
@@ -1643,30 +1812,6 @@ function constructPinFilesCell(addClass, type, rowContent) {
         })
 
         let isRemoveFiles = false
-
-        deleteButton.addEventListener("click", async () => {
-            if (!canChange) {
-                cantChange()
-                return
-            }
-
-            if (isRemoveFiles) return true
-            isRemoveFiles = true
-
-            startDownload()
-
-            const response = await removeFilesFromInput(findClicked(true))
-
-            if (!response) {
-                createNotification("error", "Ошибка отправки данных")
-            }
-
-            renderFiles()
-
-            endDownload()
-
-            isRemoveFiles = false
-        })
 
         downloadButton.addEventListener(("click"), () => {
             if (!canChange) {
@@ -1761,6 +1906,8 @@ function constructPinFilesCell(addClass, type, rowContent) {
             for (let index = 0; index < currentData.length; index++) {
                 const file = currentData[index]
 
+                if (type !== "zn") file.type = undefined
+
                 filePanel.append(
                     constructFile(
                         index,
@@ -1783,6 +1930,8 @@ function constructPinFilesCell(addClass, type, rowContent) {
                 znHasOwnFiles = filesData.select({ type: "zn" }, null, 1).length !== 0
             } else if (type === "rec")  {
                 pinFiles = recPinFiles
+            } else if (type === "tasks") {
+                pinFiles = rowContent.querySelector(".pin-files")
             } else {
                 pinFiles = rowContent.querySelector(".pin-files")
 
@@ -1859,8 +2008,6 @@ function constructPinFilesCell(addClass, type, rowContent) {
                 showPlayButton()
             }
         }
-
-        let firstFlag = true
 
         function clickedCounterAdd() {
             if (firstFlag) {
@@ -2132,6 +2279,7 @@ function createRecordPanel(addClass, addButtons, appendFile, fileInfo) {
     const pinFilesCellEscape = document.createElement("button")
     pinFilesCellEscape.className = "pin-files-panel-escape"
     pinFilesCellEscape.innerHTML = SVG.x
+    pinFilesCellEscape.style.marginLeft = "auto"
 
     pinFilesCellHeader.append(pinFilesCellEscape)
 
@@ -2701,4 +2849,17 @@ function constructFileTypeIcon(type) {
     }
 
     return typeIcon
+}
+
+function hasFiles(pinFiles) {
+    if (!pinFiles.classList.contains("has-files")) {
+        pinFiles.classList.add("has-files")
+    }
+    headerPinFiles.classList.add("has-files")
+}
+
+
+
+function checkHasFiles(pinFiles) {
+    return pinFiles.classList.contains("has-files")
 }

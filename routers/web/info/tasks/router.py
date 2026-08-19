@@ -1,6 +1,7 @@
-from typing import Annotated
+from typing import Annotated, Optional
+from uuid import UUID
 
-from fastapi import APIRouter, Body, BackgroundTasks
+from fastapi import APIRouter, Body, BackgroundTasks, Form, UploadFile, File
 
 from dependencies import GetSession, GetClientID, GetChangeUUID
 
@@ -33,17 +34,21 @@ async def create_task(
         change_uuid: GetChangeUUID,
         background_tasks: BackgroundTasks,
 
-        to_name: Annotated[str, Body()],
-        value: Annotated[str, Body()],
-        post: Annotated[str, Body()],
-        mechanic: Annotated[str, Body()],
-        zn_number: Annotated[str, Body()],
-        vin: Annotated[str, Body()],
+        uuid: Annotated[UUID, Form(...)],
+        to_name: Annotated[str, Form(...)],
+        value: Annotated[str, Form(...)],
+        post: Annotated[str, Form(...)],
+        mechanic: Annotated[str, Form(...)],
+        zn_number: Annotated[str, Form(...)],
+        vin: Annotated[str, Form(...)],
+        files: Optional[list[UploadFile]] = File(default=None),
 ):
     """Создать новую задачу на определённое имя"""
     service = TasksService(session, background_tasks)
 
     await service.create(
+        uuid=uuid,
+        files=files,
         to_name=to_name,
         value=value,
         post=post,

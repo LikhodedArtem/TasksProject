@@ -27,15 +27,16 @@ UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 class FileService(BaseService):
     async def _create_file(
             self,
-            zn_number: str,
             type_: str,
-            identical_str: str | None,
             post: str,
             mechanic: str,
             destination: Path,
             file: UploadFile,
             change_uuid: UUID,
             client_id: UUID,
+            zn_number: str | None = None,
+            identical_str: str | None = None,
+            to_name: str | None = None,
     ):
         file_uuid = uuid4()
 
@@ -54,6 +55,7 @@ class FileService(BaseService):
             type=type_,
             zn_number=zn_number,
             identical_str=identical_str,
+            to_name=to_name,
             mechanic=mechanic,
             post=post,
         )
@@ -188,13 +190,15 @@ class FileService(BaseService):
 
     async def get(
             self,
-            zn_number: str,
-            type: str | None = None,
-            identical_str: str | None = None,
+            zn_number: str | None,
+            to_name: str | None,
+            type: str | None,
+            identical_str: str | None,
     ):
         return await get_files(
             session=self.session,
             zn_number=zn_number,
+            to_name=to_name,
             type=type,
             identical_str=identical_str,
         )

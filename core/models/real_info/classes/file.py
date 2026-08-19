@@ -32,10 +32,10 @@ class File(RealInfoBase, Life):
         unique=False
     )
 
-    zn_number: Mapped[str] = mapped_column(
+    zn_number: Mapped[str | None] = mapped_column(
         String,
         ForeignKey("zns.number"),
-        nullable=False,
+        nullable=True,
         unique=False
     )
 
@@ -46,6 +46,12 @@ class File(RealInfoBase, Life):
     )
 
     identical_str: Mapped[str | None] = mapped_column(
+        String,
+        nullable=True,
+        unique=False
+    )
+
+    to_name: Mapped[str | None] = mapped_column(
         String,
         nullable=True,
         unique=False

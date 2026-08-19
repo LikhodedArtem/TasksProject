@@ -3,7 +3,7 @@ from typing import Annotated, Optional
 from uuid import UUID
 
 from pydantic import Field, field_serializer
-from sqlalchemy import UUID as SQLUUID, ForeignKey, DateTime, func, String
+from sqlalchemy import UUID as SQLUUID, ForeignKey, DateTime, func, String, Boolean
 from sqlalchemy.orm import Mapped, mapped_column
 
 from ..base import ChangeBase
@@ -61,6 +61,12 @@ class TaskChange(ChangeBase, ChangeType):
         unique=False,
     )
 
+    has_files: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=True,
+        unique=False,
+    )
+
     class TaskChangeSchema(ChangeBase.BaseSchema):
         uuid: Annotated[UUID, Field(...)]
         value: Annotated[Optional[str], Field(default=None)]
@@ -69,6 +75,7 @@ class TaskChange(ChangeBase, ChangeType):
         zn_number: Annotated[Optional[str], Field(default=None, serialization_alias="znNumber")]
         vin: Annotated[Optional[str], Field(default=None)]
         created_at: Annotated[Optional[datetime], Field(default=None, serialization_alias="createdAt")]
+        has_files: Annotated[Optional[bool], Field(default=None, serialization_alias="hasFiles")]
 
         @field_serializer('uuid')
         def serialize_uuid(self, uuid: UUID, _info) -> str:

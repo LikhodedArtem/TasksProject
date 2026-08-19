@@ -5,47 +5,6 @@ let mechanic = null
 let znNumber = null
 let post = null
 
-
-class RecurringTimer {
-    constructor(callback, delay) {
-        this.callback = callback
-        this.delay = delay
-        this.remaining = delay
-        this.timerId = null
-        this.startTime = null
-        this.running = false
-    }
-
-    resume() {
-        if (this.running) return
-
-        this.running = true
-        this.startTime = performance.now();
-
-        this.timerId = setTimeout(() => {
-            this.running = false
-            this.remaining = this.delay
-            this.callback()
-            this.resume()
-        }, this.remaining)
-    }
-
-    pause() {
-        if (!this.running) return
-
-        clearTimeout(this.timerId)
-        this.remaining -= performance.now() - this.startTime
-        this.running = false
-    }
-
-    stop() {
-        clearTimeout(this.timerId)
-        this.timerId = null
-        this.remaining = this.delay
-        this.running = false
-    }
-}
-
 let canChange = false
 
 function cantChange() {
@@ -78,15 +37,6 @@ const partsData = new SmartContainer()
 
 
 let znHasOwnFiles = false
-
-
-const EXTENSIONS = {
-    document: ['txt', 'doc', 'docx', 'pdf', 'rtf', 'odt'],
-    picture: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'ico', 'tiff'],
-    video: ['mp4', 'webm', 'mov', 'avi', 'mkv', 'ogv'],
-    audio: ['mp3', 'wav', 'ogg', 'aac', 'flac', 'm4a', 'weba'],
-    archive: ['zip', 'rar', '7z', 'tar', 'gz', 'bz', 'bz2', 'arc']
-}
 
 const CLOSE_SECONDS = 10
 
@@ -148,8 +98,6 @@ async function getZnInfo() {
     )
 }
 
-
-
 function hasFiles(pinFiles) {
     if (!pinFiles.classList.contains("has-files")) {
         pinFiles.classList.add("has-files")
@@ -162,10 +110,6 @@ function hasNotFiles(pinFiles) {
         pinFiles.classList.remove("has-files")
         if (pinFiles !== headerPinFiles) updateHeaderPinFiles()
     }
-}
-
-function checkHasFiles(pinFiles) {
-    return pinFiles.classList.contains("has-files")
 }
 
 function updateHeaderPinFiles() {

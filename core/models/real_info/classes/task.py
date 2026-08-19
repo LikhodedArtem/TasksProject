@@ -3,7 +3,7 @@ from typing import Annotated
 from uuid import UUID
 
 from pydantic import Field
-from sqlalchemy import UUID as SQLUUID, ForeignKey, DateTime, func, String
+from sqlalchemy import UUID as SQLUUID, ForeignKey, DateTime, func, String, Boolean
 from sqlalchemy.orm import Mapped, mapped_column
 
 from core.models.real_info.base import RealInfoBase
@@ -62,6 +62,12 @@ class Task(RealInfoBase):
         unique=False,
     )
 
+    has_files: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        unique=False,
+    )
+
     @staticmethod
     def for_find() -> list[str]:
         return ["uuid"]
@@ -86,5 +92,6 @@ class Task(RealInfoBase):
         zn_number: Annotated[str, Field(..., serialization_alias="znNumber")]
         vin: Annotated[str, Field(...)]
         created_at: Annotated[datetime, Field(..., serialization_alias="createdAt")]
+        has_files: Annotated[bool, Field(..., serialization_alias="hasFiles")]
 
     as_dict_model = TaskSchema

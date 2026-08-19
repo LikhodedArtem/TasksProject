@@ -13,6 +13,8 @@ startRequestsCount = 1
 const createNew = document.querySelector("#createNew")
 const createNewPanelWrapper = document.querySelector(".create-new-panel-wrapper")
 const createNewPanel = createNewPanelWrapper.querySelector(".create-new-panel")
+const createNewPinFiles = createNewPanel.querySelector(".pin-files")
+const createNewPanelMain = createNewPanel.querySelector(".create-new-panel-main")
 
 const tasksList = document.querySelector(".tasks-list")
 const sendTask = createNewPanel.querySelector(".send-task")
@@ -25,8 +27,12 @@ function clearPanel() {
     textArea.value = ""
 }
 
+const createNewFilesSaver = []
 
 const tasksData = new SmartContainer()
+
+
+let canChange = true
 
 
 async function start() {
@@ -66,23 +72,29 @@ async function initStart() {
 
 
 async function initEnd() {
+    initPinFiles()
+
     clearLoading()
 }
 
 
 function addTask(
+    uuid,
     value,
     postName,
     mechanicName,
     znNumberName,
-    carVinName
+    carVinName,
+    has,
 ) {
     const newTask = constructTask(
+        uuid,
         value,
         postName,
         mechanicName,
         znNumberName,
-        carVinName
+        carVinName,
+        has,
     )
     newTask.style.height = "0"
 
@@ -90,12 +102,6 @@ function addTask(
 
     newTask.style.height = `${newTask.querySelector(".task").offsetHeight}px`
     newTask.classList.add("opened")
-
-    if (!sendTask.classList.contains("clicked"))
-        sendTask.classList.add("clicked")
-        sendTask.addEventListener("animationend", () => {
-            sendTask.classList.remove("clicked")
-        }, { once: true })
 
     clearPanel()
 }
@@ -110,11 +116,14 @@ function initCreateButton() {
 
         const getValue = textArea.value
 
+        const uuid = crypto.randomUUID()
+
         requestManager.send(
             "/info/tasks/create",
             "POST",
             {
                 data: {
+                    uuid: uuid,
                     to_name: name,
                     value: getValue,
                     post: post,
@@ -122,11 +131,24 @@ function initCreateButton() {
                     zn_number: znNumber,
                     vin: carVin,
                 },
+                files: [...createNewFilesSaver],
                 changeUUID: true,
+                anywayFunc: (data) => {
+                    console.log(data)
+                }
             }
         )
 
-        addTask(getValue, post, mechanic, znNumber, carVin)
+        addTask(uuid, getValue, post, mechanic, znNumber, carVin, createNewFilesSaver.length !== 0)
+
+        if (!sendTask.classList.contains("clicked"))
+        sendTask.classList.add("clicked")
+        sendTask.addEventListener("animationend", () => {
+            sendTask.classList.remove("clicked")
+        }, { once: true })
+
+        createNewFilesSaver.splice(0, createNewFilesSaver.length)
+        createNewPinFiles.classList.remove("has-files")
     })
 
     createNew.addEventListener("click", () => {
@@ -157,9 +179,41 @@ function initHeaderText() {
 }
 
 
-function constructTask(value, postName, mechanicName, znName, vinName) {
+function initPinFiles() {
+    createNewPinFiles.addEventListener("click", () => {
+        createPinFilesPanel("tasks", createNewPanelMain, false, createNewFilesSaver)
+    })
+
+    tasksList.addEventListener("click", (event) => {
+        const pinFiles = event.target.closest(".pin-files")
+        if (!pinFiles) return
+
+        if (!pinFiles.classList.contains("has-files")) {
+            createNotification("warning", "У этой задачи нет файлов")
+            return
+        }
+
+        createPinFilesPanel("tasks", pinFiles.closest(".task-wrapper"), true, null)
+    })
+}
+
+function hasFiles(pinFiles) {
+    if (!pinFiles.classList.contains("has-files")) {
+        pinFiles.classList.add("has-files")
+    }
+}
+
+function hasNotFiles(pinFiles) {
+    if (pinFiles.classList.contains("has-files")) {
+        pinFiles.classList.remove("has-files")
+    }
+}
+
+
+function constructTask(uuid, value, postName, mechanicName, znName, vinName, has) {
     const taskWrapper = document.createElement("div")
     taskWrapper.className = "task-wrapper"
+    taskWrapper.dataset.uuid = uuid
 
     const task = document.createElement("div")
     task.className = "task"
@@ -195,7 +249,7 @@ function constructTask(value, postName, mechanicName, znName, vinName) {
     textArea.value = value
 
     const pinFiles = document.createElement("button")
-    pinFiles.className = "pin-files"
+    pinFiles.className = `pin-files${has ? " has-files" : ""}`
     pinFiles.innerHTML = SVG.pin
 
     taskHeadContent.append(addressName)
@@ -270,11 +324,13 @@ function renderTasks() {
 
     for (const row of data) {
         const newTask = constructTask(
+            row.uuid,
             row.value,
             row.post,
             row.mechanic,
             row.znNumber,
-            row.vin
+            row.vin,
+            row.hasFiles,
         )
         newTask.style.marginBottom = "var(--space-2)"
         newTask.classList.add("opened")
@@ -296,11 +352,13 @@ async function initSSE() {
                 tasksData.replace([data, ...tasksData.data()])
 
                 addTask(
+                    data.uuid,
                     data.value,
                     data.post,
                     data.mechanic,
                     data.znNumber ? data.znNumber : data.zn_number,
                     data.vin,
+                    data.hasFiles,
                 )
             }
         }

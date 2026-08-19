@@ -25,7 +25,7 @@ async def create(
 
     zn_number: str = Form(...),
     type: str = Form(...),
-    identical_str: str | None = Form(...),
+    identical_str: str | None = Form(default=None),
     files: list[UploadFile] = FastFile(...),
     mechanic: str = Form(...),
     post: str = Form(...),
@@ -51,7 +51,8 @@ async def create(
 async def get(
         session: GetSession,
 
-        zn_number: Annotated[str, Body()],
+        zn_number: Annotated[str | None, Body()] = None,
+        to_name: Annotated[str | None, Body()] = None,
         type: Annotated[str | None, Body()] = None,
         identical_str: Annotated[str | None, Body()] = None,
 ):
@@ -62,6 +63,7 @@ async def get(
 
     return await service.get(
         zn_number=zn_number,
+        to_name=to_name,
         type=type,
         identical_str=identical_str,
     )

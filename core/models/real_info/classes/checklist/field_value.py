@@ -97,7 +97,7 @@ class ChecklistFieldValue(RealInfoBase):
     )
 
     integer_value: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    float_value: Mapped[float | None] = mapped_column(Numeric(12, 4), nullable=True)
+    numeric_value: Mapped[float | None] = mapped_column(Numeric(12, 4), nullable=True)
     boolean_value: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     string_value: Mapped[str | None] = mapped_column(String, nullable=True)
 

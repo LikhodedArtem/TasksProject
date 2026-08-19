@@ -11,15 +11,17 @@ from crud.common import build_conditions
 
 async def get_files(
     session: AsyncSession,
-    zn_number: str,
-    type: str | None = None,
-    identical_str: str | None = None,
+    zn_number: str | None,
+    to_name: str | None,
+    type: str | None,
+    identical_str: str | None,
 ):
     kwargs = {
         "is_alive": True,
-        "zn_number": zn_number,
     }
 
+    if zn_number: kwargs["zn_number"] = zn_number
+    if to_name: kwargs["to_name"] = to_name
     if type: kwargs["type"] = type
     if identical_str: kwargs["identical_str"] = identical_str
 
