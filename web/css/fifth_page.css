@@ -272,7 +272,7 @@
 
         height: min-content;
         width: min-content;
-        padding: var(--space-2);
+        padding: var(--space-4) var(--space-6) var(--space-4) var(--space-2);
         border-radius: var(--space-3);
 
         background-color: var(--color-bg-contrast);
@@ -296,8 +296,10 @@
             top: 0;
             right: 0;
 
-            width: 1.5rem;
-            height: 1.5rem;
+            width: 2rem;
+            height: 2rem;
+
+            cursor: pointer;
 
             svg {
                 height: 70%;
@@ -315,8 +317,10 @@
             bottom: .2rem;
             right: .2rem;
 
-            width: 1.5rem;
-            height: 1.5rem;
+            width: 2rem;
+            height: 2rem;
+
+            cursor: pointer;
 
             div {
                 position: relative;
@@ -447,6 +451,7 @@
     .num-field-value {
         font-weight: 500;
         color: var(--color-text);
+        user-select: none;
     }
 }
 

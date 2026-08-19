@@ -16,7 +16,7 @@ from uuid import uuid4, UUID
 
 from core.models.real_info import *
 from crud import *
-from crud.real_info import get_files
+from crud.real_info import get_files, kill_file
 from sse import *
 from utils import uuid7_generator
 
@@ -238,51 +238,21 @@ class FileService(BaseService):
             headers={"Content-Disposition": "attachment; filename=files.zip"}
         )
 
-    async def kill(
+    async def _kill_one(
             self,
-            post: str,
-            mechanic: str,
-            uuids: list[UUID],
+            uuid: UUID,
             client_id: UUID,
             change_uuid: UUID,
+            mechanic: str,
+            post: str,
     ):
-        change_uuid_gen = uuid7_generator(change_uuid)
-
-        for uuid in uuids:
-            file_change = FileChange(
-                uuid=uuid,
-                mechanic=mechanic,
-                post=post,
-                change_uuid=next(change_uuid_gen),
-                sse_uuid=client_id,
-                type="delete",
-            )
-
-            await update_objects(
-                session=self.session,
-                model=File,
-                for_find={"uuid": uuid},
-                for_update={
-                    "is_alive": False,
-                },
-                for_add=[file_change],
-            )
-
-        identical_file = await find_objects(
+        zn_number, identical_str, type, has = await kill_file(
             session=self.session,
-            model=File,
-            uuid=uuids[0],
-        )
-
-        identical_str = identical_file.identical_str
-        zn_number = identical_file.zn_number
-        type = identical_file.type
-
-        has = await has_files(
-            session=self.session,
-            identical_str=identical_str,
-            zn_number=zn_number,
-            type=type,
+            uuid=uuid,
+            client_id=client_id,
+            change_uuid=change_uuid,
+            mechanic=mechanic,
+            post=post,
         )
 
         if not has:
@@ -298,4 +268,24 @@ class FileService(BaseService):
                 add_info=zn_number,
                 id_="test",
                 author=client_id,
+            )
+
+
+    async def kill(
+            self,
+            post: str,
+            mechanic: str,
+            uuids: list[UUID],
+            client_id: UUID,
+            change_uuid: UUID,
+    ):
+        change_uuid_gen = uuid7_generator(change_uuid)
+
+        for uuid in uuids:
+            await self._kill_one(
+                uuid=uuid,
+                client_id=client_id,
+                change_uuid=next(change_uuid_gen),
+                mechanic=mechanic,
+                post=post,
             )

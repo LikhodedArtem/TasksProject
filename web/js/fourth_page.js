@@ -299,7 +299,7 @@ async function initSSE() {
                     data.value,
                     data.post,
                     data.mechanic,
-                    data.znNumber,
+                    data.znNumber ? data.znNumber : data.zn_number,
                     data.vin,
                 )
             }

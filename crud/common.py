@@ -134,8 +134,6 @@ async def update_objects(
 FORBIDDEN_KEYS = {
     "change_uuid",
     "sse_uuid",
-    "post",
-    "mechanic",
     "type",
 }
 

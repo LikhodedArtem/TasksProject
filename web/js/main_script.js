@@ -843,7 +843,7 @@ class SmartSSESource {
             for (const func of this._sseEvents[event]) {
                 try {
                     const idName = func(data)
-                    if (id !== "skip") this._lastIDs[idName] = id
+                    if (id && id !== "skip") this._lastIDs[idName] = id
                 } catch (error) {
                     console.error(`SSE Function ${func} on Event: ${event} Error: ${error}`)
                 }
@@ -904,7 +904,7 @@ class SmartSSESource {
 
     addSSEEvent(name, func) {
         function eventReact(data) {
-            func(data)
+            return func(data)
         }
 
         if (this._sseEvents[name] === undefined) {

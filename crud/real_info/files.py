@@ -1,4 +1,7 @@
-from sqlalchemy import select, func
+from uuid import UUID
+
+from sqlalchemy import select, func, update, exists
+from sqlalchemy.orm import aliased
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.models.real_info import File
@@ -44,7 +47,52 @@ async def get_files(
     }
 
 
+async def kill_file(
+    session: AsyncSession,
+    uuid: UUID,
+    client_id: UUID,
+    change_uuid: UUID,
+    mechanic: str,
+    post: str,
+):
+    file_alias = aliased(File)
+
+    stmt = (
+        update(File)
+        .where(File.uuid == uuid)
+        .values(is_alive=False)
+        .returning(
+            File.zn_number,
+            File.identical_str,
+            File.type,
+            exists(File)
+            .where(
+                file_alias.is_alive == True,
+                file_alias.zn_number == File.zn_number,
+                file_alias.identical_str == File.identical_str,
+                file_alias.type == File.type,
+            ),
+        )
+    )
+
+    result = await session.execute(stmt)
+    session.add(
+        FileChange(
+            uuid=uuid,
+            mechanic=mechanic,
+            post=post,
+            change_uuid=change_uuid,
+            sse_uuid=client_id,
+            type="delete",
+        )
+    )
+    await session.commit()
+    info = result.tuples().first()
+
+    return info
+
+
 __all__ = [
     "get_files",
-    # "get_files_changes",
+    "kill_file",
 ]
