@@ -91,7 +91,7 @@ const SVG = {
     delete: '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16"/><path d="M10 11v5"/><path d="M14 11v5"/><path d="M6 7l1 11a2 2 0 0 0 2 1.8h6a2 2 0 0 0 2-1.8L18 7"/><path d="M9 7V5.8A1.8 1.8 0 0 1 10.8 4h2.4A1.8 1.8 0 0 1 15 5.8V7"/></svg>',
     again: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" aria-label="Заново" role="img"><path d="M4 4v5h5M5.5 8A8 8 0 1 1 4.7 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     play: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"><path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393"/></svg>',
-    arrowRight: '<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-label=\"Стрелка влево\"> <path d=\"M36 24H14\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/> <path d=\"M22 16L14 24L22 32\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>',
+    arrowLeft: '<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-label=\"Стрелка влево\"> <path d=\"M36 24H14\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/> <path d=\"M22 16L14 24L22 32\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>',
     open: '<svg class="chevron" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>',
 
     document: '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l5 5v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"/><path d="M14 3v5h5"/><path d="M9 13h6"/><path d="M9 17h6"/></svg>',
@@ -1067,6 +1067,8 @@ class RequestContainer {
 
         this.recoverDelay = 10
         this._recoverTimeout = null
+
+        this._activeRequestsCount = 0
     }
 
     run() {
@@ -1087,7 +1089,9 @@ class RequestContainer {
             errorsFuncs = null,
             changeUUID = false,
             rawResponse = false,
+            isStart = false,
        }) {
+        if (!isStart) this._activeRequestsCount++
         let body
 
         const isFormData = Array.isArray(files)
@@ -1192,10 +1196,11 @@ class RequestContainer {
 
         } catch (error) {
             this._setConFalse()
-            this._requestQueue.push([0, fetchInvoker])
+            this._requestQueue.push([0, fetchInvoker, !isStart ? 'base' : 'start'])
 
             // console.log(`Function Failed by reason: ${error}`)
         }
+        if (!isStart) this._activeRequestsCount--
     }
 
     setLastID(key, value) {
@@ -1332,6 +1337,18 @@ class RequestContainer {
 
         this.STOPPED = true
     }
+
+    queueLength() {
+        const copy = [...this._requestQueue]
+
+        let count = 0
+
+        for (const item of copy) {
+            if (item[2] !== 'start') count++
+        }
+
+        return count + this._activeRequestsCount
+    }
 }
 
 const requestManager = new RequestContainer()
@@ -1408,28 +1425,13 @@ function setClosePage() {
 
 const disconnectWarning = document.querySelector(".disconnect-warning")
 
-function disconnectSet() {
-    if (!disconnectWarning) return
-    disconnectWarning.style.transition = "none"
-    disconnectWarning.style.display = "flex"
 
-    requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-            disconnectWarning.style.transition = "opacity var(--transition-slow)"
-            disconnectWarning.style.opacity = "1"
-        })
-    })
+function disconnectSet() {
+    disconnectWarning.classList.add("show")
 }
 
 function disconnectRemove() {
-    if (!disconnectWarning) return
-    disconnectWarning.style.opacity = "0"
-
-    disconnectWarning.addEventListener(
-        "transitionend",
-        () => { disconnectWarning.style.display = "none" },
-        { once: true }
-    )
+    disconnectWarning.classList.remove("show")
 }
 
 
@@ -1437,8 +1439,113 @@ function initEscapeButton(href) {
     const escapeButton = document.querySelector(".escape")
 
     escapeButton.addEventListener("click", () => {
+        try {
+            const len = requestManager.queueLength()
+            console.log(len)
+
+            if (len !== 0) {
+                setEscapeNotification(len, href)
+                return
+            }
+        } catch (error) {
+            console.error(error)
+        }
+
         window.location.href = href
     })
+}
+
+
+function setEscapeNotification(queueLength, href) {
+    const backgroundBlur = document.createElement("div")
+    backgroundBlur.className = "background-blur fast"
+    backgroundBlur.style.zIndex = "1000"
+
+    const escapeNotification = document.createElement("div")
+    escapeNotification.className = "escape-notification"
+
+    const escapeNotificationHead = document.createElement("div")
+    escapeNotificationHead.className = "escape-notification-head"
+
+    const escapeNotificationEscape = document.createElement("div")
+    escapeNotificationEscape.className = "escape-notification-escape"
+    escapeNotificationEscape.innerHTML = SVG.x
+
+    const escapeNotificationBody = document.createElement("div")
+    escapeNotificationBody.className = "escape-notification-body"
+
+    const escapeNotificationWarning = document.createElement("div")
+    escapeNotificationWarning.className = "escape-notification-warning"
+    escapeNotificationWarning.innerHTML = "Вы уверены, что хотите покинуть страницу?"
+
+    function pluralize(number, titles) {
+        const lastTwoDigits = number % 100
+        const lastDigit = number % 10
+
+        let wordForm = titles[2]
+
+        if (lastTwoDigits >= 11 && lastTwoDigits <= 14) {
+            wordForm = titles[2]
+        } else if (lastDigit === 1) {
+            wordForm = titles[0]
+        } else if (lastDigit >= 2 && lastDigit <= 4) {
+            wordForm = titles[1]
+        }
+
+        return wordForm
+    }
+
+    const escapeNotificationText1 = document.createElement("div")
+    escapeNotificationText1.className = "escape-notification-text1"
+    escapeNotificationText1.innerHTML = `<strong>${queueLength}</strong> ${pluralize(queueLength, ['запрос', 'запроса', 'запросов'])} все ещё не ${pluralize(queueLength, ['дошёл', 'дошли', 'дошли'])} до сервера.`
+
+    const escapeNotificationText2 = document.createElement("div")
+    escapeNotificationText2.className = "escape-notification-text2"
+    escapeNotificationText2.innerHTML = `Некоторые проделанные вами изменения могли не примениться и будут безвозвратно утеряны.`
+
+    const escapeNotificationButtons = document.createElement("div")
+    escapeNotificationButtons.className = "escape-notification-buttons"
+
+    const escapeNotificationOk = document.createElement("div")
+    escapeNotificationOk.className = "escape-notification-ok"
+
+    const escapeNotificationOkText = document.createElement("span")
+    escapeNotificationOkText.textContent = "Ок"
+
+    const escapeNotificationCancel = document.createElement("div")
+    escapeNotificationCancel.className = "escape-notification-cancel"
+
+    const escapeNotificationCancelText = document.createElement("span")
+    escapeNotificationCancelText.textContent = "Отмена"
+
+    escapeNotificationHead.append(escapeNotificationEscape)
+
+    escapeNotificationBody.append(escapeNotificationWarning,
+                                  escapeNotificationText1,
+                                  escapeNotificationText2)
+
+    escapeNotificationOk.append(escapeNotificationOkText)
+    escapeNotificationCancel.append(escapeNotificationCancelText)
+    escapeNotificationButtons.append(escapeNotificationOk, escapeNotificationCancel)
+
+    escapeNotification.append(escapeNotificationHead, escapeNotificationBody, escapeNotificationButtons)
+
+    backgroundBlur.append(escapeNotification)
+
+    body.append(backgroundBlur)
+
+    function clear() {
+        body.removeChild(backgroundBlur)
+    }
+
+    escapeNotificationOk.addEventListener("click", () => {
+        clear()
+        window.location.href = href
+    })
+
+    escapeNotificationEscape.addEventListener("click", clear)
+
+    escapeNotificationCancel.addEventListener("click", clear)
 }
 
 
@@ -2858,8 +2965,29 @@ function hasFiles(pinFiles) {
     headerPinFiles.classList.add("has-files")
 }
 
-
-
 function checkHasFiles(pinFiles) {
     return pinFiles.classList.contains("has-files")
+}
+
+function snakeToCamelCase(text) {
+    const massive = Array.from(text.toLowerCase())
+    const newText = []
+
+    let makeHigh = false
+
+    for (let char of massive) {
+        if (char === "_") {
+            makeHigh = true
+            continue
+        }
+
+        if (makeHigh) {
+            makeHigh = false
+            char = char.toUpperCase()
+        }
+
+        newText.push(char)
+    }
+
+    return newText.join("")
 }

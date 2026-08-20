@@ -42,7 +42,7 @@ class TasksService(BaseService):
     ):
         created_at = datetime.now()
 
-        has = files and len(files) != 0
+        has = files is not None and len(files) != 0
 
         task = Task(
             uuid=uuid,

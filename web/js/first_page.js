@@ -112,7 +112,8 @@ async function getPostsMechanicsData(mechanics) {
                         func([])
                     })
                 }
-            }
+            },
+            isStart: true,
         }
     )
 }

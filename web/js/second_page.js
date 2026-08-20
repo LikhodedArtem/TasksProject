@@ -128,7 +128,8 @@ async function updateTable() {
                     znsData.replace(data)
                     renderData()
                 })
-            }
+            },
+            isStart: true,
         }
     )
 }
@@ -163,7 +164,7 @@ function constructTaskEquip() {
     const tableEquipButton = document.createElement("button")
     tableEquipButton.className = "table-equip-button"
 
-    tableEquipButton.innerHTML = SVG.arrowRight
+    tableEquipButton.innerHTML = SVG.arrowLeft
 
     tableEquip.append(tableEquipButton)
 

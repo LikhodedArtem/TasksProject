@@ -112,4 +112,4 @@ class ChecklistFieldValue(RealInfoBase):
     )
 
 
-__all__ = ['ChecklistFieldValue']
+__all__ = ['ChecklistFieldValue', 'ChecklistFieldValueEnum']

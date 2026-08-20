@@ -93,7 +93,8 @@ async function getZnInfo() {
                 doneStartRequest("zn", data, (data) => {
                     updateAllZnInfo(data)
                 })
-            }
+            },
+            isStart: true,
         }
     )
 }
@@ -334,7 +335,8 @@ async function uploadTable(type, data, onOk) {
                 doneStartRequest(type, data, (data) => {
                     onOk(data)
                 })
-            }
+            },
+            isStart: true,
         }
     )
 }
@@ -817,9 +819,12 @@ async function updateZNStatus() {
                 zn_number: znNumber,
                 post: post,
             },
-            okFunc: (result) => { doneStartRequest("status", result, (data) => {
-                setStatus(data)
-            }) },
+            okFunc: (result) => {
+               doneStartRequest("status", result, (data) => {
+                    setStatus(data)
+                })
+            },
+            isStart: true,
         }
     )
 }

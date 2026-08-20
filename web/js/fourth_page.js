@@ -275,10 +275,8 @@ function constructTask(uuid, value, postName, mechanicName, znName, vinName, has
     })
 
     taskHead.addEventListener("click", () => {
-        const isOpened = task.classList.contains("opened")
-
-        if (isOpened) {
-            taskValueWrapper.style.height = "0px"
+        if (task.classList.contains("opened")) {
+            taskValueWrapper.style.height = "0"
             taskWrapper.style.height = `${taskHead.offsetHeight + 10}px`
             task.classList.remove("opened")
         } else {
@@ -311,7 +309,8 @@ async function getTasks() {
                     tasksData.replace(data)
                     renderTasks()
                 })
-            }
+            },
+            isStart: true,
         }
     )
 }

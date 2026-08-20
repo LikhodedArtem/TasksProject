@@ -810,13 +810,15 @@ body {
     }
 }
 
-
 .disconnect-warning {
-    display: none;
     position: relative;
     color: var(--color-red-text);
     transition: var(--transition-slow);
     opacity: 0;
+}
+
+.disconnect-warning.show {
+    opacity: 1;
 }
 
 .disconnect-warning::before {
@@ -1566,6 +1568,172 @@ body {
         transform: scale(1.2);
         background-color: color-mix(in oklch, var(--color-red), var(--color-bg));
     }
+}
+
+.escape-notification {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: min-content 1fr min-content;
+    gap: var(--space-3);
+
+    width: 22rem;
+    height: 14rem;
+    border-radius: var(--space-4);
+    padding: var(--space-4);
+
+    background-color: var(--color-bg-contrast);
+
+    .escape-notification-head {
+        display: flex;
+        flex-direction: row;
+
+        .escape-notification-escape {
+            display: none;
+            /*display: flex;*/
+            align-items: center;
+            justify-content: center;
+
+            width: 1.5rem;
+            height: 1.5rem;
+            margin-left: auto;
+
+            svg {
+                color: color-mix(in oklch, var(--color-text-contrast), var(--color-text));
+                height: 100%;
+                aspect-ratio: 1 / 1;
+            }
+        }
+    }
+
+    .escape-notification-body {
+        display: flex;
+        flex-direction: column;
+
+        .escape-notification-warning {
+            width: 100%;
+
+            color: var(--color-red-text);
+            font-weight: 600;
+            font-size: 1.2rem;
+        }
+
+        .escape-notification-text1,
+        .escape-notification-text2 {
+            width: 100%;
+
+            color: var(--color-text-contrast);
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .escape-notification-text1 {
+            margin-top: auto;
+            margin-bottom: var(--space-2);
+        }
+
+        .escape-notification-text2 {
+            margin-bottom: var(--space-1);
+        }
+    }
+
+    .escape-notification-buttons {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--space-4);
+
+        .escape-notification-ok,
+        .escape-notification-cancel {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            width: 100%;
+            height: 4rem;
+            border-radius: var(--space-4);
+
+            transition: var(--transition-fast);
+            cursor: pointer;
+
+            span {
+                font-size: 1rem;
+                font-weight: 500;
+                user-select: none;
+            }
+        }
+
+        .escape-notification-ok:active,
+        .escape-notification-cancel:active {
+            transform: scale(0.9);
+        }
+
+        .escape-notification-ok {
+            background-color: var(--color-red-text);
+            color: var(--color-bg-contrast)
+        }
+
+        .escape-notification-cancel {
+            border: 1px solid color-mix(in oklch, var(--color-text-contrast), var(--color-bg-contrast) 30%);
+            background-color: color-mix(in oklch, var(--color-text-contrast), var(--color-bg-contrast) 80%);
+            color: color-mix(in oklch, var(--color-text-contrast), var(--color-text));
+        }
+    }
+}
+
+.pin-package {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    height: 100%;
+    aspect-ratio: 1 / 1;
+    padding: var(--space-1);
+    background: linear-gradient(-45deg, var(--color-primary), var(--color-primary-gradient));
+
+    position: relative;
+    border: none;
+    border-radius: var(--space-3);
+    cursor: pointer;
+
+    box-shadow: .3rem .3rem .5rem color-mix(var(--color-text-contrast) 20%, transparent);
+
+    transition: var(--transition-fast);
+    filter: saturate(0);
+
+    svg {
+        height: 80%;
+        aspect-ratio: 1 / 1;
+        transition: var(--transition-fast);
+        color: var(--color-bg);
+    }
+}
+
+.pin-package::after {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    border-radius: inherit;
+
+    box-shadow:
+        inset .5rem .5rem .4rem color-mix(var(--color-text) 20%, transparent),
+        inset -.3rem -.3rem .4rem color-mix(var(--color-bg) 20%, transparent);
+
+    opacity: 0;
+    transition: opacity 0.1s ease;
+}
+
+
+.pin-package.clicked {
+    transform: translateY(0.1rem);
+    box-shadow: 0 0 0 transparent;
+    filter: saturate(1);
+
+    svg {
+        color: var(--color-bg);
+    }
+}
+
+.pin-package.clicked::after {
+    opacity: 1;
 }
 
 @keyframes again-rotate {

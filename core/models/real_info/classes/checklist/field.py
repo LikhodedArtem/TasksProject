@@ -3,13 +3,15 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from sqlalchemy import Integer, String, ForeignKey, Boolean, UUID as SQLUUID
+from sqlalchemy import Integer, String, ForeignKey, Boolean, UUID as SQLUUID, Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from core.models.real_info.base import RealInfoBase
 
 if TYPE_CHECKING:
     from .row import ChecklistRow
+
+from .field_value import ChecklistFieldValueEnum
 
 
 class ChecklistField(RealInfoBase):
@@ -30,6 +32,12 @@ class ChecklistField(RealInfoBase):
 
     name: Mapped[str] = mapped_column(
         String,
+        unique=False,
+        nullable=False,
+    )
+
+    code: Mapped[str] = mapped_column(
+        String,
         unique=True,
         nullable=False,
     )
@@ -37,6 +45,15 @@ class ChecklistField(RealInfoBase):
     order: Mapped[int] = mapped_column(
         Integer,
         default=0,
+        unique=False,
+        nullable=False,
+    )
+
+    value_type: Mapped[ChecklistFieldValueEnum] = mapped_column(
+        SQLEnum(
+            ChecklistFieldValueEnum,
+            name="field_value_type",
+        ),
         unique=False,
         nullable=False,
     )
