@@ -44,7 +44,7 @@ async function start() {
     name = Cookie.get("name")
 
     if (!post || !znNumber || !mechanic || !position || !carVin || !name) {
-        createNotification("error", "Ошибка данных Cookie")
+        window.location.href = "first_page.html"
         return
     }
 

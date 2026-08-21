@@ -131,7 +131,7 @@
     border-radius: 2.5rem;
 
     background-color: var(--color-bg-contrast);
-    box-shadow: 0 10px 10px color-mix(var(--color-shadow) 10%, transparent);
+    box-shadow: 0 10px 10px color-mix(var(--color-shadow) 5%, transparent);
     border: 1px solid var(--color-border);
 }
 

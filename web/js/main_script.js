@@ -1427,10 +1427,12 @@ const disconnectWarning = document.querySelector(".disconnect-warning")
 
 
 function disconnectSet() {
+    if (!disconnectWarning) return
     disconnectWarning.classList.add("show")
 }
 
 function disconnectRemove() {
+    if (!disconnectWarning) return
     disconnectWarning.classList.remove("show")
 }
 
@@ -2656,7 +2658,7 @@ function createRecordPanel(addClass, addButtons, appendFile, fileInfo) {
                     {type: lastRecordedBlob.type || "application/octet-stream"}
                 )
 
-                await fileSaveAdd([file], [file])
+                fileSaveAdd([file])
                 fileSaveRender()
 
                 removeRecordPreview()
@@ -2990,4 +2992,56 @@ function snakeToCamelCase(text) {
     }
 
     return newText.join("")
+}
+
+function constructChecklistCounter(basics = [0, 0, 0, 0]) {
+    const checklistCounter = document.createElement("div")
+    checklistCounter.className = "checklist-counter"
+
+    const checklistCounterCellRed = constructChecklistCounterCell("red", basics[0])
+    const checklistCounterCellYellow = constructChecklistCounterCell("yellow", basics[1])
+    const checklistCounterCellGreen = constructChecklistCounterCell("green", basics[2])
+    const checklistCounterCellGray = constructChecklistCounterCell("gray", basics[3])
+
+    function constructChecklistCounterCell(addClass, basic = 0) {
+        const checklistCounterCell = document.createElement("div")
+        checklistCounterCell.className = `checklist-cell-counter ${addClass}`
+
+        const checklistCounterCellText = document.createElement("span")
+        checklistCounterCellText.textContent = basic
+
+        checklistCounterCell.append(checklistCounterCellText)
+
+        checklistCounterCell.get = () => {
+            return Number(checklistCounterCellText.textContent)
+        }
+
+        checklistCounterCell.set = (newValue) => {
+            checklistCounterCellText.textContent = newValue
+        }
+
+        checklistCounterCell.add = () => {
+            checklistCounterCellText.textContent = checklistCounterCell.get() + 1
+        }
+
+        checklistCounterCell.sub = () => {
+            checklistCounterCellText.textContent = checklistCounterCell.get() - 1
+        }
+
+        return checklistCounterCell
+    }
+
+    checklistCounter.append(
+        checklistCounterCellRed,
+        checklistCounterCellYellow,
+        checklistCounterCellGreen,
+        checklistCounterCellGray,
+    )
+
+    checklistCounter.red = checklistCounterCellRed
+    checklistCounter.yellow = checklistCounterCellYellow
+    checklistCounter.green = checklistCounterCellGreen
+    checklistCounter.gray = checklistCounterCellGray
+
+    return checklistCounter
 }

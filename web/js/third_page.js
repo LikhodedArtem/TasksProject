@@ -31,6 +31,8 @@ const reasonArea = document.querySelector("#reasonArea")
 const jobs = document.querySelector("#jobs")
 const parts = document.querySelector("#parts")
 
+const checklistCounter = constructChecklistCounter()
+
 
 const jobsData = new SmartContainer()
 const partsData = new SmartContainer()
@@ -52,13 +54,14 @@ async function start() {
     mechanic = Cookie.get("mechanic")
 
     if (!mechanic || !znNumber || !post) {
-        createNotification("error", "Ошибка данных Cookie")
+        window.location.href = "first_page.html"
         return
     }
 
     initPackagesEvents()
     initMakeTasks()
     initChecklistButton()
+    initChecklistCounter()
 
     setLoading()
 
@@ -81,6 +84,12 @@ function initEnd(){
     initRecommendation()
 
     clearLoading()
+}
+
+function initChecklistCounter() {
+    const oldCounter = document.querySelector('.checklist-counter')
+    oldCounter.parentNode.prepend(checklistCounter)
+    oldCounter.parentNode.removeChild(oldCounter)
 }
 
 async function getZnInfo() {
@@ -163,6 +172,13 @@ function updateCarInfo({ vin, reg, model, year, millage }) {
     if (millage !== null) carMillageText.textContent = `${millage}${millage !== 0 ? "км." : ""}`
 }
 
+function updateChecklistCounter({ red, yellow, green, gray }) {
+    checklistCounter.red.set(red)
+    checklistCounter.yellow.set(yellow)
+    checklistCounter.green.set(green)
+    checklistCounter.gray.set(gray)
+}
+
 async function updateAllZnInfo(data) {
     if (data.zn_has_own_files) {
         hasFiles(headerPinFiles)
@@ -174,6 +190,9 @@ async function updateAllZnInfo(data) {
         hasFiles(recPinFiles)
     }
 
+    if (data.checklist) {
+        updateChecklistCounter(data.checklist)
+    }
 
     updateZnInfo({
         number: data.number,
@@ -937,9 +956,10 @@ async function initSSE() {
 
 
     // car_changes: list[dict[str, Any]], zn_changes: list[dict[str, Any]]
-    sseSource.addRecoverHandler("zn", ({ car_changes, zn_changes }) => {
+    sseSource.addRecoverHandler("zn", ({ car_changes, zn_changes, checklist }) => {
         handleCar(car_changes)
         handleZn(zn_changes)
+        updateChecklistCounter(checklist)
     })
     sseSource.addSSEEvent("zn", (changes) => {
         handleZn(changes)

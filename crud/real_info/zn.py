@@ -8,6 +8,7 @@ from core import Names
 from core.models.real_info import ZN, Car, Post, ZNmtmPost, MainPost, File
 from core.models.changes import ZNChange, CarChange, PostChange
 from crud.common import format_change_type_rows
+from .checklist import get_marks_count
 
 
 async def get_zns_by_post(
@@ -224,6 +225,7 @@ async def get_zn(
     dict_zn["car"] = zn.car.as_dict()
     dict_zn["zn_has_own_files"] = zn_has_own_files
     dict_zn["rec_has_files"] = rec_has_files
+    dict_zn["checklist"] = await get_marks_count(session, zn_number)
 
     return {"data": dict_zn, "last_change_uuid": last_change_uuid}
 
@@ -270,6 +272,7 @@ async def get_zn_changes(
     last_change_uuid = max(last_uuid, suggest_uuid1, suggest_uuid2)
 
     result = {
+        "checklist": await get_marks_count(session, zn_number),
         "car_changes": car_changes,
         "zn_changes": zn_changes,
         "last_change_uuid": last_change_uuid,

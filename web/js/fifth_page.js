@@ -180,7 +180,7 @@ class FieldConstructor {
     addSmartInfo(
         codes = [],
         fieldType = "boolean", // boolean/keyboard/choose
-        text = null,
+        text = undefined,
         addInfo ={
             // boolean: {
             //
@@ -229,6 +229,8 @@ class FieldConstructor {
         }
 
         for (const [key, value] of Object.entries(this._smartInfo[code])) {
+            if (value === undefined) continue
+
             info[key] = value
         }
 
@@ -265,6 +267,8 @@ class FieldConstructor {
             throw Error("Unexpected field type")
         }
 
+        console.log(field)
+
         return field
     }
 
@@ -281,6 +285,8 @@ class FieldConstructor {
 
         field.id = snakeToCamelCase(code)
         field.className = "field"
+
+        field.dataset.code = code
 
         field.infoType = infoType
         field.isRequired = isRequired
@@ -318,15 +324,23 @@ class FieldConstructor {
     }
 
     _boolean(field, {}) {
+        field.classList.add("boolean")
 
+        const fieldCheckbox = document.createElement()
+
+        return field
     }
 
     _keyboard(field, { min, max }) {
+        field.classList.add("keyboard")
 
+        return field
     }
 
     _choose(field, { options }) {
+        field.classList.add("choose")
 
+        return field
     }
 }
 
@@ -351,6 +365,12 @@ async function start() {
     znNumber = Cookie.get("znNumber")
     post = Cookie.get("post")
     mechanic = Cookie.get("mechanic")
+
+    if (!znNumber || !post || !mechanic) {
+        window.location.href = "first_page.html"
+    }
+
+    initFields()
 
     initHeadCounter()
     initPositions()
@@ -390,6 +410,19 @@ function initInfo() {
 
     const reg = document.querySelector("#reg span")
     reg.parentNode.replaceChildren(document.querySelector("#reg label"), beautyReg(carReg))
+}
+
+
+function initFields() {
+    fieldConstructor.addSmartInfo(
+        [
+            "spare_wheel",
+            "pressure_set_by_axle",
+        ],
+        "boolean",
+        undefined,
+        {},
+    )
 }
 
 
@@ -492,12 +525,9 @@ function constructPosition(number, addClass) {
         positionValueWrapper.style.height = `${pxToRem(positionValue.offsetHeight)}rem`
         positionWrapper.classList.add("opened")
 
-        if (pinPackage.isClicked()) {
-            Array.from(positions.children).forEach((pos) => {
-                if (pos !== position && !pos.pin.isClicked()) pos.close()
-            })
-        }
-
+        Array.from(positions.children).forEach((posWrapper) => {
+            if (posWrapper !== positionWrapper && !posWrapper.pin.isClicked()) posWrapper.close()
+        })
     }
 
     position.addEventListener("click", (event) => {
@@ -548,7 +578,9 @@ function constructPinPackage() {
 
 function constructRow(name, code, double = false) {
     const row = document.createElement("div")
+    row.id = snakeToCamelCase(code)
     row.className = "row"
+
     row.dataset.code = code
 
     const multipleButton = double ? constructDoubleButton() : constructTripleButton()
@@ -572,59 +604,6 @@ function constructRow(name, code, double = false) {
     }
 
     return row
-}
-
-
-function constructChecklistCounter(bases = [0, 0, 0, 0]) {
-    const checklistCounter = document.createElement("div")
-    checklistCounter.className = "checklist-counter"
-
-    const checklistCounterCellRed = constructChecklistCounterCell("red", bases[0])
-    const checklistCounterCellYellow = constructChecklistCounterCell("yellow", bases[1])
-    const checklistCounterCellGreen = constructChecklistCounterCell("green", bases[2])
-    const checklistCounterCellGray = constructChecklistCounterCell("gray", bases[3])
-
-    function constructChecklistCounterCell(addClass, base = 0) {
-        const checklistCounterCell = document.createElement("div")
-        checklistCounterCell.className = `checklist-cell-counter ${addClass}`
-
-        const checklistCounterCellText = document.createElement("span")
-        checklistCounterCellText.textContent = base
-
-        checklistCounterCell.append(checklistCounterCellText)
-
-        checklistCounterCell.get = () => {
-            return Number(checklistCounterCellText.textContent)
-        }
-
-        checklistCounterCell.set = (newValue) => {
-            checklistCounterCellText.textContent = newValue
-        }
-
-        checklistCounterCell.add = () => {
-            checklistCounterCellText.textContent = checklistCounterCell.get() + 1
-        }
-
-        checklistCounterCell.sub = () => {
-            checklistCounterCellText.textContent = checklistCounterCell.get() - 1
-        }
-
-        return checklistCounterCell
-    }
-
-    checklistCounter.append(
-        checklistCounterCellRed,
-        checklistCounterCellYellow,
-        checklistCounterCellGreen,
-        checklistCounterCellGray,
-    )
-
-    checklistCounter.red = checklistCounterCellRed
-    checklistCounter.yellow = checklistCounterCellYellow
-    checklistCounter.green = checklistCounterCellGreen
-    checklistCounter.gray = checklistCounterCellGray
-
-    return checklistCounter
 }
 
 

@@ -16,7 +16,7 @@ async function start() {
     mechanic = Cookie.get("mechanic")
 
     if (!mechanic || !post) {
-        createNotification("error", "Ошибка данных Cookie")
+        window.location.href = "first_page.html"
         return
     }
 
