@@ -77,8 +77,10 @@ const generateUUIDv7 = (() => {
         const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
 
         return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
-    };
-})();
+    }
+})()
+
+const remBase = parseFloat(getComputedStyle(document.documentElement).fontSize)
 
 
 const body = document.querySelector(".body")
@@ -432,7 +434,6 @@ function beautyReg(reg) {
 }
 
 function pxToRem(px) {
-    const remBase = parseFloat(getComputedStyle(document.documentElement).fontSize)
     return Math.round(px / remBase * 100) / 100
 }
 
@@ -1075,6 +1076,13 @@ class RequestContainer {
         this._runQueue()
     }
 
+    addCount() {
+        this._activeRequestsCount++
+    }
+
+    subCount() {
+        this._activeRequestsCount--
+    }
     async send(
         addURL,
         method,
@@ -2690,6 +2698,11 @@ function createRecordPanel(addClass, addButtons, appendFile, fileInfo) {
             } else {
                 timeCounterSeconds.textContent = addZero(Number(timeCounterSeconds.textContent) + 1)
             }
+
+            if (timeCounterMinutes.textContent === "05") {
+                createNotification("error", `Нельзя записывать ${isAudio ? "аудио" : "видео"} дольше 5 минут`)
+                stopRecord()
+            }
         }
 
         function resetTimeCounter() {
@@ -2859,6 +2872,8 @@ async function uploadFiles(files, type, objectData) {
             formData.append("files", file, file.name)
         }
 
+        requestManager.addCount()
+
         const response = await fetch(`${API_PATH}/files/create`, {
             method: "POST",
             credentials: "include",
@@ -2868,6 +2883,8 @@ async function uploadFiles(files, type, objectData) {
                 'X-Change-UUID': generateUUIDv7(),
             },
         })
+
+        requestManager.subCount()
 
         if (!response.ok) {
             console.error(response.status, await response.json())

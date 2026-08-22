@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from sqlalchemy import String, ForeignKey, UUID as SQLUUID
+from sqlalchemy import String, ForeignKey, UUID as SQLUUID, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from core.models.real_info.base import RealInfoBase
@@ -25,6 +25,27 @@ class Checklist(RealInfoBase):
         String,
         ForeignKey('zns.number'),
         unique=True,
+    )
+
+    is_closed: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False,
+        unique=False,
+    )
+
+    close_post: Mapped[str] = mapped_column(
+        String,
+        ForeignKey('mainposts.name'),
+        nullable=True,
+        unique=False,
+    )
+
+    close_mechanic: Mapped[str] = mapped_column(
+        String,
+        ForeignKey('mechanics.name'),
+        nullable=True,
+        unique=False,
     )
 
     zn: Mapped[ZN] = relationship(

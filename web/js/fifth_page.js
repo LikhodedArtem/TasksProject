@@ -110,14 +110,14 @@ const checklist = {
                 "front_discs_drums_actual",
                 "integer",
                 false,
-                null,
+                "%",
             ],
             [
                 "Колодки факт",
                 "front_pads_actual",
                 "integer",
                 false,
-                null,
+                "%",
             ],
         ],
         "Проверка задних тормозных механизмов/rear_brakes/3": [
@@ -126,14 +126,14 @@ const checklist = {
                 "rear_discs_drums_actual",
                 "integer",
                 false,
-                null,
+                "%",
             ],
             [
                 "Колодки факт",
                 "rear_pads_actual",
                 "integer",
                 false,
-                null,
+                "%",
             ],
         ],
         "Контроль и регулировка колодок стояночного тормоза*/parking_brake_shoes/3": [
@@ -142,14 +142,14 @@ const checklist = {
                 "parking_discs_drums_actual",
                 "integer",
                 false,
-                null,
+                "%",
             ],
             [
                 "Колодки факт",
                 "parking_pads_actual",
                 "integer",
                 false,
-                null,
+                "%",
             ],
         ],
         "Установка колес (при отсутствии доп.работ или замене ТЖ)/wheels_installation/3": null,
@@ -181,7 +181,7 @@ class FieldConstructor {
         codes = [],
         fieldType = "boolean", // boolean/keyboard/choose
         text = undefined,
-        addInfo ={
+        addInfo = {
             // boolean: {
             //
             // },
@@ -201,9 +201,9 @@ class FieldConstructor {
         if (text) info[text] = text
 
         if (fieldType === "keyboard") {
-            info[addInfo] = addInfo.keyboard
+            info.addInfo = addInfo.keyboard
         } else if (fieldType === "choose") {
-            info[addInfo] = addInfo.choose
+            info.addInfo = addInfo.choose
         }
 
         for (const code of codes) {
@@ -221,7 +221,7 @@ class FieldConstructor {
         if (!this._smartInfo[code]) return null
 
         const info = {
-            name: name,
+            text: name,
             code: code,
             type: type,
             isRequired: isRequired,
@@ -267,8 +267,6 @@ class FieldConstructor {
             throw Error("Unexpected field type")
         }
 
-        console.log(field)
-
         return field
     }
 
@@ -294,15 +292,17 @@ class FieldConstructor {
         const fieldTextArea = document.createElement("div")
         fieldTextArea.className = "field-text-area"
 
-        const fieldText = document.createElement("div")
+        const fieldText = document.createElement("span")
         fieldText.className = "field-text"
         fieldText.textContent = text
 
-        field.set = (value) => {}
         field.get = () => {}
+        field.set = (value) => {}
+
+        fieldTextArea.append(fieldText)
 
         field.textArea = fieldTextArea
-        field.text = fieldText
+        field.textArea.text = fieldText
 
         if (unit !== null) {
             const fieldUnitArea = document.createElement("div")
@@ -312,8 +312,10 @@ class FieldConstructor {
             fieldUnit.className = "field-unit"
             fieldUnit.textContent = unit
 
+            fieldUnitArea.append(fieldUnit)
+
             field.unitArea = fieldUnitArea
-            field.unit = fieldUnit
+            field.unitArea.unit = fieldUnit
 
         } else {
             field.unitArea = null
@@ -323,10 +325,52 @@ class FieldConstructor {
         return field
     }
 
-    _boolean(field, {}) {
+    _boolean(field) {
         field.classList.add("boolean")
 
-        const fieldCheckbox = document.createElement()
+        const fieldCheckbox = document.createElement("div")
+        fieldCheckbox.className = "field-checkbox hide"
+
+        const fieldCheckboxBox = document.createElement("div")
+        fieldCheckboxBox.className = "field-checkbox-box"
+
+        const check = document.createElement("div")
+        check.className = "check"
+        check.innerHTML = '<svg viewBox="0 0 30 30" stroke-linecap="round" stroke-linejoin="round" stroke-width="4" stroke="currentColor"><path class="check-path" fill="none" d="M4.1 19.2l7.1 7.2 16.7-16.8"/></svg>'
+
+        fieldCheckboxBox.className = "field-checkbox-box"
+
+        fieldCheckbox.append(fieldCheckboxBox, check)
+
+        field.append(fieldCheckbox, field.textArea)
+
+        function show() {
+            fieldCheckbox.classList.add("show")
+            fieldCheckbox.classList.remove("hide")
+        }
+
+        function hide() {
+            fieldCheckbox.classList.add("hide")
+            fieldCheckbox.classList.remove("show")
+        }
+
+        fieldCheckbox.addEventListener('click', () => {
+            if (field.classList.contains("disabled")) return
+
+            fieldCheckbox.classList.contains("show")
+                ? hide()
+                : show()
+        })
+
+        field.get = () => {
+            return fieldCheckbox.classList.contains("show")
+        }
+
+        field.set = (value) => {
+            value
+                ? show()
+                : hide()
+        }
 
         return field
     }
@@ -334,16 +378,203 @@ class FieldConstructor {
     _keyboard(field, { min, max }) {
         field.classList.add("keyboard")
 
+        const inputContainer = document.createElement("div")
+        inputContainer.className = "input-container"
+
+        const inputValue = document.createElement("div")
+        inputValue.className = "input-value unstated"
+
+        const inputValueText = document.createElement("div")
+        inputValueText.className = "input-value-text"
+        inputValueText.textContent = "?"
+
+        const inputPanel = document.createElement("div")
+        inputPanel.className = "input-panel"
+
+        const inputPanelInput = document.createElement("input")
+        inputPanelInput.className = "input-panel-input"
+        inputPanelInput.setAttribute("type", "text")
+        inputPanelInput.setAttribute("inputmode", "numeric")
+
+        const applyButton = document.createElement("div")
+        applyButton.className = "apply-button"
+        applyButton.innerHTML = SVG.load
+
+        inputPanel.append(inputPanelInput, applyButton)
+        inputValue.append(inputValueText)
+
+        inputContainer.append(inputValue, inputPanel)
+
+        field.get = () => {
+            return inputValueText.textContent !== "?"
+                ? inputValueText.textContent
+                : null
+        }
+
+        field.set = (value) => {
+            baseSet(value)
+        }
+
+        function baseSet(value) {
+            inputValue.classList.remove("unstated")
+            inputValueText.textContent = value
+
+            inputPanelInput.value = ""
+            inputContainer.classList.remove("show")
+        }
+
+        inputValue.addEventListener("click", () => {
+            if (inputContainer.classList.contains("show")) {
+                inputContainer.classList.remove("show")
+            } else {
+                inputContainer.classList.add("show")
+            }
+        })
+
+        applyButton.addEventListener("click", () => {
+            const forParse = inputPanelInput.value.replaceAll(" ", "").replaceAll(",", ".").replace(/\.{2,}/g, '.')
+
+            const numValue = Number(forParse)
+            if (Number.isNaN(numValue)) {
+                createNotification("error", "Введено нечисловое значение")
+                return;
+            }
+
+            if (numValue < min) {
+                createNotification("error", `Введено значение меньше ${min}`)
+                return
+            }
+
+            if (numValue > max) {
+                createNotification("error", `Введено значение больше ${max}`)
+                return
+            }
+
+            field.set(numValue)
+        })
+
+        field.append(inputContainer)
+        if (field.unitArea) field.append(field.unitArea)
+        field.append(field.textArea)
+
         return field
     }
 
     _choose(field, { options }) {
         field.classList.add("choose")
 
+        field.options = options
+
+        const chooseContainer = document.createElement("div")
+        chooseContainer.className = "choose-container"
+
+        const chooseBox = document.createElement("div")
+        chooseBox.className = "choose-box unstated"
+
+        const chooseBoxValue = document.createElement("div")
+        chooseBoxValue.className = "choose-box-value"
+        chooseBoxValue.textContent = "?"
+
+        const fieldOptions = document.createElement("div")
+        fieldOptions.className = "field-options"
+
+        chooseBox.get = () => {
+            return chooseBoxValue.textContent !== "?"
+                ? chooseBoxValue.textContent
+                : null
+        }
+
+        chooseBox.set = (value) => {
+            chooseBox.classList.remove("unstated")
+            chooseBoxValue.textContent = value
+        }
+
+        const gap = 0.6 // rem
+
+        function findX(elColumnIndex, rowLength) {
+            return `${Math.round((Math.floor(rowLength / 2) - elColumnIndex) * (2.2 + gap) * 100 * -1) / 100}rem`
+        }
+
+        function findY(elRowIndex, columnLength) {
+            return `${Math.round((columnLength - elRowIndex) * (2.2 + gap) * 100) / 100 * -1}rem`
+        }
+
+        const lastRow = Math.ceil(options.length / 3)
+        const lastRowLength = 3 - options.length % 3
+
+        options.forEach((option, index) => {
+            const myColumn = index % 3
+            const myRow = index % lastRow
+
+            const myX = findX(myColumn, myRow === lastRow - 1 ? lastRowLength : 3)
+            const myY = findY(myRow, lastRow)
+
+            fieldOptions.append(constructOption(option, myX, myY))
+        })
+
+        fieldOptions.go = () => {
+            fieldOptions.classList.add("show")
+            Array.from(fieldOptions.children).forEach((option) => { option.go() })
+        }
+
+        fieldOptions.back = () => {
+            fieldOptions.classList.remove("show")
+            Array.from(fieldOptions.children).forEach((option) => { option.back() })
+        }
+
+        function constructOption(text, moveX, moveY) {
+            const fieldOption = document.createElement("div")
+            fieldOption.className = "field-option"
+
+            const fieldOptionText = document.createElement("div")
+            fieldOptionText.className = "field-option-text"
+            fieldOptionText.textContent = text
+
+            fieldOption.append(fieldOptionText)
+
+            fieldOption.go = () => {
+                fieldOption.style.top = moveY
+                fieldOption.style.left = moveX
+            }
+
+            fieldOption.back = () => {
+                fieldOption.style.top = "0"
+                fieldOption.style.left = "0"
+            }
+
+            fieldOption.get = () => {
+                return fieldOptionText.textContent
+            }
+
+            return fieldOption
+        }
+
+        chooseBox.addEventListener("click", () => {
+            if (fieldOptions.classList.contains("show")) {
+                fieldOptions.back()
+            } else {
+                fieldOptions.go()
+            }
+        })
+
+        fieldOptions.addEventListener("click", (event) => {
+            const option = event.target.closest(".field-option")
+            if (!option) return
+
+            chooseBox.set(option.get())
+            fieldOptions.back()
+        })
+
+        chooseBox.append(chooseBoxValue)
+        chooseContainer.append(chooseBox, fieldOptions)
+
+        field.append(chooseContainer)
+        if (field.unitArea) field.append(field.unitArea)
+        field.append(field.textArea)
+
         return field
     }
 }
-
 
 let znNumber
 let post
@@ -422,6 +653,83 @@ function initFields() {
         "boolean",
         undefined,
         {},
+    )
+
+    fieldConstructor.addSmartInfo(
+        [
+            "rear_left",
+            "rear_right",
+            "front_left",
+            "front_right",
+        ],
+        "choose",
+        undefined,
+        {
+            choose: {
+                options: [1, 3, 6]
+            }
+        },
+    )
+
+    fieldConstructor.addSmartInfo(
+        [
+            "front_discs_drums_actual",
+            "front_pads_actual",
+            "rear_discs_drums_actual",
+            "rear_pads_actual",
+            "parking_discs_drums_actual",
+            "parking_pads_actual",
+        ],
+        "choose",
+        undefined,
+        {
+            choose: {
+                options: [25, 50, 75]
+            }
+        },
+    )
+
+    fieldConstructor.addSmartInfo(
+        [
+            "residual_capacity",
+        ],
+        "keyboard",
+        undefined,
+        {
+            keyboard: {
+                min: 0,
+                max: 100,
+            }
+        }
+    )
+
+    fieldConstructor.addSmartInfo(
+        [
+            "voltage",
+        ],
+        "keyboard",
+        undefined,
+        {
+            keyboard: {
+                min: 0,
+                max: Infinity,
+            }
+        }
+    )
+
+    fieldConstructor.addSmartInfo(
+        [
+            "front",
+            "rear",
+        ],
+        "keyboard",
+        undefined,
+        {
+            keyboard: {
+                min: 1.8,
+                max: 3.0,
+            }
+        }
     )
 }
 
@@ -585,22 +893,44 @@ function constructRow(name, code, double = false) {
 
     const multipleButton = double ? constructDoubleButton() : constructTripleButton()
 
+    const rowValue = document.createElement("div")
+    rowValue.className = "row-value"
+
     const rowText = document.createElement("div")
     rowText.textContent = name
 
-    row.append(multipleButton, rowText)
+    rowValue.append(rowText)
+
+    row.append(multipleButton, rowValue)
 
     row.fields = []
-    row.addField = (fieldInfo) => {
-        row.fields.push(fieldInfo)
 
+    row.addField = (fieldInfo) => {
         const fieldEl = fieldConstructor.create(...fieldInfo)
 
         if (!fieldEl) {
             console.warn(`Row '${code}' can't find field '${fieldInfo[1]}'`)
         } else {
-            row.append(fieldEl)
+            rowValue.append(fieldEl)
         }
+
+        row.fields.push(fieldEl)
+    }
+
+    row.red = multipleButton.red
+    row.yellow = multipleButton.yellow
+    row.green = multipleButton.green
+    row.get = multipleButton.get
+    row.fieldsGet = () => {
+        const answer = {}
+
+        for (const field of row.fields) {
+            if (field == null) continue
+
+            answer[field.dataset.code] = field.get()
+        }
+
+        return answer
     }
 
     return row
@@ -909,6 +1239,32 @@ function constructDoubleButton() {
         doubleButtonPointGreen
     )
 
+    function clear() {
+        Array.from(doubleButton.children).forEach((point) => {
+            point.classList.remove("inactive")
+        })
+    }
+
+    doubleButton.red = () => {
+        clear()
+        doubleButtonPointRed.classList.add("active")
+    }
+
+    doubleButton.green = () => {
+        clear()
+        doubleButtonPointGreen.classList.add("active")
+    }
+
+    doubleButton.get = () => {
+        for (const point of Array.from(doubleButton.children)) {
+            if (point.classList.contains("active")) {
+                return Array.from(point.classList)[1]
+            }
+        }
+
+        return "unstated"
+    }
+
     return doubleButton
 }
 
@@ -932,6 +1288,37 @@ function constructTripleButton() {
         tripleButtonPointYellow,
         tripleButtonPointGreen
     )
+
+    function clear() {
+        Array.from(tripleButton.children).forEach((point) => {
+            point.classList.remove("inactive")
+        })
+    }
+
+    tripleButton.red = () => {
+        clear()
+        tripleButtonPointRed.classList.add("active")
+    }
+
+    tripleButton.yellow = () => {
+        clear()
+        tripleButtonPointYellow.classList.add("active")
+    }
+
+    tripleButton.green = () => {
+        clear()
+        tripleButtonPointGreen.classList.add("active")
+    }
+
+    tripleButton.get = () => {
+        for (const point of Array.from(tripleButton.children)) {
+            if (point.classList.contains("active")) {
+                return Array.from(point.classList)[1]
+            }
+        }
+
+        return "unstated"
+    }
 
     return tripleButton
 }
