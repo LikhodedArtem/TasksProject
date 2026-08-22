@@ -1467,27 +1467,6 @@ function initEscapeButton(href) {
 
 
 function setEscapeNotification(queueLength, href) {
-    const backgroundBlur = document.createElement("div")
-    backgroundBlur.className = "background-blur fast"
-    backgroundBlur.style.zIndex = "1000"
-
-    const escapeNotification = document.createElement("div")
-    escapeNotification.className = "escape-notification"
-
-    const escapeNotificationHead = document.createElement("div")
-    escapeNotificationHead.className = "escape-notification-head"
-
-    const escapeNotificationEscape = document.createElement("div")
-    escapeNotificationEscape.className = "escape-notification-escape"
-    escapeNotificationEscape.innerHTML = SVG.x
-
-    const escapeNotificationBody = document.createElement("div")
-    escapeNotificationBody.className = "escape-notification-body"
-
-    const escapeNotificationWarning = document.createElement("div")
-    escapeNotificationWarning.className = "escape-notification-warning"
-    escapeNotificationWarning.innerHTML = "Вы уверены, что хотите покинуть страницу?"
-
     function pluralize(number, titles) {
         const lastTwoDigits = number % 100
         const lastDigit = number % 10
@@ -1505,57 +1484,15 @@ function setEscapeNotification(queueLength, href) {
         return wordForm
     }
 
-    const escapeNotificationText1 = document.createElement("div")
-    escapeNotificationText1.className = "escape-notification-text1"
-    escapeNotificationText1.innerHTML = `<strong>${queueLength}</strong> ${pluralize(queueLength, ['запрос', 'запроса', 'запросов'])} все ещё не ${pluralize(queueLength, ['дошёл', 'дошли', 'дошли'])} до сервера.`
-
-    const escapeNotificationText2 = document.createElement("div")
-    escapeNotificationText2.className = "escape-notification-text2"
-    escapeNotificationText2.innerHTML = `Некоторые проделанные вами изменения могли не примениться и будут безвозвратно утеряны.`
-
-    const escapeNotificationButtons = document.createElement("div")
-    escapeNotificationButtons.className = "escape-notification-buttons"
-
-    const escapeNotificationOk = document.createElement("div")
-    escapeNotificationOk.className = "escape-notification-ok"
-
-    const escapeNotificationOkText = document.createElement("span")
-    escapeNotificationOkText.textContent = "Ок"
-
-    const escapeNotificationCancel = document.createElement("div")
-    escapeNotificationCancel.className = "escape-notification-cancel"
-
-    const escapeNotificationCancelText = document.createElement("span")
-    escapeNotificationCancelText.textContent = "Отмена"
-
-    escapeNotificationHead.append(escapeNotificationEscape)
-
-    escapeNotificationBody.append(escapeNotificationWarning,
-                                  escapeNotificationText1,
-                                  escapeNotificationText2)
-
-    escapeNotificationOk.append(escapeNotificationOkText)
-    escapeNotificationCancel.append(escapeNotificationCancelText)
-    escapeNotificationButtons.append(escapeNotificationOk, escapeNotificationCancel)
-
-    escapeNotification.append(escapeNotificationHead, escapeNotificationBody, escapeNotificationButtons)
-
-    backgroundBlur.append(escapeNotification)
-
-    body.append(backgroundBlur)
-
-    function clear() {
-        body.removeChild(backgroundBlur)
-    }
-
-    escapeNotificationOk.addEventListener("click", () => {
-        clear()
-        window.location.href = href
-    })
-
-    escapeNotificationEscape.addEventListener("click", clear)
-
-    escapeNotificationCancel.addEventListener("click", clear)
+    setOkCancelNotification(
+        "Вы уверены, что хотите покинуть страницу?",
+        `<strong>${queueLength}</strong> ${pluralize(queueLength, ['запрос', 'запроса', 'запросов'])} все ещё не ${pluralize(queueLength, ['дошёл', 'дошли', 'дошли'])} до сервера.`,
+        `Некоторые проделанные вами изменения могли не примениться и будут безвозвратно утеряны.`,
+        () => {
+            window.location.href = href
+        },
+        null
+    )
 }
 
 
@@ -3061,4 +2998,76 @@ function constructChecklistCounter(basics = [0, 0, 0, 0]) {
     checklistCounter.gray = checklistCounterCellGray
 
     return checklistCounter
+}
+
+
+function setOkCancelNotification(
+    mainText,
+    addText1,
+    addText2 = null,
+    onOkFunc,
+    onCancelFunc = null,
+) {
+    const backgroundBlur = document.createElement("div")
+    backgroundBlur.className = "background-blur fast"
+
+    const okCancelNotification = document.createElement("div")
+    okCancelNotification.className = "ok-cancel-notification"
+
+    const okCancelNotificationMain = document.createElement("div")
+    okCancelNotificationMain.className = "ok-cancel-notification-main"
+
+    const okCancelNotificationButtons = document.createElement("div")
+    okCancelNotificationButtons.className = "ok-cancel-notification-buttons"
+
+    const okCancelNotificationMainText = document.createElement("span")
+    okCancelNotificationMainText.className = "ok-cancel-notification-main-text"
+    okCancelNotificationMainText.textContent = mainText
+
+    const okCancelNotificationAddText1 = document.createElement("span")
+    okCancelNotificationAddText1.className = "ok-cancel-notification-add-text1"
+    okCancelNotificationAddText1.textContent = addText1
+
+    const okCancelNotificationAddText2 = document.createElement("span")
+    okCancelNotificationAddText2.className = "ok-cancel-notification-add-text2"
+    okCancelNotificationAddText2.textContent = addText2
+
+    const okCancelNotificationOk = document.createElement("div")
+    okCancelNotificationOk.className = "ok-cancel-notification-ok"
+
+    const okCancelNotificationOkText = document.createElement("span")
+    okCancelNotificationOkText.className = "ok-cancel-notification-ok-text"
+    okCancelNotificationOkText.textContent = "Ок"
+
+    const okCancelNotificationCancel = document.createElement("div")
+    okCancelNotificationCancel.className = "ok-cancel-notification-cancel"
+
+    const okCancelNotificationCancelText = document.createElement("span")
+    okCancelNotificationCancelText.className = "ok-cancel-notification-cancel-text"
+    okCancelNotificationCancelText.textContent = "Отмена"
+    
+    okCancelNotificationMain.append(okCancelNotificationMainText, okCancelNotificationAddText1)
+    if (addText2) okCancelNotificationMain.append(okCancelNotificationAddText2)
+    
+    okCancelNotificationOk.append(okCancelNotificationOkText)
+    okCancelNotificationCancel.append(okCancelNotificationCancelText)
+    
+    okCancelNotificationButtons.append(okCancelNotificationOk, okCancelNotificationCancel)
+    okCancelNotification.append(okCancelNotificationMain, okCancelNotificationButtons)
+
+    okCancelNotification.close = () => {
+        body.removeChild(backgroundBlur)
+    }
+    
+    okCancelNotificationOk.addEventListener("click", () => {
+        onOkFunc()
+        okCancelNotification.close()
+    })
+    okCancelNotificationCancel.addEventListener("click", () => {
+        if (onCancelFunc) onCancelFunc()
+        okCancelNotification.close()
+    })
+    
+    backgroundBlur.append(okCancelNotification)
+    body.append(backgroundBlur)
 }

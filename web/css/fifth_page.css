@@ -40,8 +40,8 @@
     display: grid;
     background: transparent;
 
-    width: 11rem;
-    height: 5rem;
+    min-width: 11rem;
+    min-height: 5rem;
     border-radius: 2.5rem;
 
     padding: var(--space-4);
@@ -49,8 +49,7 @@
 
     border: none;
 
-    .double-button-point,
-    .triple-button-point {
+    .multiple-button-point {
         box-sizing: border-box;
         position: relative;
         display: flex;
@@ -68,12 +67,11 @@
         border: none;
     }
 
-    .double-button-point::before,
-    .triple-button-point::before {
+    .multiple-button-point::before {
         content: "";
         position: absolute;
-        top: -7.5%;
-        left: -7.5%;
+        top: -7%;
+        left: -7%;
         opacity: 0;
 
         width: 110%;
@@ -87,60 +85,208 @@
         z-index: -1;
     }
 
-    .double-button-point.red,
-    .triple-button-point.red {
+    .multiple-button-point.red {
         color: #d83747;
     }
 
-    .double-button-point.yellow,
-    .triple-button-point.yellow {
+    .multiple-button-point.yellow {
         color: #f1c703;
     }
 
-    .double-button-point.green,
-    .triple-button-point.green {
+    .multiple-button-point.green {
         color: #42ba52;
     }
 
-    .double-button-point.active,
-    .triple-button-point.active {
+    .multiple-button-point.active {
         width: 3rem;
         height: 3rem;
 
         filter: saturate(1);
     }
 
-    .double-button-point.active::before,
-    .triple-button-point.active::before {
+    .multiple-button-point.active::before {
         opacity: 1;
         transform: scale(1);
     }
 
-    .double-button-point.inactive,
-    .triple-button-point.inactive {
+    .multiple-button-point.inactive {
         width: 2.5rem;
         height: 2.5rem;
     }
 }
 
-.row {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
+.row-wrapper {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr;
 
-    height: min-content;
-    border-radius: 2.5rem;
-
-    background-color: var(--color-bg-contrast);
-    box-shadow: 0 10px 10px color-mix(var(--color-shadow) 5%, transparent);
-    border: 1px solid var(--color-border);
-
-    .row-value {
+    .row {
+        position: relative;
         display: flex;
+        flex-direction: row;
         align-items: center;
-        flex-wrap: wrap;
-        padding: var(--space-4) var(--space-4) var(--space-4) 0;
+
+        height: min-content;
+        border-radius: 2.5rem;
+
+        background-color: var(--color-bg-contrast);
+        border: 1px solid var(--color-border);
+        z-index: 10;
+
+        .row-text {
+            flex: 1 0 100%;
+        }
+
+        .row-value {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: var(--space-2);
+            padding: var(--space-4) var(--space-4) var(--space-4) 0;
+            width: 100%;
+        }
     }
+
+    .row-add-data-wrapper {
+        position: relative;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: var(--space-4);
+
+        height: 0;
+
+        opacity: 0;
+        overflow: hidden;
+        top: -.3rem;
+
+        transition: var(--transition-slow);
+
+        mask-image: linear-gradient(180deg, black 0%, transparent 100%);
+        mask-size: 300% 300%;
+        mask-position: 0 100%;
+
+        .row-add-data-content-wrapper {
+            overflow: hidden;
+            transition: var(--transition-slow);
+
+            .row-add-data {
+                position: relative;
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: var(--space-1);
+                height: min-content;
+
+                padding: var(--space-4) var(--space-4) var(--space-6) var(--space-4);
+                margin-inline: var(--space-10);
+
+                background-color: var(--color-bg);
+                box-shadow: .2rem .2rem .8rem color-mix(in oklch, var(--color-shadow) 15%, transparent);
+
+                border: 1px solid var(--color-border);
+                border-top: none;
+
+                .row-add-data-head {
+                    display: flex;
+                    flex-direction: row;
+
+                    .row-add-data-name {
+                        font-size: 0.7rem;
+                        font-weight: 500;
+                        color: var(--color-text-contrast);
+                    }
+                }
+
+                .row-add-data-body {
+                    display: grid;
+                    grid-template-columns: 1fr min-content;
+                    grid-template-rows: repeat(2, 1fr);
+
+                    textarea {
+                        height: 5.5rem;
+                        grid-row: span 2;
+                        background-color: var(--color-bg-contrast) !important;
+                    }
+                }
+            }
+        }
+
+        .row-add-data-bottom {
+            position: relative;
+            display: flex;
+
+            align-items: center;
+            justify-content: center;
+
+            left: 2rem;
+            bottom: calc(1rem + 1px);
+
+            width: calc(100% - 4rem);
+            height: 2rem;
+            border-radius: 1rem;
+
+            background-color: var(--color-bg);
+            border: 1px solid var(--color-border);
+            box-shadow: .2rem .2rem .8rem color-mix(in oklch, var(--color-shadow) 15%, transparent);
+            transition: var(--transition-slow);
+
+            svg {
+                height: 100%;
+                aspect-ratio: 1 / 1;
+                transform: rotate(90deg);
+                color: var(--color-text-contrast);
+                transition: var(--transition-slow);
+            }
+        }
+
+        .row-add-data-bottom.show {
+            bottom: 2rem;
+
+            svg {
+                transform: rotate(-90deg);
+            }
+        }
+    }
+
+    .row-add-data-wrapper.opened {
+        opacity: 1;
+        top: 0;
+        mask-image: linear-gradient(180deg, black 100%, transparent 100%);
+        mask-position: 0 0;
+    }
+}
+
+.pin-files {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    height: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 20%;
+
+    background: linear-gradient(-45deg, var(--color-primary), var(--color-primary-gradient));
+    background-size: 150% 150%;
+    box-shadow: 0 5px 10px color-mix(in oklch, var(--color-shadow) 30%, transparent);
+
+    color: var(--color-bg);
+    border: none;
+
+    filter: saturate(0);
+
+    transition: var(--transition-fast);
+
+    svg {
+        width: 60%;
+        aspect-ratio: 1 / 1;
+    }
+}
+
+.pin-files.has-files {
+    filter: saturate(1);
+}
+
+.pin-files:hover {
+    background-position: 100% 100%;
 }
 
 .checklist-counter {
@@ -558,9 +704,10 @@
     display: flex;
     flex-direction: row;
     align-items: center;
-    margin-left: var(--space-4);
 
     .field-unit-area {
+        margin-left: var(--space-2);
+
         .field-unit {
             font-weight: 600;
             font-size: 1.2rem;
@@ -571,7 +718,7 @@
     }
 
     .field-text-area {
-        margin-left: var(--space-3);
+        margin-right: var(--space-3);
     }
 }
 
@@ -683,13 +830,13 @@
         .input-panel {
             position: absolute;
             bottom: 0;
-            left: -2.5rem;
+            right: -2.5rem;
             display: flex;
             gap: var(--space-2);
             pointer-events: none;
 
-            border-radius: var(--space-2);
-            padding: var(--space-1);
+            border-radius: var(--space-4);
+            padding: var(--space-2);
 
             background-color: var(--color-bg);
             border: 1px solid var(--color-border);
@@ -702,11 +849,11 @@
             z-index: -1;
 
             input {
-                width: 6rem;
+                width: 10rem;
                 height: 2.1rem;
                 box-sizing: border-box;
                 border-radius: var(--space-2);
-                padding: var(--space-1);
+                padding: var(--space-1) var(--space-2);
 
                 background-color: var(--color-bg-contrast);
                 border: 1px solid var(--color-border);
@@ -742,6 +889,7 @@
             transform: scale(1) translateY(-2.4rem);
             opacity: 1;
             pointer-events: auto;
+            right: 0;
         }
     }
 }
@@ -749,7 +897,7 @@
 .field.choose {
     .choose-container {
         position: relative;
-        z-index: 1;
+        z-index: 2;
 
         .field-option,
         .choose-box {
@@ -804,20 +952,36 @@
             pointer-events: none;
             opacity: 0;
 
-            transition: var(--transition-slow);
-
-            .field-option {
-                transform: scale(0);
-            }
+            transition: var(--transition-fast);
         }
 
         .field-options.show {
             pointer-events: auto;
             opacity: 1;
+        }
 
-            .field-option {
-                transform: scale(1);
-            }
+        .field-options-bg {
+            position: absolute;
+            left: 0;
+            top: 0;
+
+            background-color: var(--color-bg);
+            box-shadow: .2rem .2rem .5rem color-mix(in oklch, var(--color-shadow) 15%, transparent);
+            border: 1px solid var(--color-border);
+
+            border-radius: var(--space-4);
+
+            z-index: -2;
+
+            transition: var(--transition-fast);
+
+            transform: scale(0);
+            opacity: 0;
+        }
+
+        .field-options-bg.show {
+            transform: scale(1);
+            opacity: 1;
         }
     }
 }
@@ -830,4 +994,51 @@
 @keyframes strokeShow {
     0% { stroke-dashoffset: 0; }
     100% { stroke-dashoffset: 48; }
+}
+
+
+#tyresTread {
+    .field.choose {
+        flex: 1 0 100%;
+        margin-left: unset;
+    }
+
+    #rearLeft {
+        flex: unset !important;
+        margin-left: auto !important;
+    }
+
+    .field.choose::before {
+        content: "";
+        margin-left: auto;
+    }
+}
+
+#frontBrakes,
+#rearBrakes,
+#parkingBrakeShoes {
+    .field.choose {
+        margin-left: auto;
+    }
+}
+
+#rear,
+#frontDiscsDrumsActual,
+#rearDiscsDrumsActual,
+#parkingDiscsDrumsActual,
+#residualCapacity,
+#voltage {
+    flex: 1 0 100%;
+}
+
+
+#front,
+#rear::before,
+#residualCapacity::before,
+#voltage::before,
+#frontDiscsDrumsActual::before,
+#rearDiscsDrumsActual::before,
+#parkingDiscsDrumsActual::before {
+    content: "";
+    margin-left: auto;
 }

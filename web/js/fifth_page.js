@@ -342,7 +342,7 @@ class FieldConstructor {
 
         fieldCheckbox.append(fieldCheckboxBox, check)
 
-        field.append(fieldCheckbox, field.textArea)
+        field.append(field.textArea, fieldCheckbox)
 
         function show() {
             fieldCheckbox.classList.add("show")
@@ -405,6 +405,22 @@ class FieldConstructor {
 
         inputContainer.append(inputValue, inputPanel)
 
+        const clickHandler = (event) => {
+            const findInputContainer = event.target.closest(".input-container")
+            if (!findInputContainer
+                || findInputContainer !== inputContainer) close()
+        }
+
+        function open() {
+            inputContainer.classList.add("show")
+            window.addEventListener("click", clickHandler)
+        }
+
+        function close() {
+            inputContainer.classList.remove("show")
+            window.removeEventListener("click", clickHandler)
+        }
+
         field.get = () => {
             return inputValueText.textContent !== "?"
                 ? inputValueText.textContent
@@ -424,11 +440,9 @@ class FieldConstructor {
         }
 
         inputValue.addEventListener("click", () => {
-            if (inputContainer.classList.contains("show")) {
-                inputContainer.classList.remove("show")
-            } else {
-                inputContainer.classList.add("show")
-            }
+            inputContainer.classList.contains("show")
+                ? close()
+                : open()
         })
 
         applyButton.addEventListener("click", () => {
@@ -453,9 +467,12 @@ class FieldConstructor {
             field.set(numValue)
         })
 
+        field.append(field.textArea)
         field.append(inputContainer)
         if (field.unitArea) field.append(field.unitArea)
-        field.append(field.textArea)
+
+        field.open = open
+        field.close = close
 
         return field
     }
@@ -478,6 +495,9 @@ class FieldConstructor {
         const fieldOptions = document.createElement("div")
         fieldOptions.className = "field-options"
 
+        const fieldOptionsBg = document.createElement("div")
+        fieldOptionsBg.className = "field-options-bg"
+
         chooseBox.get = () => {
             return chooseBoxValue.textContent !== "?"
                 ? chooseBoxValue.textContent
@@ -492,19 +512,20 @@ class FieldConstructor {
         const gap = 0.6 // rem
 
         function findX(elColumnIndex, rowLength) {
-            return `${Math.round((Math.floor(rowLength / 2) - elColumnIndex) * (2.2 + gap) * 100 * -1) / 100}rem`
+            return `${(Math.round((Math.floor(rowLength / 2) - elColumnIndex + (0.5 * (rowLength % 2 - 1))) * (2.2 + gap) * 100 * -1) / 100) - (2.2 + gap)}rem`
         }
 
         function findY(elRowIndex, columnLength) {
-            return `${Math.round((columnLength - elRowIndex) * (2.2 + gap) * 100) / 100 * -1}rem`
+            return `${Math.round((columnLength - elRowIndex) * (2.2 + gap) * 100) / 100 * -1 - 0.25}rem`
         }
 
-        const lastRow = Math.ceil(options.length / 3)
-        const lastRowLength = 3 - options.length % 3
+        const allLen = options.length
+        const lastRow = Math.ceil(allLen / 3)
+        const lastRowLength = allLen % 3 === 0 ? 3 : allLen % 3
 
         options.forEach((option, index) => {
             const myColumn = index % 3
-            const myRow = index % lastRow
+            const myRow = Math.floor(index / 3)
 
             const myX = findX(myColumn, myRow === lastRow - 1 ? lastRowLength : 3)
             const myY = findY(myRow, lastRow)
@@ -512,15 +533,50 @@ class FieldConstructor {
             fieldOptions.append(constructOption(option, myX, myY))
         })
 
+        const clickHandler = (event) => {
+            const findChooseContainer = event.target.closest(".choose-container")
+            if (!findChooseContainer
+                || findChooseContainer !== chooseContainer) fieldOptions.back()
+        }
+
+        const bgHeight = (lastRow) * (2.2 + gap) - gap + 1
+        const bgWidth = Math.min(3, allLen) * (2.2 + gap) - gap + 1
+
+        const add = lastRow === 1 && allLen < 3
+            ? allLen === 2 ? (0.5 * (2.2 + gap)) : 2.2 + gap
+            : 0
+
+        const bgTop = `${(bgHeight + gap - 0.5) * -1 - 0.25}rem`
+        const bgLeft = `${((bgWidth - 2.2 - 0.5) * -1) - add}rem`
+
+        fieldOptionsBg.style.height = `${bgHeight}rem`
+        fieldOptionsBg.style.width = `${bgWidth}rem`
+
+        fieldOptionsBg.go = () => {
+            fieldOptionsBg.classList.add("show")
+            fieldOptionsBg.style.top = bgTop
+            fieldOptionsBg.style.left = bgLeft
+        }
+
+        fieldOptionsBg.back = () => {
+            fieldOptionsBg.classList.remove("show")
+            fieldOptionsBg.style.left = "0"
+            fieldOptionsBg.style.top = "0"
+        }
+
         fieldOptions.go = () => {
             fieldOptions.classList.add("show")
+            window.addEventListener("click", clickHandler)
             Array.from(fieldOptions.children).forEach((option) => { option.go() })
         }
 
         fieldOptions.back = () => {
             fieldOptions.classList.remove("show")
+            window.removeEventListener("click", clickHandler)
             Array.from(fieldOptions.children).forEach((option) => { option.back() })
         }
+
+        fieldOptions.append(fieldOptionsBg)
 
         function constructOption(text, moveX, moveY) {
             const fieldOption = document.createElement("div")
@@ -568,9 +624,9 @@ class FieldConstructor {
         chooseBox.append(chooseBoxValue)
         chooseContainer.append(chooseBox, fieldOptions)
 
+        field.append(field.textArea)
         field.append(chooseContainer)
         if (field.unitArea) field.append(field.unitArea)
-        field.append(field.textArea)
 
         return field
     }
@@ -743,7 +799,7 @@ function initPositions() {
         for (const [rowInfo, fields] of Object.entries(rows)) {
             const [rowName, rowCode, rowType] = rowInfo.split("/")
 
-            const row = constructRow(rowName, rowCode, rowType === "2")
+            const row = constructRow(rowName, rowCode, rowType === "2", position.counter)
 
             if (fields) {
                 for (const fieldInfo of fields) {
@@ -769,8 +825,13 @@ function initRowClicks() {
         const doubleButton = event.target.closest(".double-button")
         const tripleButton = event.target.closest(".triple-button")
 
-        if (doubleButton) handleMultipleButton(doubleButton, event)
-        if (tripleButton) handleMultipleButton(tripleButton, event)
+        const actualButton = doubleButton || tripleButton
+            ? doubleButton ? doubleButton : tripleButton
+            : null
+
+        if (!actualButton) return
+
+        handleMultipleButton(actualButton, event)
     })
 }
 
@@ -884,28 +945,93 @@ function constructPinPackage() {
 }
 
 
-function constructRow(name, code, double = false) {
+function constructRow(name, code, double = false, counter) {
+    const rowWrapper = document.createElement("div")
+    rowWrapper.className = "row-wrapper"
+
     const row = document.createElement("div")
     row.id = snakeToCamelCase(code)
     row.className = "row"
-
     row.dataset.code = code
 
-    const multipleButton = double ? constructDoubleButton() : constructTripleButton()
+    const multipleButton = constructMultipleButton(!double, counter)
 
     const rowValue = document.createElement("div")
     rowValue.className = "row-value"
 
     const rowText = document.createElement("div")
+    rowText.className = "row-text"
     rowText.textContent = name
+
+    const rowAddDataWrapper = document.createElement("div")
+    rowAddDataWrapper.className = "row-add-data-wrapper"
+
+    const rowAddDataContentWrapper = document.createElement("div")
+    rowAddDataContentWrapper.className = "row-add-data-content-wrapper"
+
+    const rowAddData = document.createElement("div")
+    rowAddData.className = "row-add-data"
+
+    const rowAddDataHead = document.createElement("div")
+    rowAddDataHead.className = "row-add-data-head"
+
+    const rowAddDataBody = document.createElement("div")
+    rowAddDataBody.className = "row-add-data-body"
+
+    const rowAddDataBottom = document.createElement("div")
+    rowAddDataBottom.className = "row-add-data-bottom show"
+    rowAddDataBottom.innerHTML = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6" stroke-linecap="round" stroke-linejoin="round"></path></svg>'
+
+    const rowAddDataName = document.createElement("span")
+    rowAddDataName.className = "row-add-data-name"
+    rowAddDataName.textContent = "Оставить комментарий и прикрепить файлы о неисправности"
+
+    const rowAddDataComment = document.createElement("textarea")
+    rowAddDataComment.className = "row-add-data-comment textarea"
+
+    const pinFiles = document.createElement("pin-files")
+    pinFiles.className = "pin-files"
+    pinFiles.innerHTML = SVG.pin
+
+    rowAddDataHead.append(rowAddDataName)
+    rowAddDataBody.append(rowAddDataComment, pinFiles)
+
+    rowAddData.append(rowAddDataHead, rowAddDataBody)
+    rowAddDataContentWrapper.append(rowAddData)
+    rowAddDataWrapper.append(rowAddDataContentWrapper, rowAddDataBottom)
 
     rowValue.append(rowText)
 
     row.append(multipleButton, rowValue)
+    rowWrapper.append(row, rowAddDataWrapper)
 
-    row.fields = []
+    rowAddDataBottom.show = () => {
+        if (rowAddDataBottom.classList.contains("show")) return
 
-    row.addField = (fieldInfo) => {
+        rowAddDataBottom.classList.add("show")
+        rowAddDataContentWrapper.style.height = `${pxToRem(rowAddData.offsetHeight)}rem`
+        rowAddDataWrapper.style.height = `${pxToRem(rowAddData.offsetHeight + rowAddDataBottom.offsetHeight)}rem`
+    }
+
+    rowAddDataBottom.hide = () => {
+        if (!rowAddDataBottom.classList.contains("show")) return
+
+        rowAddDataBottom.classList.remove("show")
+        rowAddDataContentWrapper.style.height = "0"
+        rowAddDataWrapper.style.height = `${pxToRem(rowAddDataBottom.offsetHeight) + 1}rem`
+    }
+
+    rowAddDataBottom.addEventListener("click", () => {
+        if (rowAddDataBottom.classList.contains("show")) {
+            rowAddDataBottom.hide()
+        } else {
+            rowAddDataBottom.show()
+        }
+    })
+
+    rowWrapper.fields = {}
+
+    rowWrapper.addField = (fieldInfo) => {
         const fieldEl = fieldConstructor.create(...fieldInfo)
 
         if (!fieldEl) {
@@ -914,14 +1040,26 @@ function constructRow(name, code, double = false) {
             rowValue.append(fieldEl)
         }
 
-        row.fields.push(fieldEl)
+        rowWrapper.fields[fieldEl.dataset.code] = fieldEl
     }
 
-    row.red = multipleButton.red
-    row.yellow = multipleButton.yellow
-    row.green = multipleButton.green
-    row.get = multipleButton.get
-    row.fieldsGet = () => {
+    rowWrapper.red = () => {
+        rowWrapper.open()
+        multipleButton.red()
+    }
+
+    rowWrapper.yellow = () => {
+        rowWrapper.open()
+        multipleButton.yellow()
+    }
+
+    rowWrapper.green = () => {
+        baseClose()
+        multipleButton.green()
+    }
+
+    rowWrapper.get = multipleButton.get
+    rowWrapper.fieldsGet = () => {
         const answer = {}
 
         for (const field of row.fields) {
@@ -933,7 +1071,68 @@ function constructRow(name, code, double = false) {
         return answer
     }
 
-    return row
+    rowWrapper.fieldsSet = (code, value) => {
+        const field = rowWrapper.fields[code]
+
+        if (!field) {
+            console.warn(`Can't find field with code: ${code}`)
+            return
+        }
+
+        field.set(value)
+    }
+
+    function baseOpen() {
+        if (rowAddDataWrapper.classList.contains("opened")) return
+
+        rowAddDataWrapper.classList.add("opened")
+        rowAddDataWrapper.style.height = `${pxToRem(rowAddData.offsetHeight + rowAddDataBottom.offsetHeight)}rem`
+    }
+
+    function baseClose() {
+        if (!rowAddDataWrapper.classList.contains("opened")) return
+
+        rowAddDataWrapper.classList.remove("opened")
+        rowAddDataWrapper.style.height = "0"
+    }
+
+    rowWrapper.clearAddData = () => {
+        rowAddDataComment.value = ""
+        hasNotFiles(pinFiles)
+    }
+
+    rowWrapper.makeCloseNotification = () => {
+        setOkCancelNotification(
+            "Вы уверены, что хотите сменить статус?",
+            "Комментарий и файлы сообщающие о неисправностях будут удалены.",
+            null,
+            () => {
+                baseClose()
+                multipleButton.green()
+            },
+            null,
+        )
+    }
+
+    rowWrapper.open = () => {
+        rowAddDataBottom.hide()
+        rowAddDataBottom.show()
+        baseOpen()
+    }
+
+    rowWrapper.close = () => {
+        if (rowAddDataWrapper.classList.contains("opened")) {
+            rowWrapper.makeCloseNotification()
+            return
+        }
+
+        baseClose()
+    }
+
+    multipleButton.open = rowWrapper.open
+    multipleButton.close = rowWrapper.close
+
+    return rowWrapper
 }
 
 
@@ -946,381 +1145,114 @@ function getFloat(num) {
 }
 
 
-function constructNumInput(
-    value = null,
-    {
-        min = 0,
-        max = Infinity,
-        type = "integer", // integer, float
-        tenth = [],
-        basic = null
-    }) {
-    if (
-        !(
-            type === "float"
-            || type === "integer"
-        )
-    ) {
-        throw Error("Wrong NumInput type")
-    }
+function constructMultiplePoint(addClass, counter) {
+    const multipleButtonPoint = document.createElement("div")
+    multipleButtonPoint.className = `multiple-button-point ${addClass} inactive`
 
-    const numInput = document.createElement("div")
-    numInput.className = "num-input"
+    multipleButtonPoint.pointType = addClass
 
-    const numInputValue = document.createElement("div")
-    numInputValue.className = "num-input-value"
+    multipleButtonPoint.clear = () => {
+        multipleButtonPoint.classList.remove("inactive")
 
-    const numInputValueText = document.createElement("span")
-    numInputValueText.className = "num-input-value-text"
-    numInputValueText.textContent = value ? value : '?'
-
-    numInputValue.append(numInputValueText)
-    numInput.append(numInputValue)
-
-    function getTenth(id) {
-        return tenth[id] === undefined || tenth[id] === null ? false : tenth[id]
-    }
-
-    function getBasic() {
-        return basic === undefined || basic === null ? min : basic
-    }
-
-    function constructPanel() {
-        const numInputPanel = document.createElement("div")
-        numInputPanel.className = `num-input-panel ${type}`
-
-        const numInputPanelBody = document.createElement("div")
-        numInputPanelBody.className = "num-input-panel-body"
-
-        const numInputPanelClose = document.createElement("div")
-        numInputPanelClose.className = "num-input-panel-close"
-        numInputPanelClose.innerHTML = SVG.x
-
-        const numInputPanelApply = document.createElement("div")
-        numInputPanelApply.className = "num-input-panel-apply"
-        numInputPanelApply.innerHTML = `<div>${SVG.load}</div>`
-
-        numInputPanelClose.addEventListener("click", closeNumInput)
-        numInputPanelApply.addEventListener("click", apply)
-
-        numInputPanelBody.append(numInputPanelClose, numInputPanelApply)
-
-        if (type === "integer") {
-            const numInteger = constructInteger(
-                getTenth(0),
-                numInputValueText.textContent !== "?"
-                    ? numInputValueText.textContent
-                    : getBasic(),
-                min,
-                max
-            )
-
-            numInputPanelBody.append(
-                numInteger
-            )
-
-            numInteger.addEventListener("click", (event) => {
-                const arrow = event.target.closest(".num-arrow")
-                if (!arrow) return
-
-                const value = arrow.classList.contains("tenth") ? 10 : 1
-                const operation = arrow.classList.contains("add")
-                const check = operation
-                    ? numInteger.get() !== max
-                    : numInteger.get() !== min
-
-                if (!check) {
-                    if (!arrow.classList.contains("bad-click")) {
-                        arrow.classList.add("bad-click")
-                        arrow.addEventListener("animationend", () => {
-                            arrow.classList.remove("bad-click")
-                        }, { once: true })
-                    }
-                    return
-                }
-
-                numInteger.set(
-                    operation
-                        ? Math.min(numInteger.get() + value, max)
-                        : Math.max(numInteger.get() - value, min)
-                )
-            })
-
-            numInput.apply = () => {
-                return numInteger.get().toString()
-            }
-
-        } else if (type === "float") {
-            const dot = document.createElement("div")
-            dot.className = 'num-input-dot'
-
-            const currentValue = numInputValueText.textContent !== "?"
-                ? Number(numInputValueText.textContent)
-                : getBasic()
-
-            const intNumInput = constructInteger(
-                getTenth(0),
-                getInt(currentValue)
-            )
-            intNumInput.classList.add("int")
-
-            const floatNumInput = constructInteger(
-                getTenth(1),
-                getFloat(currentValue)
-            )
-            intNumInput.classList.add("float")
-
-            numInputPanelBody.append(
-                intNumInput,
-                dot,
-                floatNumInput,
-            )
-
-            function getCurrent() {
-                return intNumInput.get() + floatNumInput.get() * 0.01
-            }
-
-            numInputPanelBody.addEventListener("click", (event) => {
-                const arrow = event.target.closest(".num-arrow")
-                if (!arrow) return
-
-                const multiplier = arrow.closest(".num-integer").classList.contains("int") ? 1 : 0.01
-                const value = arrow.classList.contains("tenth") ? 10 : 1
-                const operation = arrow.classList.contains("add")
-
-                const currentValue = getCurrent()
-
-                const check = operation
-                    ? currentValue !== max
-                    : currentValue !== min
-
-                if (!check) {
-                    if (!arrow.classList.contains("bad-click")) {
-                        arrow.classList.add("bad-click")
-                        arrow.addEventListener("animationend", () => {
-                            arrow.classList.remove("bad-click")
-                        }, { once: true })
-                    }
-                    return
-                }
-
-                const newValue = operation
-                    ? Math.min(currentValue + value * multiplier, max)
-                    : Math.max(currentValue - value * multiplier, min)
-
-                intNumInput.set(getInt(newValue))
-                floatNumInput.set(getFloat(newValue))
-            })
-
-            numInput.apply = () => {
-                return getCurrent()
-            }
+        if (multipleButtonPoint.classList.contains("active")) {
+            multipleButtonPoint.classList.remove("active")
+            counter[multipleButtonPoint.pointType].sub()
+            headCounter[multipleButtonPoint.pointType].sub()
+            return true
         }
-
-        numInputPanel.append(numInputPanelBody)
-
-        return numInputPanel
+        return false
     }
 
-    function openNumInput() {
-        if (numInput.classList.contains("opened")) return
-
-        numInput.classList.add("opened")
-
-        const panel = constructPanel()
-
-        numInput.append(panel)
-
-        panel.style.opacity = "0"
-
-        void panel.offsetHeight
-
-        panel.style.opacity = "1"
-
-        setTimeout(setAnotherClickHandler, 10)
+    multipleButtonPoint.get = () => {
+        return multipleButtonPoint.classList.contains("active")
     }
 
-    function closeNumInput() {
-        if (!numInput.classList.contains("opened")) return
+    multipleButtonPoint.set = () => {
+        multipleButtonPoint.classList.remove("inactive")
 
-        numInput.classList.remove("opened")
+        if (multipleButtonPoint.classList.contains("active")) return false
 
-        numInput.removeChild(numInput.querySelector(".num-input-panel"))
+        multipleButtonPoint.classList.add("active")
+        counter[multipleButtonPoint.pointType].add()
+            headCounter[multipleButtonPoint.pointType].add()
+        return true
     }
 
-    numInput.addEventListener("click", (event) => {
-        if (event.target.closest(".num-input-panel") !== null) return
-        openNumInput()
-    })
-
-    function setAnotherClickHandler() {
-        window.addEventListener("click", (event) => {
-            const findNumInputPanel = event.target.closest(".num-input-panel")
-
-            findNumInputPanel === numInput.querySelector(".num-input-panel")
-                ? setAnotherClickHandler()
-                : closeNumInput()
-        }, {
-            once: true
-        })
-    }
-
-    function apply() {
-        numInputValueText.textContent = numInput.apply()
-        closeNumInput()
-    }
-
-    return numInput
+    return multipleButtonPoint
 }
 
-function constructInteger(tenth, basic) {
-    const numInteger= document.createElement("div")
-    numInteger.className = "num-integer"
+function constructMultipleButton(triple = false, localCounter) {
+    const multipleButton = document.createElement("button")
+    multipleButton.className = triple ? "triple-button" : "double-button"
+    multipleButton.isActive = false
 
-    numInteger.append(constructNumArrow(true, false))
-    if (tenth) numInteger.append(constructNumArrow(true, true))
+    multipleButton.redPoint = constructMultiplePoint("red", localCounter)
+    if (triple) multipleButton.yellowPoint = constructMultiplePoint("yellow", localCounter)
+    multipleButton.greenPoint = constructMultiplePoint("green", localCounter)
 
-    const field = constructNumField(basic)
+    multipleButton.points = [multipleButton.redPoint]
+    if (triple) multipleButton.points.push(multipleButton.yellowPoint)
+    multipleButton.points.push(multipleButton.greenPoint)
 
-    numInteger.append(field)
-
-    if (tenth) numInteger.append(constructNumArrow(false, true))
-    numInteger.append(constructNumArrow(false, false))
-
-    numInteger.get = field.get
-    numInteger.set = field.set
-
-    return numInteger
-}
-
-function constructNumArrow(add = true, tenth = false) {
-    const numArrow = document.createElement("div")
-    numArrow.className = `num-arrow ${add ? "add" : "sub"}${tenth ? " tenth" : ""}`
-    if (!tenth) numArrow.innerHTML = '<svg viewBox="0 0 24 24" overflow="visible" fill="currentColor" stroke="var(--color-border)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M10.66,2.68 L1.34,21.32 Q0,24 3,24 L21,24 Q24,24 22.66,21.32 L13.34,2.68 Q12,0 10.66,2.68 Z" vector-effect="non-scaling-stroke"/></svg>'
-
-    return numArrow
-}
-
-function constructNumField(value) {
-    const numField = document.createElement("div")
-    numField.className = "num-field"
-
-    const numFieldValue = document.createElement("span")
-    numFieldValue.className = "num-field-value"
-    numFieldValue.textContent = value
-
-    numField.append(numFieldValue)
-
-    numField.get = () => {
-        return numFieldValue.length !== 0 ? Number(numFieldValue.textContent) : null
-    }
-
-    numField.set = (newNum) => {
-        numFieldValue.textContent = newNum
-    }
-
-    return numField
-}
-
-
-function constructDoubleButton() {
-    const doubleButton = document.createElement("div")
-    doubleButton.className = "double-button"
-    doubleButton.isActive = false
-
-    const doubleButtonPointRed = document.createElement("div")
-    doubleButtonPointRed.className = "double-button-point red inactive"
-
-    const doubleButtonPointGreen = document.createElement("div")
-    doubleButtonPointGreen.className = "double-button-point green inactive"
-
-    doubleButton.append(
-        doubleButtonPointRed,
-        doubleButtonPointGreen
-    )
+    multipleButton.append(...multipleButton.points)
 
     function clear() {
-        Array.from(doubleButton.children).forEach((point) => {
-            point.classList.remove("inactive")
+        let currentActive = "gray"
+
+        multipleButton.points.forEach((point) => {
+            if (point.clear()) currentActive = point.pointType
         })
-    }
 
-    doubleButton.red = () => {
-        clear()
-        doubleButtonPointRed.classList.add("active")
-    }
-
-    doubleButton.green = () => {
-        clear()
-        doubleButtonPointGreen.classList.add("active")
-    }
-
-    doubleButton.get = () => {
-        for (const point of Array.from(doubleButton.children)) {
-            if (point.classList.contains("active")) {
-                return Array.from(point.classList)[1]
-            }
+        if (!multipleButton.isActive) {
+            multipleButton.isActive = true
+            headCounter.gray.sub()
+            localCounter.gray.sub()
         }
 
+        return currentActive
+    }
+
+    multipleButton.get = () => {
+        for (const point of multipleButton.points) {
+            if (point.get()) return point.pointType
+        }
         return "unstated"
     }
 
-    return doubleButton
-}
+    multipleButton.red = (fromClick) => {
+        if (multipleButton.get() === "red") return
 
-
-function constructTripleButton() {
-    const tripleButton = document.createElement("button")
-    tripleButton.className = "triple-button"
-    tripleButton.isActive = false
-
-    const tripleButtonPointRed = document.createElement("div")
-    tripleButtonPointRed.className = "triple-button-point red inactive"
-
-    const tripleButtonPointYellow = document.createElement("div")
-    tripleButtonPointYellow.className = "triple-button-point yellow inactive"
-
-    const tripleButtonPointGreen = document.createElement("div")
-    tripleButtonPointGreen.className = "triple-button-point green inactive"
-
-    tripleButton.append(
-        tripleButtonPointRed,
-        tripleButtonPointYellow,
-        tripleButtonPointGreen
-    )
-
-    function clear() {
-        Array.from(tripleButton.children).forEach((point) => {
-            point.classList.remove("inactive")
-        })
-    }
-
-    tripleButton.red = () => {
         clear()
-        tripleButtonPointRed.classList.add("active")
+        multipleButton.redPoint.set()
+        multipleButton.open()
     }
 
-    tripleButton.yellow = () => {
+    if (triple) multipleButton.yellow = (fromClick) => {
+        if (multipleButton.get() === "yellow") return
+
         clear()
-        tripleButtonPointYellow.classList.add("active")
+        multipleButton.yellowPoint.set()
+        multipleButton.open()
     }
 
-    tripleButton.green = () => {
-        clear()
-        tripleButtonPointGreen.classList.add("active")
-    }
+    multipleButton.green = (fromClick) => {
+        const current = multipleButton.get()
+        if (current === "green") return
 
-    tripleButton.get = () => {
-        for (const point of Array.from(tripleButton.children)) {
-            if (point.classList.contains("active")) {
-                return Array.from(point.classList)[1]
-            }
+        if (fromClick
+            && (current === "red"
+            || current === "yellow")) {
+            multipleButton.close()
+            return
         }
 
-        return "unstated"
+        clear()
+        multipleButton.greenPoint.set()
     }
 
-    return tripleButton
+    multipleButton.counter = localCounter
+
+    return multipleButton
 }
 
 
@@ -1329,7 +1261,6 @@ function handleMultipleButton(button, event) {
     let minDistance = Infinity
 
     const points = Array.from(button.children)
-    const localCounter = button.closest(".position-wrapper").querySelector(".checklist-counter")
 
     const clickX = event.clientX
     const clickY = event.clientY
@@ -1348,36 +1279,7 @@ function handleMultipleButton(button, event) {
         }
     })
 
-    if (!closest.classList.contains("active")) {
-        points.forEach((point) => {
-            const active = point.classList.contains("active")
-            const clicked = point === closest
-
-            if (active || clicked) {
-                const funcName = active ? "sub" : "add"
-
-                const type = Array.from(point.classList)[1]
-
-                headCounter[type][funcName]()
-                localCounter[type][funcName]()
-            }
-
-            if (clicked) {
-                point.classList.add("active")
-            } else {
-                point.classList.remove("active")
-            }
-        })
-
-        if (!button.isActive) {
-            button.isActive = true
-            points.forEach((point) => {
-                point.classList.remove("inactive")
-            })
-            headCounter.gray.sub()
-            localCounter.gray.sub()
-        }
-    }
+    button[closest.pointType](true)
 }
 
 async function initEnd() {
@@ -1423,3 +1325,280 @@ async function initSSE() {
 
 
 start()
+
+
+// function constructNumInput(
+//     value = null,
+//     {
+//         min = 0,
+//         max = Infinity,
+//         type = "integer", // integer, float
+//         tenth = [],
+//         basic = null
+//     }) {
+//     if (
+//         !(
+//             type === "float"
+//             || type === "integer"
+//         )
+//     ) {
+//         throw Error("Wrong NumInput type")
+//     }
+//
+//     const numInput = document.createElement("div")
+//     numInput.className = "num-input"
+//
+//     const numInputValue = document.createElement("div")
+//     numInputValue.className = "num-input-value"
+//
+//     const numInputValueText = document.createElement("span")
+//     numInputValueText.className = "num-input-value-text"
+//     numInputValueText.textContent = value ? value : '?'
+//
+//     numInputValue.append(numInputValueText)
+//     numInput.append(numInputValue)
+//
+//     function getTenth(id) {
+//         return tenth[id] === undefined || tenth[id] === null ? false : tenth[id]
+//     }
+//
+//     function getBasic() {
+//         return basic === undefined || basic === null ? min : basic
+//     }
+//
+//     function constructPanel() {
+//         const numInputPanel = document.createElement("div")
+//         numInputPanel.className = `num-input-panel ${type}`
+//
+//         const numInputPanelBody = document.createElement("div")
+//         numInputPanelBody.className = "num-input-panel-body"
+//
+//         const numInputPanelClose = document.createElement("div")
+//         numInputPanelClose.className = "num-input-panel-close"
+//         numInputPanelClose.innerHTML = SVG.x
+//
+//         const numInputPanelApply = document.createElement("div")
+//         numInputPanelApply.className = "num-input-panel-apply"
+//         numInputPanelApply.innerHTML = `<div>${SVG.load}</div>`
+//
+//         numInputPanelClose.addEventListener("click", closeNumInput)
+//         numInputPanelApply.addEventListener("click", apply)
+//
+//         numInputPanelBody.append(numInputPanelClose, numInputPanelApply)
+//
+//         if (type === "integer") {
+//             const numInteger = constructInteger(
+//                 getTenth(0),
+//                 numInputValueText.textContent !== "?"
+//                     ? numInputValueText.textContent
+//                     : getBasic(),
+//                 min,
+//                 max
+//             )
+//
+//             numInputPanelBody.append(
+//                 numInteger
+//             )
+//
+//             numInteger.addEventListener("click", (event) => {
+//                 const arrow = event.target.closest(".num-arrow")
+//                 if (!arrow) return
+//
+//                 const value = arrow.classList.contains("tenth") ? 10 : 1
+//                 const operation = arrow.classList.contains("add")
+//                 const check = operation
+//                     ? numInteger.get() !== max
+//                     : numInteger.get() !== min
+//
+//                 if (!check) {
+//                     if (!arrow.classList.contains("bad-click")) {
+//                         arrow.classList.add("bad-click")
+//                         arrow.addEventListener("animationend", () => {
+//                             arrow.classList.remove("bad-click")
+//                         }, { once: true })
+//                     }
+//                     return
+//                 }
+//
+//                 numInteger.set(
+//                     operation
+//                         ? Math.min(numInteger.get() + value, max)
+//                         : Math.max(numInteger.get() - value, min)
+//                 )
+//             })
+//
+//             numInput.apply = () => {
+//                 return numInteger.get().toString()
+//             }
+//
+//         } else if (type === "float") {
+//             const dot = document.createElement("div")
+//             dot.className = 'num-input-dot'
+//
+//             const currentValue = numInputValueText.textContent !== "?"
+//                 ? Number(numInputValueText.textContent)
+//                 : getBasic()
+//
+//             const intNumInput = constructInteger(
+//                 getTenth(0),
+//                 getInt(currentValue)
+//             )
+//             intNumInput.classList.add("int")
+//
+//             const floatNumInput = constructInteger(
+//                 getTenth(1),
+//                 getFloat(currentValue)
+//             )
+//             intNumInput.classList.add("float")
+//
+//             numInputPanelBody.append(
+//                 intNumInput,
+//                 dot,
+//                 floatNumInput,
+//             )
+//
+//             function getCurrent() {
+//                 return intNumInput.get() + floatNumInput.get() * 0.01
+//             }
+//
+//             numInputPanelBody.addEventListener("click", (event) => {
+//                 const arrow = event.target.closest(".num-arrow")
+//                 if (!arrow) return
+//
+//                 const multiplier = arrow.closest(".num-integer").classList.contains("int") ? 1 : 0.01
+//                 const value = arrow.classList.contains("tenth") ? 10 : 1
+//                 const operation = arrow.classList.contains("add")
+//
+//                 const currentValue = getCurrent()
+//
+//                 const check = operation
+//                     ? currentValue !== max
+//                     : currentValue !== min
+//
+//                 if (!check) {
+//                     if (!arrow.classList.contains("bad-click")) {
+//                         arrow.classList.add("bad-click")
+//                         arrow.addEventListener("animationend", () => {
+//                             arrow.classList.remove("bad-click")
+//                         }, { once: true })
+//                     }
+//                     return
+//                 }
+//
+//                 const newValue = operation
+//                     ? Math.min(currentValue + value * multiplier, max)
+//                     : Math.max(currentValue - value * multiplier, min)
+//
+//                 intNumInput.set(getInt(newValue))
+//                 floatNumInput.set(getFloat(newValue))
+//             })
+//
+//             numInput.apply = () => {
+//                 return getCurrent()
+//             }
+//         }
+//
+//         numInputPanel.append(numInputPanelBody)
+//
+//         return numInputPanel
+//     }
+//
+//     function openNumInput() {
+//         if (numInput.classList.contains("opened")) return
+//
+//         numInput.classList.add("opened")
+//
+//         const panel = constructPanel()
+//
+//         numInput.append(panel)
+//
+//         panel.style.opacity = "0"
+//
+//         void panel.offsetHeight
+//
+//         panel.style.opacity = "1"
+//
+//         setTimeout(setAnotherClickHandler, 10)
+//     }
+//
+//     function closeNumInput() {
+//         if (!numInput.classList.contains("opened")) return
+//
+//         numInput.classList.remove("opened")
+//
+//         numInput.removeChild(numInput.querySelector(".num-input-panel"))
+//     }
+//
+//     numInput.addEventListener("click", (event) => {
+//         if (event.target.closest(".num-input-panel") !== null) return
+//         openNumInput()
+//     })
+//
+//     function setAnotherClickHandler() {
+//         window.addEventListener("click", (event) => {
+//             const findNumInputPanel = event.target.closest(".num-input-panel")
+//
+//             findNumInputPanel === numInput.querySelector(".num-input-panel")
+//                 ? setAnotherClickHandler()
+//                 : closeNumInput()
+//         }, {
+//             once: true
+//         })
+//     }
+//
+//     function apply() {
+//         numInputValueText.textContent = numInput.apply()
+//         closeNumInput()
+//     }
+//
+//     return numInput
+// }
+//
+// function constructInteger(tenth, basic) {
+//     const numInteger= document.createElement("div")
+//     numInteger.className = "num-integer"
+//
+//     numInteger.append(constructNumArrow(true, false))
+//     if (tenth) numInteger.append(constructNumArrow(true, true))
+//
+//     const field = constructNumField(basic)
+//
+//     numInteger.append(field)
+//
+//     if (tenth) numInteger.append(constructNumArrow(false, true))
+//     numInteger.append(constructNumArrow(false, false))
+//
+//     numInteger.get = field.get
+//     numInteger.set = field.set
+//
+//     return numInteger
+// }
+//
+// function constructNumArrow(add = true, tenth = false) {
+//     const numArrow = document.createElement("div")
+//     numArrow.className = `num-arrow ${add ? "add" : "sub"}${tenth ? " tenth" : ""}`
+//     if (!tenth) numArrow.innerHTML = '<svg viewBox="0 0 24 24" overflow="visible" fill="currentColor" stroke="var(--color-border)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M10.66,2.68 L1.34,21.32 Q0,24 3,24 L21,24 Q24,24 22.66,21.32 L13.34,2.68 Q12,0 10.66,2.68 Z" vector-effect="non-scaling-stroke"/></svg>'
+//
+//     return numArrow
+// }
+//
+// function constructNumField(value) {
+//     const numField = document.createElement("div")
+//     numField.className = "num-field"
+//
+//     const numFieldValue = document.createElement("span")
+//     numFieldValue.className = "num-field-value"
+//     numFieldValue.textContent = value
+//
+//     numField.append(numFieldValue)
+//
+//     numField.get = () => {
+//         return numFieldValue.length !== 0 ? Number(numFieldValue.textContent) : null
+//     }
+//
+//     numField.set = (newNum) => {
+//         numFieldValue.textContent = newNum
+//     }
+//
+//     return numField
+// }
